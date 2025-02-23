@@ -1,0 +1,63 @@
+#pragma once
+
+#include <stdio.h>
+
+#define BVR_FAILED  0x0
+#define BVR_OK      0x1
+
+/*   based on OpenGLES   */  
+#define BVR_NULL                0x00
+#define BVR_FLOAT               0x1406
+#define BVR_INT8                0x1400
+#define BVR_INT16               0x1402
+#define BVR_INT32               0x1404
+#define BVR_UNSIGNED_INT8       0x1401
+#define BVR_UNSIGNED_INT16      0x1403
+#define BVR_UNSIGNED_INT32      0x1405
+#define BVR_MAT3                0x1408
+#define BVR_MAT4                0x140A
+
+#define BVR_INCLUDE_BUFFER
+#define BVR_INCLUDE_DEBUG
+#define BVR_INCLUDE_IO
+
+/*          UTILS               */
+/*                              */
+
+int bvr_sizeof(int type);
+
+/*          BUFFERS             */
+/*                              */
+#ifdef BVR_INCLUDE_BUFFER
+
+
+#endif
+
+
+/*          INPUT-OUTPUT            */
+/*                                  */
+#ifdef BVR_INCLUDE_IO
+
+
+#endif
+
+/*          DEBUG                   */
+/*                                  */
+#ifdef BVR_INCLUDE_DEBUG
+
+char* bvri_string_format(const char* __string, ...);
+
+void bvri_wmessage(FILE* __stream, const int __line, const char* __file, const char* __message, ...);
+void bvri_wassert(const char* __message, const char* __file, unsigned long long __line);
+int bvri_werror(const char* __message, int __code);
+void bvri_break(const char* __file, unsigned long long __line);
+
+#define BVR_FORMAT(message, ...)(char*)(bvri_string_format(message, __VA_ARGS__))
+
+#define BVR_PRINT(message)(void)(bvri_wmessage(stdout, __LINE__, __FILE__, message))
+#define BVR_PRINTF(message, ...)(void)(bvri_wmessage(stdout, __LINE__, __FILE__, message, __VA_ARGS__))
+#define BVR_ASSERT(expression) (void) (                                         \
+    (((expression) == 0) ? bvri_wassert(#expression, __FILE__, __LINE__) : 0)  \
+)
+
+#endif

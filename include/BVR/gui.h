@@ -1,0 +1,27 @@
+#pragma once
+
+#include <BVR/window.h>
+#include <stdint.h>
+
+#define BVR_INCLUDE_NUKLEAR
+
+#ifdef BVR_INCLUDE_NUKLEAR
+
+typedef struct bvr_nuklear_s {
+    void* context;
+    bvr_window_t* window;
+
+    struct nk_font_atlas* atlas;
+    int antialiasing;
+    uint32_t vertex_buffer_length;
+    uint32_t element_buffer_length;
+} bvr_nuklear_t;
+
+int bvr_create_nuklear(bvr_nuklear_t* nuklear, bvr_window_t* window);
+void bvr_nuklear_handle(bvr_nuklear_t* nuklear);
+void bvr_nuklear_render(bvr_nuklear_t* nuklear);
+void bvr_destroy_nuklear(bvr_nuklear_t* nuklear);
+
+void bvr_nuklear_vec3_label(bvr_nuklear_t* nuklear, const char* text, float* value);
+
+#endif

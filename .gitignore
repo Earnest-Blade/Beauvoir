@@ -1,0 +1,17 @@
+# files
+*.dll
+*.exe
+*.c.txt
+*.cmake
+Makefile
+CMakeCache.txt
+
+bin/*.exe
+!bin/*.dll
+
+# folders
+.vscode/
+build/
+share/
+extern/
+CMakeFiles/
