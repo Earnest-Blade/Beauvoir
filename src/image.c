@@ -634,7 +634,7 @@ static int bvri_load_psd(bvr_image_t* image, FILE* file){
     struct {
         short compression;
         short target_channel;
-        uint32_t row;
+        uint32_t rows;
         uint32_t columns;
         uint32_t unpacked_length;
         uint32_t packed_length;
@@ -874,6 +874,8 @@ static int bvri_load_psd(bvr_image_t* image, FILE* file){
 
                 for (size_t channel = 0; channel < image->channels; channel++)
                 {
+                    size_t readed_size;
+
                     fseek(file, layer_section.layers[layer].channels[channel].position, SEEK_SET);
 
                     image_data_section.target_channel = layer_section.layers[layer].channels[channel].id; 
@@ -882,21 +884,21 @@ static int bvri_load_psd(bvr_image_t* image, FILE* file){
                     case -1: // transparency
                         {
                             image_data_section.columns = layer_width;
-                            image_data_section.row = layer_height;  
+                            image_data_section.rows = layer_height;  
                             image_data_section.target_channel = 3;
                         }
                         break;
                     case -2: // layer or vector
                         {
                             image_data_section.columns = layer_width;
-                            image_data_section.row = layer_height;
+                            image_data_section.rows = layer_height;
                             image_data_section.target_channel = 0;
                         }
                         break;
                     case -3: // layer mask
                         {
                             image_data_section.columns = layer_width;
-                            image_data_section.row = layer_height;
+                            image_data_section.rows = layer_height;
                             image_data_section.target_channel = 0;
                         }
                         break;
@@ -907,19 +909,20 @@ static int bvri_load_psd(bvr_image_t* image, FILE* file){
                     default: // color channel
                         {
                             image_data_section.columns = layer_width;
-                            image_data_section.row = layer_height;
+                            image_data_section.rows = layer_height;
                         }
                         break;
                     }
 
                     image_data_section.packed_length = 0;
-                    image_data_section.unpacked_length = image_data_section.columns * (image->depth / 8) * image_data_section.row;
-                    for (size_t j = 0; j < image_data_section.row; j++)
+                    image_data_section.unpacked_length = image_data_section.columns * image->channels;
+                    for (size_t j = 0; j < image_data_section.rows; j++)
                     {
                         image_data_section.rle_pack_lengths[j] = bvr_freadu16_be(file);
                         image_data_section.packed_length += image_data_section.rle_pack_lengths[j];
                     }
-
+                    BVR_PRINTF("packed length %i", image_data_section.packed_length);
+                    
                     image_data_section.packed_buffer = calloc(image_data_section.packed_length, sizeof(uint8_t));
                     image_data_section.unpacked_buffer = calloc(image_data_section.unpacked_length, sizeof(uint8_t));
                     BVR_ASSERT(image_data_section.packed_buffer);
@@ -927,60 +930,71 @@ static int bvri_load_psd(bvr_image_t* image, FILE* file){
 
                     BVR_PRINTF("channel %i id %i ftell %x", channel, image_data_section.target_channel, ftell(file));
 
-                    const size_t readed_size = fread(image_data_section.packed_buffer, sizeof(char), image_data_section.packed_length, file);
+                    readed_size = fread(image_data_section.packed_buffer, sizeof(uint8_t), image_data_section.packed_length, file);
                     BVR_ASSERT(readed_size == image_data_section.packed_length);
 
-                    size_t readed_bytes = 0;
-                    size_t offset = 0;
-                    for (size_t strip = 0; strip < image_data_section.row; strip++)
+                    for (size_t strip = 0; strip < image_data_section.rows; strip++)
                     {
                         char count = 0;
+                        size_t offset = 0;
                         uint8_t character = 0;
+                        size_t readed_bytes = 0;
 
-                        while (offset < image_data_section.rle_pack_lengths[strip])
+                        while (readed_bytes < image_data_section.rle_pack_lengths[strip] 
+                                && offset < image_data_section.unpacked_length)
                         {
-                            //BVR_PRINTF("%i-%i %i-%i", readed_bytes, image_data_section.packed_length, offset, image_data_section.unpacked_length);
                             BVR_ASSERT(readed_bytes < image_data_section.packed_length);
+                            BVR_ASSERT(offset < image_data_section.unpacked_length);
 
-                            count = image_data_section.packed_buffer[readed_bytes++];
-
-                            if(count == 0x80){
-                                // byte == -128
-                            }
-                            else if((count) & 0x80){
-                                // 0x81 < byte < 0xFF
-                                count = 0x101 - count;
-
-                                memset(&image_data_section.unpacked_buffer[offset], 
-                                    image_data_section.packed_buffer[readed_bytes],
-                                    count
-                                );
-
-                                offset += count;
-                                readed_bytes++;
+                            if(readed_bytes < image_data_section.rle_pack_lengths[strip]){
+                                count = (char)image_data_section.packed_buffer[readed_bytes++];
+                                //BVR_PRINTF("%i<%i %i", readed_bytes, image_data_section.rle_pack_lengths[strip], offset);
+                                if(count == 0x80){
+                                    // byte == -128
+                                }
+                                else if((count) & 0x80){
+                                    // 0x81 < byte < 0xFF
+                                    count = 0x101 - count;
+    
+                                    //BVR_ASSERT(readed_bytes + 1 <= image_data_section.rle_pack_lengths[strip]);
+                                    BVR_ASSERT(offset + count < image_data_section.unpacked_length);
+    
+                                    memset(&image_data_section.unpacked_buffer[offset], 
+                                        image_data_section.packed_buffer[readed_bytes],
+                                        count
+                                    );
+    
+                                    offset += count;
+                                    readed_bytes++;
+                                }
+                                else {
+                                    // 0x00 < byte < 0x7F
+                                    count = count + 1;
+    
+                                    //BVR_ASSERT(readed_bytes + count <= image_data_section.rle_pack_lengths[strip]);
+                                    BVR_ASSERT(offset + count < image_data_section.unpacked_length);
+    
+                                    memcpy(&image_data_section.unpacked_buffer[offset],
+                                        &image_data_section.packed_buffer[readed_bytes],
+                                        count
+                                    );
+    
+                                    offset += count;
+                                    readed_bytes += count;
+                                }
                             }
                             else {
-                                // 0x00 < byte < 0x7F
-                                count = count + 1;
-                                memcpy(&image_data_section.unpacked_buffer[offset],
-                                    &image_data_section.packed_buffer[readed_bytes],
-                                    count
-                                );
-
-                                offset += count;
-                                readed_bytes += count;
+                                memset(image_data_section.unpacked_buffer, 0, image_data_section.unpacked_length - offset);
+                                offset += image_data_section.unpacked_length - offset;
                             }
                         }
-                    }
 
-                    for (size_t strip = 0; strip < image_data_section.row; strip++)
-                    {
                         for (size_t column = 0; column < image_data_section.columns; column++)
                         {
                             image->pixels[
                                 ((strip * image->width + column) * image->channels + image_data_section.target_channel) +
                                 (image->width * image->height * image->channels * layer)
-                            ] = image_data_section.unpacked_buffer[(strip * layer_width + column) * (image->depth / 8)];
+                            ] = image_data_section.unpacked_buffer[column];
                         }
                     }
                     
