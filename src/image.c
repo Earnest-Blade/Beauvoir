@@ -595,6 +595,8 @@ static void bvri_psd_read_pascal_string(bvr_string_t* string, FILE* file){
 
         fread(string->data, sizeof(char), string->size - 1, file);
         string->data[string->size - 1] = '\0';
+
+        fseek(file, (string->size + 4) & ~4, SEEK_CUR);
     }
 }
 
@@ -676,9 +678,6 @@ static int bvri_load_psd(bvr_image_t* image, FILE* file){
             ressources_section.block.id = bvr_freadu16_be(file);
 
             bvri_psd_read_pascal_string(&ressources_section.block.name, file);
-
-            // pascal string padding.
-            bvr_freadu8(file);
 
             ressources_section.block.data.size = bvr_freadu32_be(file);
             ressources_section.block.data.elemsize = ressources_section.block.data.size;
@@ -949,23 +948,23 @@ static int bvri_load_psd(bvr_image_t* image, FILE* file){
                             if(readed_bytes < image_data_section.rle_pack_lengths[strip]){
                                 count = (char)image_data_section.packed_buffer[readed_bytes++];
                                 //BVR_PRINTF("%i<%i %i", readed_bytes, image_data_section.rle_pack_lengths[strip], offset);
-                                if(count == 0x80){
+                                if(count == -0x80){
                                     // byte == -128
+                                    // no-op
                                 }
                                 else if((count) & 0x80){
                                     // 0x81 < byte < 0xFF
-                                    count = 0x101 - count;
+                                    count = 0x100 - count + 1;
     
                                     //BVR_ASSERT(readed_bytes + 1 <= image_data_section.rle_pack_lengths[strip]);
                                     BVR_ASSERT(offset + count < image_data_section.unpacked_length);
     
                                     memset(&image_data_section.unpacked_buffer[offset], 
-                                        image_data_section.packed_buffer[readed_bytes],
+                                        image_data_section.packed_buffer[readed_bytes++],
                                         count
                                     );
     
                                     offset += count;
-                                    readed_bytes++;
                                 }
                                 else {
                                     // 0x00 < byte < 0x7F
@@ -985,7 +984,7 @@ static int bvri_load_psd(bvr_image_t* image, FILE* file){
                             }
                             else {
                                 memset(image_data_section.unpacked_buffer, 0, image_data_section.unpacked_length - offset);
-                                offset += image_data_section.unpacked_length - offset;
+                                offset = image_data_section.unpacked_length;
                             }
                         }
 
