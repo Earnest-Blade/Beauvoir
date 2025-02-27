@@ -579,7 +579,7 @@ static int bvri_is_psd(FILE* file){
     fread(sig, sizeof(char), 4, file);
     sig[4] = '\0';
 
-    version = BVR_BE_TO_LE16(bvr_fread16(file));
+    version = bvr_freadu16_be(file);
     return strcmp(sig, "8BPS") == 0 //8BPS -> psd's magic number 
             && version == 1; 
 }
@@ -589,14 +589,12 @@ static void bvri_psd_read_pascal_string(bvr_string_t* string, FILE* file){
     string->elemsize = sizeof(char);
     string->size = (size_t)bvr_freadu8(file) + 1;
 
-    if(string->size){
+    if(string->size - 1){
         string->data = malloc(string->size);
         BVR_ASSERT(string->data);
 
         fread(string->data, sizeof(char), string->size - 1, file);
         string->data[string->size - 1] = '\0';
-
-        fseek(file, (string->size + 4) & ~4, SEEK_CUR);
     }
 }
 
@@ -619,12 +617,15 @@ static int bvri_load_psd(bvr_image_t* image, FILE* file){
 
     struct {
         uint32_t size; // ressource's data full size
+        uint32_t end_position;
         uint32_t count; //
         struct bvri_psdressource_s block;
     } ressources_section;
 
     struct {
         size_t size;
+        size_t end_position;
+
         size_t layer_size;
         size_t mask_size;
 
@@ -666,9 +667,10 @@ static int bvri_load_psd(bvr_image_t* image, FILE* file){
 
     // ressource section parsing
     ressources_section.size = bvr_freadu32_be(file);
-    {
-        size_t start_of_the_header = ftell(file);
-        while (ftell(file) - start_of_the_header < ressources_section.size)
+    ressources_section.end_position = ftell(file) + ressources_section.size;
+    
+    if(ressources_section.size){
+        while (ftell(file) < ressources_section.end_position)
         {
             bvr_freadstr(ressources_section.block.sig, sizeof(ressources_section.block.sig), file);
             
@@ -678,15 +680,11 @@ static int bvri_load_psd(bvr_image_t* image, FILE* file){
             ressources_section.block.id = bvr_freadu16_be(file);
 
             bvri_psd_read_pascal_string(&ressources_section.block.name, file);
+            bvr_freadu8(file); // read an empty character used as padding
 
             ressources_section.block.data.size = bvr_freadu32_be(file);
             ressources_section.block.data.elemsize = ressources_section.block.data.size;
             ressources_section.block.data.data = NULL;
-
-            // BVR_PRINTF("tag_id=%i  name_len=%i  data_size=%i", 
-            //     ressources_section.block.id, ressources_section.block.name_length, 
-            //     ressources_section.block.data_size
-            // );        
 
             // seek to the end of the section. Each section's size must be even. 
             fseek(file, (ressources_section.block.data.size + 1) & ~1, SEEK_CUR);
@@ -697,9 +695,12 @@ static int bvri_load_psd(bvr_image_t* image, FILE* file){
         }
         
         ressources_section.count++;
+
+        fseek(file, ressources_section.end_position, SEEK_SET);
     }
 
     layer_section.size = bvr_freadu32_be(file);
+    layer_section.end_position = ftell(file) + layer_section.size;
     {
         size_t start_of_the_header = ftell(file);
 
@@ -722,8 +723,6 @@ static int bvri_load_psd(bvr_image_t* image, FILE* file){
             size_t end_of_header;
 
             layer = &layer_section.layers[layer_id];
-            //uint32_t layer_record_size = bvr_freadu32_be(file);
-            //bvr_freadu32_be(file); // record size
 
             layer->bounds[0] = bvr_freadu32_be(file);
             layer->bounds[1] = bvr_freadu32_be(file);
@@ -914,7 +913,7 @@ static int bvri_load_psd(bvr_image_t* image, FILE* file){
                     }
 
                     image_data_section.packed_length = 0;
-                    image_data_section.unpacked_length = image_data_section.columns * image->channels;
+                    image_data_section.unpacked_length = image_data_section.columns * image_data_section.rows;
                     for (size_t j = 0; j < image_data_section.rows; j++)
                     {
                         image_data_section.rle_pack_lengths[j] = bvr_freadu16_be(file);
@@ -932,68 +931,68 @@ static int bvri_load_psd(bvr_image_t* image, FILE* file){
                     readed_size = fread(image_data_section.packed_buffer, sizeof(uint8_t), image_data_section.packed_length, file);
                     BVR_ASSERT(readed_size == image_data_section.packed_length);
 
-                    for (size_t strip = 0; strip < image_data_section.rows; strip++)
+                    char count = 0;
+                    size_t offset = 0;
+                    uint8_t count_dis = 0;
+                    uint8_t character = 0;
+                    size_t readed_bytes = 0;
+                    while (readed_bytes < image_data_section.packed_length 
+                            && offset < image_data_section.unpacked_length)
                     {
-                        char count = 0;
-                        size_t offset = 0;
-                        uint8_t character = 0;
-                        size_t readed_bytes = 0;
+                        BVR_ASSERT(readed_bytes < image_data_section.packed_length);
+                        BVR_ASSERT(offset < image_data_section.unpacked_length);
 
-                        while (readed_bytes < image_data_section.rle_pack_lengths[strip] 
-                                && offset < image_data_section.unpacked_length)
-                        {
-                            BVR_ASSERT(readed_bytes < image_data_section.packed_length);
-                            BVR_ASSERT(offset < image_data_section.unpacked_length);
+                        if(readed_bytes < image_data_section.packed_length){
+                            count = (char)image_data_section.packed_buffer[readed_bytes++];
+                            //BVR_PRINTF("%i<%i %i", readed_bytes, image_data_section.rle_pack_lengths[strip], offset);
+                            if(count == -0x80){
+                                // byte == -128
+                                // no-op
+                            }
+                            else if((count) & 0x80){
+                                // 0x81 < byte < 0xFF
+                                count_dis = (uint8_t)(0x101 - count);
 
-                            if(readed_bytes < image_data_section.rle_pack_lengths[strip]){
-                                count = (char)image_data_section.packed_buffer[readed_bytes++];
-                                //BVR_PRINTF("%i<%i %i", readed_bytes, image_data_section.rle_pack_lengths[strip], offset);
-                                if(count == -0x80){
-                                    // byte == -128
-                                    // no-op
-                                }
-                                else if((count) & 0x80){
-                                    // 0x81 < byte < 0xFF
-                                    count = 0x100 - count + 1;
-    
-                                    //BVR_ASSERT(readed_bytes + 1 <= image_data_section.rle_pack_lengths[strip]);
-                                    BVR_ASSERT(offset + count < image_data_section.unpacked_length);
-    
-                                    memset(&image_data_section.unpacked_buffer[offset], 
-                                        image_data_section.packed_buffer[readed_bytes++],
-                                        count
-                                    );
-    
-                                    offset += count;
-                                }
-                                else {
-                                    // 0x00 < byte < 0x7F
-                                    count = count + 1;
-    
-                                    //BVR_ASSERT(readed_bytes + count <= image_data_section.rle_pack_lengths[strip]);
-                                    BVR_ASSERT(offset + count < image_data_section.unpacked_length);
-    
-                                    memcpy(&image_data_section.unpacked_buffer[offset],
-                                        &image_data_section.packed_buffer[readed_bytes],
-                                        count
-                                    );
-    
-                                    offset += count;
-                                    readed_bytes += count;
-                                }
+                                //BVR_ASSERT(readed_bytes + 1 <= image_data_section.rle_pack_lengths[strip]);
+                                BVR_ASSERT(offset + count_dis < image_data_section.unpacked_length);
+
+                                memset(&image_data_section.unpacked_buffer[offset], 
+                                    image_data_section.packed_buffer[readed_bytes++],
+                                    count_dis
+                                );
+
+                                offset += count_dis;
                             }
                             else {
-                                memset(image_data_section.unpacked_buffer, 0, image_data_section.unpacked_length - offset);
-                                offset = image_data_section.unpacked_length;
+                                // 0x00 < byte < 0x7F
+                                count_dis = (uint8_t)(count + 1);
+
+                                //BVR_ASSERT(readed_bytes + count <= image_data_section.rle_pack_lengths[strip]);
+                                BVR_ASSERT(offset + count_dis < image_data_section.unpacked_length);
+
+                                memcpy(&image_data_section.unpacked_buffer[offset],
+                                    &image_data_section.packed_buffer[readed_bytes],
+                                    count_dis
+                                );
+
+                                offset += count_dis;
+                                readed_bytes += count_dis;
                             }
                         }
+                        else {
+                            memset(image_data_section.unpacked_buffer, 0, image_data_section.unpacked_length - offset);
+                            offset = image_data_section.unpacked_length;
+                        }
+                    }
 
+                    for (size_t strip = 0; strip < image_data_section.rows; strip++)
+                    {
                         for (size_t column = 0; column < image_data_section.columns; column++)
                         {
                             image->pixels[
                                 ((strip * image->width + column) * image->channels + image_data_section.target_channel) +
                                 (image->width * image->height * image->channels * layer)
-                            ] = image_data_section.unpacked_buffer[column];
+                            ] = image_data_section.unpacked_buffer[strip * image_data_section.columns + column];
                         }
                     }
                     
@@ -1042,7 +1041,8 @@ static void bvri_create_default_layer(bvr_image_t* image){
     ((bvr_layer_t*)image->layers.data)[0].height = image->height;
     ((bvr_layer_t*)image->layers.data)[0].anchor_x = 0;
     ((bvr_layer_t*)image->layers.data)[0].anchor_y = 0;
-    bvr_create_string(&((bvr_layer_t*)image->layers.data)[0].name, "Layer0");
+    
+    bvr_create_string(&((bvr_layer_t*)image->layers.data)[0].name, "DefaultLayer");
 }
 
 int bvr_create_image(bvr_image_t* image, FILE* file){

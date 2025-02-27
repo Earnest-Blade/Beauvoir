@@ -6,6 +6,12 @@
 #include <string.h>
 #include <assert.h>
 
+#ifdef _WIN32
+	#include <Windows.h>
+#elif
+	#include <signal.h>
+#endif
+
 int bvr_sizeof(int type){
     switch (type)
     {
@@ -120,12 +126,24 @@ void bvri_wassert(const char* __message, const char* __file, unsigned long long 
     exit(0);
 }
 
+void bvri_wassert_break(const char* __message, const char* __file, unsigned long long __line){
+    bvri_wmessage(stderr, -1, 0, "assertion failed: %s, %s, line %i\n", __message, __file, __line);
+
+	bvri_break(__file, __line);
+}
+
 int bvri_werror(const char* __message, int __code){
     assert(0 && "not implemented!");
 }
 
-void bvri_break(const char* __file, unsigned long long __line){
-    assert(0 && "not implemented!");
+void bvri_break(const char* __file, unsigned long long __line){	
+	bvri_wmessage(stderr, __line, __file, "program break!");
+
+#ifdef _WIN32
+	DebugBreak();
+#elif
+	raise(SIGINT);
+#endif
 }
 
 #endif
