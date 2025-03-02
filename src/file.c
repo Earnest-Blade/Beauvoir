@@ -14,23 +14,22 @@ size_t bvr_get_file_size(FILE* file){
 
 int bvr_read_file(bvr_string_t* string, FILE* file){
     BVR_ASSERT(string);
-    BVR_ASSERT(string->elemsize);
     BVR_ASSERT(file);
 
     size_t file_size = bvr_get_file_size(file);
-    size_t string_p = string->size;
+    size_t string_p = string->length;
 
     if(string->data){
         BVR_ASSERT(0 || "cannot copy on a previously allocated string :(");
     }
     else {
         // TODO: check if size is correct
-        string->size = file_size + 1;
-        string->data = malloc(string->size);
+        string->length = file_size + 1;
+        string->data = malloc(string->length);
         BVR_ASSERT(string->data);
 
         size_t final_size = fread(string->data, sizeof(char), file_size, file);
-        string->data[string->size - 1] = '\0';
+        string->data[string->length - 1] = '\0';
     }
 
     return BVR_OK;

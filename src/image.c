@@ -586,15 +586,14 @@ static int bvri_is_psd(FILE* file){
 
 static void bvri_psd_read_pascal_string(bvr_string_t* string, FILE* file){
     string->data = NULL;
-    string->elemsize = sizeof(char);
-    string->size = (size_t)bvr_freadu8(file) + 1;
+    string->length = (size_t)bvr_freadu8(file) + 1;
 
-    if(string->size - 1){
-        string->data = malloc(string->size);
+    if(string->length - 1){
+        string->data = malloc(string->length);
         BVR_ASSERT(string->data);
 
-        fread(string->data, sizeof(char), string->size - 1, file);
-        string->data[string->size - 1] = '\0';
+        fread(string->data, sizeof(char), string->length - 1, file);
+        string->data[string->length - 1] = '\0';
     }
 }
 
@@ -763,7 +762,7 @@ static int bvri_load_psd(bvr_image_t* image, FILE* file){
             bvri_psd_read_pascal_string(&layer->name, file);
 
             // pascal string padding.
-            fseek(file, (layer->name.size - 1) - (((layer->name.size - 1) / 4) * 4) + 3, SEEK_CUR);
+            fseek(file, (layer->name.length - 1) - (((layer->name.length - 1) / 4) * 4) + 3, SEEK_CUR);
 
             int has_next_additional_data = 1;
             while(has_next_additional_data) {
@@ -789,7 +788,7 @@ static int bvri_load_psd(bvr_image_t* image, FILE* file){
             }
 
             fseek(file, end_of_header, SEEK_SET);
-            BVR_PRINTF("layer name %s (%i)", layer->name.data, layer->name.size);
+            BVR_PRINTF("layer name %s (%i)", layer->name.data, layer->name.length);
             BVR_PRINTF("end of header %x", ftell(file));
         }
 
@@ -857,6 +856,8 @@ static int bvri_load_psd(bvr_image_t* image, FILE* file){
     {
         if(image_data_section.compression == 0){
             // proceed to RAW uncompression 
+
+            BVR_ASSERT(0 || "unsupported compression mode");
         }
         else if(image_data_section.compression == 1){
             // do RLE uncompression
@@ -929,7 +930,11 @@ static int bvri_load_psd(bvr_image_t* image, FILE* file){
                     BVR_PRINTF("channel %i id %i ftell %x", channel, image_data_section.target_channel, ftell(file));
 
                     readed_size = fread(image_data_section.packed_buffer, sizeof(uint8_t), image_data_section.packed_length, file);
-                    BVR_ASSERT(readed_size == image_data_section.packed_length);
+                    //BVR_ASSERT(readed_size == image_data_section.packed_length);
+                    if(readed_size != image_data_section.packed_length){
+                        BVR_PRINT("skipping layer");
+                        continue;
+                    }
 
                     char count = 0;
                     size_t offset = 0;
@@ -944,7 +949,7 @@ static int bvri_load_psd(bvr_image_t* image, FILE* file){
 
                         if(readed_bytes < image_data_section.packed_length){
                             count = (char)image_data_section.packed_buffer[readed_bytes++];
-                            //BVR_PRINTF("%i<%i %i", readed_bytes, image_data_section.rle_pack_lengths[strip], offset);
+                            
                             if(count == -0x80){
                                 // byte == -128
                                 // no-op
@@ -953,7 +958,6 @@ static int bvri_load_psd(bvr_image_t* image, FILE* file){
                                 // 0x81 < byte < 0xFF
                                 count_dis = (uint8_t)(0x101 - count);
 
-                                //BVR_ASSERT(readed_bytes + 1 <= image_data_section.rle_pack_lengths[strip]);
                                 BVR_ASSERT(offset + count_dis < image_data_section.unpacked_length);
 
                                 memset(&image_data_section.unpacked_buffer[offset], 
@@ -967,7 +971,6 @@ static int bvri_load_psd(bvr_image_t* image, FILE* file){
                                 // 0x00 < byte < 0x7F
                                 count_dis = (uint8_t)(count + 1);
 
-                                //BVR_ASSERT(readed_bytes + count <= image_data_section.rle_pack_lengths[strip]);
                                 BVR_ASSERT(offset + count_dis < image_data_section.unpacked_length);
 
                                 memcpy(&image_data_section.unpacked_buffer[offset],
@@ -996,7 +999,6 @@ static int bvri_load_psd(bvr_image_t* image, FILE* file){
                         }
                     }
                     
-                    
                     free(image_data_section.packed_buffer);
                     free(image_data_section.unpacked_buffer);
                     image_data_section.packed_buffer = NULL;
@@ -1009,7 +1011,7 @@ static int bvri_load_psd(bvr_image_t* image, FILE* file){
             
         }
         else {
-            BVR_ASSERT(0 || "supported compression format");
+            BVR_ASSERT(0 || "unsupported compression mode");
         }
     }
 

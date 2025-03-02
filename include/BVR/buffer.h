@@ -4,6 +4,7 @@
 #include <string.h>
 
 #define BVR_BUFFER_SIZE 1024
+#define BVR_POOL_SIZE 2048
 
 #define BVR_BUFFER_COUNT(buffer)((unsigned long long)(buffer.size / buffer.elemsize))
 
@@ -13,7 +14,13 @@ struct bvr_buffer_s {
     unsigned int elemsize;
 };
 
-typedef struct bvr_buffer_s bvr_string_t;
+/*
+    pascal typed string
+*/
+typedef struct bvr_string_s { 
+    unsigned short length;
+    char* data;
+} bvr_string_t;
 
 void bvr_create_string(bvr_string_t* string, const char* value);
 

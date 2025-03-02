@@ -100,7 +100,7 @@ int main(){
     bvr_shader_register_sub_shader(&texture_infos.model.shader, BVR_FRAGMENT_SHADER, "_FRAGMENT_");
     bvr_shader_compile(&texture_infos.model.shader);
 
-    load_texture("res/texture.psd");
+    load_texture("res/hands.psd");
 
     while (1)
     {

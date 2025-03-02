@@ -87,7 +87,7 @@ void bvr_shader_register_sub_shader(bvr_shader_t* shader, int type, const char* 
     bvr_string_concat(&shader_header, name);
 
     bvr_string_insert(&shader_str, shader->header_length, shader_header.data);
-    
+
     uint32_t target;
     if(bvri_compile_shader(&target, &shader_str, type)) {
         glAttachShader(shader->program, target);
