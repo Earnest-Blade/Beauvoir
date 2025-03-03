@@ -96,3 +96,63 @@ void bvr_destroy_string(bvr_string_t* string){
     free(string->data);
     string->data = NULL;
 }
+
+void bvr_create_pool(bvr_pool_t* pool, size_t size, size_t count){
+    BVR_ASSERT(pool);
+    BVR_ASSERT(size < 255);
+
+    pool->data = NULL;
+    pool->next = NULL;
+    pool->elemsize = size;
+    pool->count = count;
+
+    if(size && count){
+
+        pool->data = calloc(pool->count, (pool->elemsize + sizeof(struct bvr_pool_block_s)));
+        BVR_ASSERT(pool->data);
+        pool->next = (struct bvr_pool_block_s*)pool->data;
+
+        struct bvr_pool_block_s* block = (struct bvr_pool_block_s*)pool->data;
+        for (size_t i = 0; i < pool->count - 1; i++)
+        {
+            block->next = i;
+            block = (struct bvr_pool_block_s*)(pool->data + i * (pool->elemsize + sizeof(struct bvr_pool_block_s)));
+        }
+        
+        block->next = 0;
+
+    }
+}
+
+void* bvr_pool_alloc(bvr_pool_t* pool){
+    BVR_ASSERT(pool);
+
+    if(pool->next){
+        struct bvr_pool_block_s* block = pool->next;
+        
+        pool->next = (struct bvr_pool_block_s*)(
+            pool->data + block->next * (pool->elemsize + sizeof(struct bvr_pool_block_s))
+        );
+        return (void*)(block + sizeof(struct bvr_pool_block_s));
+    }
+
+    return NULL;
+}
+
+void bvr_pool_free(bvr_pool_t* pool, void* ptr){
+    BVR_ASSERT(pool);
+
+    if(ptr){
+        struct bvr_pool_block_s* prev = pool->next;
+        pool->next = (struct bvr_pool_block_s*)((char*)ptr - sizeof(struct bvr_pool_block_s));
+        pool->next->next = ((size_t)prev / (pool->elemsize + sizeof(struct bvr_pool_block_s))) - (size_t)pool->data;
+    }
+}
+
+void bvr_destroy_pool(bvr_pool_t* pool){
+    BVR_ASSERT(pool);
+
+    free(pool->data);
+    pool->data = NULL;
+    pool->next = NULL;
+}

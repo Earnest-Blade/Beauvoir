@@ -35,6 +35,8 @@ typedef struct bvr_shader_s {
     struct bvr_buffer_s shaders;
     uint32_t program;
     
+    int flags;
+    
     // TODO: find another way to store initialization variables.
     bvr_string_t file_string;
     size_t header_length;

@@ -22,6 +22,27 @@ typedef struct bvr_string_s {
     char* data;
 } bvr_string_t;
 
+typedef struct bvr_pool_s {
+    char* data;
+
+    /*
+        Pool's data is structure as such :
+
+        | next data block id |
+        |        ----        |
+        |        data        |
+    
+
+        after that, all informations are aligned to this pattern.
+    */
+    struct bvr_pool_block_s {
+        unsigned char next;
+    }* next;
+
+    unsigned int count;
+    unsigned int elemsize;
+} bvr_pool_t;
+
 void bvr_create_string(bvr_string_t* string, const char* value);
 
 /*
@@ -49,3 +70,8 @@ const char* bvr_string_get(bvr_string_t* string);
     Free the string.
 */
 void bvr_destroy_string(bvr_string_t* string);
+
+void bvr_create_pool(bvr_pool_t* pool, size_t size, size_t count);
+void* bvr_pool_alloc(bvr_pool_t* pool);
+void bvr_pool_free(bvr_pool_t* pool, void* ptr);
+void bvr_destroy_pool(bvr_pool_t* pool);
