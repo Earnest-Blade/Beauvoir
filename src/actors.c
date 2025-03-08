@@ -2,9 +2,6 @@
 
 #include <BVR/file.h>
 
-#define CGLTF_IMPLEMENTATION
-#include <cgltf.h>
-
 void bvr_model_draw(bvr_model_t* model, int drawmode){
     bvr_shader_enable(&model->shader);
 

@@ -17,12 +17,6 @@
 #define BVR_VERTEX_SHADER 0x001
 #define BVR_FRAGMENT_SHADER 0x002
 
-/*
-#define BVR_VERTEX_SHADER 0x8B31
-#define BVR_FRAGMENT_SHADER 0x8B30
-#define BVR_GEOMETRY_SHADER 0x8DD9
-*/
-
 typedef struct bvr_shader_uniform_s {
     struct bvr_buffer_s memory;
     bvr_string_t name;

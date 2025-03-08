@@ -10,11 +10,11 @@
 
 #define BVR_MAX_GLSL_HEADER_SIZE 100
 
-static int bvri_compile_shader(uint32_t* shader, bvr_string_t* values, int type){
+static int bvri_compile_shader(uint32_t* shader, bvr_string_t* content, int type){
     *shader = glCreateShader(type);
 
-    BVR_PRINT(values->data);
-    glShaderSource(*shader, 1, (const char**)&values->data, NULL);
+    //BVR_PRINT(content->data);
+    glShaderSource(*shader, 1, (const char**)&content->data, NULL);
     glCompileShader(*shader);
 
     int s;
@@ -46,15 +46,16 @@ static int bvri_link_shader(uint32_t program) {
     return BVR_OK;
 }
 
-static int bvri_register_shader_state(bvr_shader_t* program, bvr_shader_stage_t* shader, bvr_string_t* data, 
+static int bvri_register_shader_state(bvr_shader_t* program, bvr_shader_stage_t* shader, bvr_string_t* content, 
     const char* header, const char* name, int type){
     
     BVR_ASSERT(shader);
-    BVR_ASSERT(data);
+    BVR_ASSERT(content);
     BVR_ASSERT(header);
     BVR_ASSERT(name);
 
     char shader_header_str[BVR_SMALL_BUFFER_SIZE];
+    memset(shader_header_str, 0, BVR_SMALL_BUFFER_SIZE);
     bvr_string_t shader_str;
 
     strncpy(shader_header_str, header, strnlen(header, 100));
@@ -63,7 +64,7 @@ static int bvri_register_shader_state(bvr_shader_t* program, bvr_shader_stage_t*
     strncat(shader_header_str, "\n", 1);
 
     bvr_create_string(&shader_str, shader_header_str);
-    bvr_string_concat(&shader_str, data->data);
+    bvr_string_concat(&shader_str, content->data);
 
     if (type && shader_str.length) {
         if (bvri_compile_shader(&shader->shader, &shader_str, type)) {
