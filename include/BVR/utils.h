@@ -26,20 +26,7 @@
 
 int bvr_sizeof(int type);
 
-/*          BUFFERS             */
-/*                              */
-#ifdef BVR_INCLUDE_BUFFER
-
-
-#endif
-
-
-/*          INPUT-OUTPUT            */
-/*                                  */
-#ifdef BVR_INCLUDE_IO
-
-
-#endif
+#define BVR_HAS_FLAG(x, f) ((int)((x & f) == f))
 
 /*          DEBUG                   */
 /*                                  */

@@ -95,12 +95,9 @@ int main(){
     bvr_create_2d_square_mesh(&texture_infos.model.mesh, 480.0f, 270.0f);
 
     /* Create the shader */
-    bvr_create_shader(&texture_infos.model.shader, "res/shader.glsl");
-    bvr_shader_register_sub_shader(&texture_infos.model.shader, BVR_VERTEX_SHADER, "_VERTEX_");
-    bvr_shader_register_sub_shader(&texture_infos.model.shader, BVR_FRAGMENT_SHADER, "_FRAGMENT_");
-    bvr_shader_compile(&texture_infos.model.shader);
+    bvr_create_shader(&texture_infos.model.shader, "res/shader.glsl", BVR_VERTEX_SHADER | BVR_FRAGMENT_SHADER);
 
-    load_texture("res/hands.psd");
+    load_texture("res/texture.tif");
 
     while (1)
     {

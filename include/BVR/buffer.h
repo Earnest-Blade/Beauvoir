@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#define BVR_SMALL_BUFFER_SIZE 256
 #define BVR_BUFFER_SIZE 1024
 #define BVR_POOL_SIZE 2048
 

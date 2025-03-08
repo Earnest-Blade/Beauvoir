@@ -16,7 +16,7 @@ int bvr_read_file(bvr_string_t* string, FILE* file){
     BVR_ASSERT(string);
     BVR_ASSERT(file);
 
-    size_t file_size = bvr_get_file_size(file);
+    size_t file_size = bvr_get_file_size(file) - ftell(file);
     size_t string_p = string->length;
 
     if(string->data){
