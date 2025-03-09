@@ -85,7 +85,6 @@ typedef struct bvr_texture_s {
     bvr_image_t image;
 
     uint32_t id;
-    int location;
     int filter, wrap;
 } bvr_texture_t;
 
@@ -97,7 +96,6 @@ typedef struct bvr_texture_atlas_s
     bvr_image_t image;
 
     uint32_t id;
-    int location, layer;
     int filter, wrap;
 
     uint32_t tile_width, tile_height;
@@ -110,7 +108,6 @@ typedef struct bvr_layered_texture_s {
     bvr_image_t image;
 
     uint32_t id;
-    int location, layer;
     int filter, wrap;
 } bvr_layered_texture_t;
 
@@ -127,7 +124,6 @@ static inline int bvr_create_texture(bvr_texture_t* texture, const char* path, i
     return success;
 }
 
-int bvr_texture_link(bvr_texture_t* texture, void* shader, const char* name);
 void bvr_texture_enable(bvr_texture_t* texture, int unit);
 void bvr_texture_disable(void);
 void bvr_destroy_texture(bvr_texture_t* texture);
@@ -141,8 +137,6 @@ static inline int bvr_create_texture_atlas(bvr_texture_atlas_t* atlas, const cha
     return success;
 }
 
-int bvr_texture_atlas_link(bvr_texture_atlas_t* atlas, void* shader, const char* name);
-int bvr_texture_atlas_link_layer(bvr_texture_atlas_t* atlas, void* shader, const char* name);
 void bvr_texture_atlas_enablei(bvr_texture_atlas_t* atlas, int id, int unit);
 static inline void bvr_texture_atlas_enable(bvr_texture_atlas_t* atlas, int x, int y, int unit) {
     bvr_texture_atlas_enablei(atlas, y * (atlas->image.width / atlas->tile_width) + x, unit);
@@ -159,8 +153,6 @@ static inline int bvr_create_layered_texture(bvr_layered_texture_t* texture, con
     return success;
 }
 
-int bvr_layered_texture_link(bvr_layered_texture_t* texture, void* shader, const char* name);
-int bvr_layered_texture_link_layer(bvr_layered_texture_t* texture, void* shader, const char* name);
 void bvr_layered_texture_enable(bvr_layered_texture_t* texture, int id, int unit);
 void bvr_layered_texture_disable(void);
 

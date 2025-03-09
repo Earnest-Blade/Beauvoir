@@ -10,10 +10,17 @@
 
 #define BVR_MAX_GLSL_HEADER_SIZE 100
 
+struct bvri_texture_uniform_s {
+    int id;
+    int layer; 
+
+    int layer_location;
+    int unit;
+};
+
 static int bvri_compile_shader(uint32_t* shader, bvr_string_t* content, int type){
     *shader = glCreateShader(type);
 
-    //BVR_PRINT(content->data);
     glShaderSource(*shader, 1, (const char**)&content->data, NULL);
     glCompileShader(*shader);
 
@@ -56,6 +63,7 @@ static int bvri_register_shader_state(bvr_shader_t* program, bvr_shader_stage_t*
 
     char shader_header_str[BVR_SMALL_BUFFER_SIZE];
     memset(shader_header_str, 0, BVR_SMALL_BUFFER_SIZE);
+
     bvr_string_t shader_str;
 
     strncpy(shader_header_str, header, strnlen(header, 100));
@@ -179,13 +187,13 @@ int bvr_create_shaderf(bvr_shader_t* shader, FILE* file, int flags){
     return BVR_OK;
 }
 
-void bvr_shader_register_uniform(bvr_shader_t* shader, int type, int count, const char* name){
+bvr_shader_uniform_t* bvr_shader_register_uniform(bvr_shader_t* shader, int type, int count, const char* name){
     BVR_ASSERT(shader);
     BVR_ASSERT(name);
 
     if (shader->uniform_count + 1 >= BVR_MAX_UNIFORM_COUNT) {
         BVR_PRINTF("uniform maximum capacity reached on shader '%i'!", shader->program);
-        return;
+        return NULL;
     }
 
     int location = glGetUniformLocation(shader->program, name);
@@ -193,27 +201,81 @@ void bvr_shader_register_uniform(bvr_shader_t* shader, int type, int count, cons
         shader->uniform_count++;
         shader->uniforms[shader->uniform_count].location = location;
         shader->uniforms[shader->uniform_count].type = type;
-        shader->uniforms[shader->uniform_count].memory.elemsize = bvr_sizeof(type);
-        shader->uniforms[shader->uniform_count].memory.size = count * shader->uniforms[shader->uniform_count].memory.elemsize;
-        shader->uniforms[shader->uniform_count].memory.data = malloc(shader->uniforms[shader->uniform_count].memory.size);
-        BVR_ASSERT(shader->uniforms[shader->uniform_count].memory.data);
-        memset(shader->uniforms[shader->uniform_count].memory.data, 0, shader->uniforms[shader->uniform_count].memory.size);
 
+        if(type != BVR_TEXTURE_2D || type != BVR_TEXTURE_2D_ARRAY){
+            shader->uniforms[shader->uniform_count].memory.elemsize = bvr_sizeof(type);
+            shader->uniforms[shader->uniform_count].memory.size = count * shader->uniforms[shader->uniform_count].memory.elemsize;
+            shader->uniforms[shader->uniform_count].memory.data = malloc(shader->uniforms[shader->uniform_count].memory.size);
+            BVR_ASSERT(shader->uniforms[shader->uniform_count].memory.data);
+            memset(shader->uniforms[shader->uniform_count].memory.data, 0, shader->uniforms[shader->uniform_count].memory.size);    
+        }
+        else {
+            shader->uniforms[shader->uniform_count].memory.elemsize = sizeof(struct bvri_texture_uniform_s);
+            shader->uniforms[shader->uniform_count].memory.size = sizeof(struct bvri_texture_uniform_s);
+            shader->uniforms[shader->uniform_count].memory.data = malloc(shader->uniforms[shader->uniform_count].memory.size);
+            BVR_ASSERT(shader->uniforms[shader->uniform_count].memory.data);
+        }
+        
         bvr_create_string(&shader->uniforms[shader->uniform_count].name, name);
+        return &shader->uniforms[shader->uniform_count];
     }
-    else {
-        BVR_PRINTF("cannot find uniform '%s'!", name);
-        return;
-    }
+
+    BVR_PRINTF("cannot find uniform '%s'!", name);
+    return NULL;
 }
 
-void bvr_shader_set_uniformi(bvr_shader_t* shader, const int id, void* data){
+bvr_shader_uniform_t* bvr_shader_register_texture(bvr_shader_t* shader, int type, int* id, int* layer, 
+    const char* name, const char* layer_name)
+{
     BVR_ASSERT(shader);
+    if(type != BVR_TEXTURE_2D && type != BVR_TEXTURE_2D_ARRAY){
+        BVR_PRINT("cannot link default uniform through texture registering!");
+        return NULL;
+    }
 
-    if(data){
-        if(id >= 0 && id < shader->uniform_count) {
-            memcpy(shader->uniforms[id].memory.data, data, shader->uniforms[id].memory.size);
+    bvr_shader_uniform_t* uniform = bvr_shader_register_uniform(shader, type, 0, name);
+    if(uniform){
+        struct bvri_texture_uniform_s texture_uniform;
+        texture_uniform.id = 0;
+        texture_uniform.layer = 0;
+        texture_uniform.layer_location = 0;
+        texture_uniform.unit = 0;
+
+        if(id){
+            texture_uniform.id = *id;
         }
+
+        if(type == BVR_TEXTURE_2D_ARRAY){
+            if(layer){
+                texture_uniform.layer = *layer;
+            }
+
+            texture_uniform.layer_location = glGetUniformLocation(shader->program, layer_name);
+
+            if(texture_uniform.layer_location == -1){
+                BVR_PRINT("failed to find texture layer location!");
+            }
+        }
+
+        for (size_t i = 0; i < shader->uniform_count; i++)
+        {
+            if(shader->uniforms[i].type == BVR_TEXTURE_2D || shader->uniforms[i].type == BVR_TEXTURE_2D_ARRAY){
+                texture_uniform.unit++;
+            }
+        }
+        
+        memcpy(uniform->memory.data, &texture_uniform, sizeof(struct bvri_texture_uniform_s));
+
+        return uniform;
+    }
+
+    return NULL;
+}
+
+void bvr_shader_set_uniformi(bvr_shader_uniform_t* uniform, void* data){
+
+    if(data && uniform){
+        memcpy(uniform->memory.data, data, uniform->memory.size);
     }
     else {
         BVR_PRINT("skipping uniform data updating, data is NULL");
@@ -227,7 +289,33 @@ void bvr_shader_set_uniform(bvr_shader_t* shader, const char* name, void* data){
     for (size_t i = 0; i < shader->uniform_count; i++)
     {
         if (strcmp(shader->uniforms[i].name.data, name) == 0) {
-            bvr_shader_set_uniformi(shader, i, data);
+            bvr_shader_set_uniformi(&shader->uniforms[i], data);
+        }
+    }
+}
+void bvr_shader_set_texturei(bvr_shader_uniform_t* uniform, int* id, int* layer){
+    if(uniform){
+        struct bvri_texture_uniform_s texture;
+        if(id){
+            texture.id = *id;
+        }
+
+        if(layer){
+            texture.layer = *layer;
+        }
+
+        memcpy(uniform->memory.data, &texture, sizeof(texture.id) + sizeof(texture.layer));
+    }
+}
+
+void bvr_shader_set_texture(bvr_shader_t* shader, const char* name, int* id, int* layer){
+    BVR_ASSERT(shader);
+    BVR_ASSERT(name);
+
+    for (size_t i = 0; i < shader->uniform_count; i++)
+    {
+        if (strcmp(shader->uniforms[i].name.data, name) == 0) {
+            bvr_shader_set_texturei(&shader->uniforms[i], id, layer);
         }
     }
 }
@@ -257,7 +345,16 @@ void bvr_shader_use_uniform(bvr_shader_uniform_t* uniform, void* data){
         case BVR_MAT4: 
             glUniformMatrix4fv(uniform->location, uniform->memory.size / uniform->memory.elemsize, GL_FALSE, (float*)data); 
             return;
-
+        case BVR_TEXTURE_2D:
+            glUniform1i(uniform->location, ((struct bvri_texture_uniform_s*)uniform->memory.data)->unit);
+            return;
+        case BVR_TEXTURE_2D_ARRAY:
+            {
+                struct bvri_texture_uniform_s* texture = (struct bvri_texture_uniform_s*)uniform->memory.data;
+                glUniform1i(uniform->location, texture->unit);
+                glUniform1i(texture->layer_location, texture->layer);
+            }
+            return;
         default:
             break;
         }

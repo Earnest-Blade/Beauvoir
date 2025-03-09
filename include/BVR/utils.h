@@ -17,6 +17,10 @@
 #define BVR_MAT3                0x1408
 #define BVR_MAT4                0x140A
 
+/*   custom   */  
+#define BVR_TEXTURE_2D          0x140B
+#define BVR_TEXTURE_2D_ARRAY    0x140C
+
 #define BVR_INCLUDE_BUFFER
 #define BVR_INCLUDE_DEBUG
 #define BVR_INCLUDE_IO

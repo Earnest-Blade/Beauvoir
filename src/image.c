@@ -1211,26 +1211,9 @@ int bvr_create_texturef(bvr_texture_t* texture, FILE* file, int filter, int wrap
     return BVR_OK;
 }
 
-int bvr_texture_link(bvr_texture_t* texture, void* shaderp, const char* name){
-    bvr_shader_t* shader = (bvr_shader_t*) shaderp;
-    BVR_ASSERT(texture);
-    BVR_ASSERT(shader);
-
-    texture->location = glGetUniformLocation(shader->program, name);
-    if(texture->location == -1){
-        BVR_PRINTF("failed to link texture '%s' to the shader!", name);
-        return BVR_FAILED;
-    }
-
-    return BVR_OK;
-}
-
 void bvr_texture_enable(bvr_texture_t* texture, int unit){
-    if(texture->location >= 0){
-        glActiveTexture(unit);
-        glBindTexture(GL_TEXTURE_2D, texture->id);
-        glUniform1i(texture->location, BVR_TEXTURE_UNIT0 - unit);
-    }
+    glActiveTexture(unit);
+    glBindTexture(GL_TEXTURE_2D, texture->id);
 }
 
 void bvr_texture_disable(void){
@@ -1257,8 +1240,6 @@ int bvr_create_texture_atlasf(bvr_texture_atlas_t* atlas, FILE* file,
     atlas->tile_height = tile_height;
 
     atlas->id = 0;
-    atlas->layer = 0;
-    atlas->location = 0;
     
     bvr_create_image(&atlas->image, file);
     if(!atlas->image.pixels){
@@ -1310,39 +1291,9 @@ int bvr_create_texture_atlasf(bvr_texture_atlas_t* atlas, FILE* file,
     return BVR_OK;
 }
 
-int bvr_texture_atlas_link(bvr_texture_atlas_t* atlas, void* shaderp, const char* name){
-    bvr_shader_t* shader = (bvr_shader_t*) shaderp;
-    BVR_ASSERT(atlas);
-    BVR_ASSERT(shader);
-
-    atlas->location = glGetUniformLocation(shader->program, name);
-    if(atlas->location == -1){
-        BVR_PRINTF("failed to link texture '%s' to the shader!", name);
-        return BVR_FAILED;
-    }
-
-    return BVR_OK;
-}
-
-int bvr_texture_atlas_link_layer(bvr_texture_atlas_t* atlas, void* shaderp, const char* name){
-    bvr_shader_t* shader = (bvr_shader_t*) shaderp;
-    BVR_ASSERT(atlas);
-    BVR_ASSERT(shader);
-
-    atlas->layer = glGetUniformLocation(shader->program, name);
-    if(atlas->location == -1){
-        BVR_PRINTF("failed to link texture's layer '%s' to the shader!", name);
-        return BVR_FAILED;
-    }
-
-    return BVR_OK;
-}
-
 void bvr_texture_atlas_enablei(bvr_texture_atlas_t* atlas, int id, int unit){
     glActiveTexture(unit);
     glBindTexture(GL_TEXTURE_2D_ARRAY, atlas->id);
-    glUniform1i(atlas->location, BVR_TEXTURE_UNIT0 - unit);
-    glUniform1i(atlas->layer, id);
 }
 
 void bvr_texture_atlas_disable(void){
@@ -1363,9 +1314,7 @@ int bvr_create_layered_texturef(bvr_layered_texture_t* texture, FILE* file, int 
     texture->wrap = wrap;
 
     texture->id = 0;
-    texture->layer = 0;
-    texture->location = 0;
-    
+
     bvr_create_image(&texture->image, file);
     if(!texture->image.pixels){
         BVR_PRINT("invalid image!");
@@ -1418,39 +1367,9 @@ int bvr_create_layered_texturef(bvr_layered_texture_t* texture, FILE* file, int 
     return BVR_OK;
 }
 
-int bvr_layered_texture_link(bvr_layered_texture_t* texture, void* shaderp, const char* name){
-    bvr_shader_t* shader = (bvr_shader_t*) shaderp;
-    BVR_ASSERT(shader);
-    BVR_ASSERT(texture);
-
-    texture->location = glGetUniformLocation(shader->program, name);
-    if(texture->location == -1){
-        BVR_PRINTF("failed to link texture '%s' to the shader!", name);
-        return BVR_FAILED;
-    }
-
-    return BVR_OK;
-}
-
-int bvr_layered_texture_link_layer(bvr_layered_texture_t* texture, void* shaderp, const char* name){
-    bvr_shader_t* shader = (bvr_shader_t*) shaderp;
-    BVR_ASSERT(shader);
-    BVR_ASSERT(texture);
-
-    texture->layer = glGetUniformLocation(shader->program, name);
-    if(texture->layer == -1){
-        BVR_PRINTF("failed to link texture's layer '%s' to the shader!", name);
-        return BVR_FAILED;
-    }
-
-    return BVR_OK;
-}
-
 void bvr_layered_texture_enable(bvr_layered_texture_t* texture, int id, int unit){
     glActiveTexture(unit);
     glBindTexture(GL_TEXTURE_2D_ARRAY, texture->id);
-    glUniform1i(texture->location, BVR_TEXTURE_UNIT0 - unit);
-    glUniform1i(texture->layer, id);
 }
 
 void bvr_layered_texture_disable(void){

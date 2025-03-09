@@ -24,6 +24,7 @@ static struct {
     bvr_model_t model;
 
     bvr_layered_texture_t texture;
+    bvr_shader_uniform_t* texture_uniform;
     char path[256];
 
     uint8_t* enabled_layers;
@@ -41,8 +42,7 @@ static void load_texture(const char* path){
         memcpy(texture_infos.path, path, sizeof(texture_infos.path));
 
         bvr_create_layered_texture(&texture_infos.texture, path, BVR_TEXTURE_FILTER_NEAREST, BVR_TEXTURE_WRAP_REPEAT);
-        bvr_layered_texture_link(&texture_infos.texture, &texture_infos.model.shader, "bvr_texture");
-        bvr_layered_texture_link_layer(&texture_infos.texture, &texture_infos.model.shader, "bvr_texture_layer");
+        bvr_shader_set_texturei(texture_infos.texture_uniform, &texture_infos.texture.id, NULL);
     
         texture_infos.enabled_layers = calloc(BVR_BUFFER_COUNT(texture_infos.texture.image.layers), sizeof(uint8_t));   
         memset(texture_infos.enabled_layers, 1, BVR_BUFFER_COUNT(texture_infos.texture.image.layers)); 
@@ -96,6 +96,10 @@ int main(){
 
     /* Create the shader */
     bvr_create_shader(&texture_infos.model.shader, "res/shader.glsl", BVR_VERTEX_SHADER | BVR_FRAGMENT_SHADER);
+    texture_infos.texture_uniform = bvr_shader_register_texture(
+        &texture_infos.model.shader, BVR_TEXTURE_2D_ARRAY, NULL, NULL, 
+        "bvr_texture", "bvr_texture_layer"
+    );
 
     load_texture("res/texture.tif");
 

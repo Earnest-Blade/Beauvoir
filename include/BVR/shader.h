@@ -12,7 +12,7 @@
 
 #define BVR_MAX_SHADER_COUNT 7
 #define BVR_MAX_UNIFORM_COUNT 20
-#define BVR_MAX_SHADER_BLOCK_COUNT 10
+#define BVR_MAX_SHADER_BLOCK_COUNT 5
 
 #define BVR_VERTEX_SHADER 0x001
 #define BVR_FRAGMENT_SHADER 0x002
@@ -56,10 +56,13 @@ static inline int bvr_create_shader(bvr_shader_t* shader, const char* path, int 
     return a;
 } 
 
-void bvr_shader_register_uniform(bvr_shader_t* shader, int type, int count, const char* name);
+bvr_shader_uniform_t* bvr_shader_register_uniform(bvr_shader_t* shader, int type, int count, const char* name);
+bvr_shader_uniform_t* bvr_shader_register_texture(bvr_shader_t* shader, int type, int* id, int* layer, const char* name, const char* layer_name);
 
-void bvr_shader_set_uniformi(bvr_shader_t* shader, const int id, void* data);
+void bvr_shader_set_uniformi(bvr_shader_uniform_t* uniform, void* data);
+void bvr_shader_set_texturei(bvr_shader_uniform_t* uniform, int* id, int* layer);
 void bvr_shader_set_uniform(bvr_shader_t* shader, const char* name, void* data);
+void bvr_shader_set_texture(bvr_shader_t* shader, const char* name, int* id, int* layer);
 void bvr_shader_use_uniform(bvr_shader_uniform_t* uniform, void* data);
 
 void bvr_shader_enable(bvr_shader_t* shader);
