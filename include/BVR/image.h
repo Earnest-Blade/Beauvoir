@@ -60,6 +60,9 @@
 #define BVR_TEXTURE_WRAP_REPEAT 0x2901
 #define BVR_TEXTURE_WRAP_CLAMP_TO_EDGE 0x812F
 
+/*
+    Contains image layer informations
+*/
 typedef struct bvr_layer_s {
     bvr_string_t name;
     uint16_t flags;
@@ -69,6 +72,9 @@ typedef struct bvr_layer_s {
     int anchor_x, anchor_y;
 } bvr_layer_t;
 
+/*
+    Contains an image informations and data
+*/
 typedef struct bvr_image_s {
     int width, height, depth;
     int format;
@@ -137,7 +143,7 @@ static inline int bvr_create_texture_atlas(bvr_texture_atlas_t* atlas, const cha
     return success;
 }
 
-void bvr_texture_atlas_enablei(bvr_texture_atlas_t* atlas, int id, int unit);
+void bvr_texture_atlas_enablei(bvr_texture_atlas_t* atlas, int unit);
 static inline void bvr_texture_atlas_enable(bvr_texture_atlas_t* atlas, int x, int y, int unit) {
     bvr_texture_atlas_enablei(atlas, y * (atlas->image.width / atlas->tile_width) + x, unit);
 }
@@ -153,7 +159,7 @@ static inline int bvr_create_layered_texture(bvr_layered_texture_t* texture, con
     return success;
 }
 
-void bvr_layered_texture_enable(bvr_layered_texture_t* texture, int id, int unit);
+void bvr_layered_texture_enable(bvr_layered_texture_t* texture, int unit);
 void bvr_layered_texture_disable(void);
 
 void bvr_destroy_layered_texture(bvr_layered_texture_t* texture);

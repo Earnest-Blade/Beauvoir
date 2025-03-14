@@ -1291,7 +1291,7 @@ int bvr_create_texture_atlasf(bvr_texture_atlas_t* atlas, FILE* file,
     return BVR_OK;
 }
 
-void bvr_texture_atlas_enablei(bvr_texture_atlas_t* atlas, int id, int unit){
+void bvr_texture_atlas_enablei(bvr_texture_atlas_t* atlas, int unit){
     glActiveTexture(unit);
     glBindTexture(GL_TEXTURE_2D_ARRAY, atlas->id);
 }
@@ -1367,7 +1367,7 @@ int bvr_create_layered_texturef(bvr_layered_texture_t* texture, FILE* file, int 
     return BVR_OK;
 }
 
-void bvr_layered_texture_enable(bvr_layered_texture_t* texture, int id, int unit){
+void bvr_layered_texture_enable(bvr_layered_texture_t* texture, int unit){
     glActiveTexture(unit);
     glBindTexture(GL_TEXTURE_2D_ARRAY, texture->id);
 }
