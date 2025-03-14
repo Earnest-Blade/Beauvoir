@@ -101,7 +101,7 @@ int main(){
         "bvr_texture", "bvr_texture_layer"
     );
 
-    load_texture("res/texture.tif");
+    load_texture("res/texture.psd");
 
     while (1)
     {
@@ -115,18 +115,27 @@ int main(){
 
         /* start drawing */
         bvr_shader_enable(&texture_infos.model.shader);
-        for (size_t layer = 0; layer < BVR_BUFFER_COUNT(texture_infos.texture.image.layers); layer++)
+        for (int layer = 0; layer < BVR_BUFFER_COUNT(texture_infos.texture.image.layers); layer++)
         {
             if(texture_infos.enabled_layers[layer]){
                 texture_infos.model.transform.position[1] = layer;
+                
+                /* enable texture unit */
                 bvr_layered_texture_enable(&texture_infos.texture, layer, BVR_TEXTURE_UNIT0);
+
+                /* update texture's content and push it to the shader */
+                bvr_shader_set_texturei(texture_infos.texture_uniform, NULL, &layer);
+                bvr_shader_use_uniform(texture_infos.texture_uniform, NULL);
     
+                /* draw the plane */
                 bvr_mesh_draw(&texture_infos.model.mesh, BVR_DRAWMODE_TRIANGLES);
                 
+                /* disable texture unit */
                 bvr_layered_texture_disable();
             }
         }
         
+        /* disable shader */
         bvr_shader_disable();
 
 #ifdef BVR_INCLUDE_NUKLEAR
