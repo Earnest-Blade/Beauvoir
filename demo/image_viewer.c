@@ -121,7 +121,7 @@ int main(){
                 texture_infos.model.transform.position[1] = layer;
                 
                 /* enable texture unit */
-                bvr_layered_texture_enable(&texture_infos.texture, layer, BVR_TEXTURE_UNIT0);
+                bvr_layered_texture_enable(&texture_infos.texture, BVR_TEXTURE_UNIT0);
 
                 /* update texture's content and push it to the shader */
                 bvr_shader_set_texturei(texture_infos.texture_uniform, NULL, &layer);

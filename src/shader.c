@@ -366,8 +366,6 @@ void bvr_shader_use_uniform(bvr_shader_uniform_t* uniform, void* data){
                 struct bvri_texture_uniform_s* texture = (struct bvri_texture_uniform_s*)uniform->memory.data;
                 glUniform1i(uniform->location, texture->unit);
                 glUniform1i(texture->layer_location, texture->layer);
-
-                BVR_PRINTF("%i %i %i %i", uniform->location, texture->layer_location, texture->unit, texture->layer);
             }
             return;
         default:
