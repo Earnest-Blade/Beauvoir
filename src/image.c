@@ -993,7 +993,7 @@ static int bvri_load_psd(bvr_image_t* image, FILE* file){
                         for (size_t column = 0; column < image_data_section.columns; column++)
                         {
                             image->pixels[
-                                ((strip * image->width + column) * image->channels + image_data_section.target_channel) +
+                                ((strip * image->width + column + layer_anchor_y) * image->channels + image_data_section.target_channel + layer_anchor_x) +
                                 (image->width * image->height * image->channels * layer)
                             ] = image_data_section.unpacked_buffer[strip * image_data_section.columns + column];
                         }
@@ -1031,22 +1031,6 @@ static int bvri_load_psd(bvr_image_t* image, FILE* file){
 
 #endif
 
-static void bvri_create_default_layer(bvr_image_t* image){
-    BVR_ASSERT(image);
-
-    image->layers.data = malloc(image->layers.elemsize);
-    image->layers.size = image->layers.elemsize;
-
-    ((bvr_layer_t*)image->layers.data)[0].blend_mode = 0;
-    ((bvr_layer_t*)image->layers.data)[0].flags = 0;
-    ((bvr_layer_t*)image->layers.data)[0].width = image->width;
-    ((bvr_layer_t*)image->layers.data)[0].height = image->height;
-    ((bvr_layer_t*)image->layers.data)[0].anchor_x = 0;
-    ((bvr_layer_t*)image->layers.data)[0].anchor_y = 0;
-    
-    bvr_create_string(&((bvr_layer_t*)image->layers.data)[0].name, "DefaultLayer");
-}
-
 int bvr_create_image(bvr_image_t* image, FILE* file){
     BVR_ASSERT(image);
     BVR_ASSERT(file);
@@ -1062,6 +1046,7 @@ int bvr_create_image(bvr_image_t* image, FILE* file){
     image->layers.elemsize = sizeof(bvr_layer_t);
 
     int status = 0;
+    
 #ifndef BVR_NO_PNG
     if(bvri_is_png(file)){ 
         status = bvri_load_png(image, file);
@@ -1086,10 +1071,6 @@ int bvr_create_image(bvr_image_t* image, FILE* file){
     }
 #endif
 
-    if(image->pixels && !image->layers.data){
-        bvri_create_default_layer(image);
-    }
-
 #ifndef BVR_NO_FLIP
     if(image->pixels && status){
         bvr_flip_image_vertically(image);
@@ -1099,28 +1080,66 @@ int bvr_create_image(bvr_image_t* image, FILE* file){
     return status;
 }
 
-void bvr_flip_image_vertically(bvr_image_t* image){
-    int row;
-    size_t stride = image->width * image->channels;
+/*
+    Create a default layer on an image.
+    This layer will have the same size as the image.
+    This layer will be named "layer0".
+*/
+static void bvri_create_default_layer(bvr_image_t* image){
+    BVR_ASSERT(image);
+
+    image->layers.data = malloc(image->layers.elemsize);
+    image->layers.size = image->layers.elemsize;
+
+    ((bvr_layer_t*)image->layers.data)[0].blend_mode = 0;
+    ((bvr_layer_t*)image->layers.data)[0].flags = 0;
+    ((bvr_layer_t*)image->layers.data)[0].width = image->width;
+    ((bvr_layer_t*)image->layers.data)[0].height = image->height;
+    ((bvr_layer_t*)image->layers.data)[0].anchor_x = 0;
+    ((bvr_layer_t*)image->layers.data)[0].anchor_y = 0;
+    
+    bvr_create_string(&((bvr_layer_t*)image->layers.data)[0].name, "layer0");
+}
+
+/*
+    Flip vertically an array of pixels.
+*/
+static void bvri_flip_image_vertically_raw(uint8_t* pixels, int stride, int width, int height, int channels) {
     uint8_t buffer[BVR_BUFFER_SIZE];
-    uint8_t* bytes = image->pixels;
 
-    for (row = 0; row < (image->height>>1); row++)
+    for (int row = 0; row < (height >> 1); row++)
     {
-        uint8_t* row0 = bytes + row * stride;
-        uint8_t* row1 = bytes + (image->height - row - 1) * stride;
-
+        uint8_t* row0 = pixels + row * stride;
+        uint8_t* row1 = pixels + (height - row - 1) * stride;
         size_t bleft = stride;
+
         while (bleft)
         {
-            size_t bcpy = (bleft < sizeof(buffer)) ? bleft : sizeof(buffer);
+            size_t bcpy = sizeof(buffer);
+            if(bleft < sizeof(buffer)){
+                bcpy = bleft;
+            }
+
             memcpy(buffer, row0, bcpy);
             memcpy(row0, row1, bcpy);
             memcpy(row1, buffer, bcpy);
+
             row0 += bcpy;
             row1 += bcpy;
+
             bleft -= bcpy;
         }
+    }
+}
+
+void bvr_flip_image_vertically(bvr_image_t* image){
+    BVR_ASSERT(image);
+
+    for (size_t layer = 0; layer < BVR_BUFFER_COUNT(image->layers); layer++){
+        bvri_flip_image_vertically_raw(
+            &image->pixels[image->width * image->height * image->channels * layer],
+            image->width * image->channels, image->width, image->height, image->channels
+        );
     }
 }
 
@@ -1325,6 +1344,10 @@ int bvr_create_layered_texturef(bvr_layered_texture_t* texture, FILE* file, int 
         BVR_PRINT("layered texture will load without layer info. Data might be lost.");
     }
 
+    if(!texture->image.layers.data){
+        bvri_create_default_layer(&texture->image);
+    }
+
     glGenTextures(1, &texture->id);
     glBindTexture(GL_TEXTURE_2D_ARRAY, texture->id);
 
@@ -1347,6 +1370,18 @@ int bvr_create_layered_texturef(bvr_layered_texture_t* texture, FILE* file, int 
 
     for (size_t layer = 0; layer < texture->image.layers.size / sizeof(bvr_layer_t); layer++)
     {
+#ifndef BVR_NO_FLIP
+        glTexSubImage3D(
+            GL_TEXTURE_2D_ARRAY, 0, 
+            0, 
+            0,
+            layer,
+            texture->image.width, 
+            texture->image.height, 
+            1, texture->image.format, GL_UNSIGNED_BYTE,
+            texture->image.pixels + texture->image.width * texture->image.height * texture->image.channels * layer
+        );
+#else
         glTexSubImage3D(
             GL_TEXTURE_2D_ARRAY, 0, 
             ((bvr_layer_t*)texture->image.layers.data)[layer].anchor_x, 
@@ -1357,6 +1392,7 @@ int bvr_create_layered_texturef(bvr_layered_texture_t* texture, FILE* file, int 
             1, texture->image.format, GL_UNSIGNED_BYTE,
             texture->image.pixels + texture->image.width * texture->image.height * texture->image.channels * layer
         );
+#endif
     }
     
     glBindTexture(GL_TEXTURE_2D_ARRAY, 0);

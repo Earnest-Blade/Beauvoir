@@ -36,6 +36,9 @@ uniform int bvr_texture_layer;
 void main() {
 	vec4 tex = texture(bvr_texture, vec3(vertex.uvs, bvr_texture_layer));
 
+	if(tex.a < 0.1){
+		tex = vec4(0.2, 0.2, 0.2, 0.2);
+	}
 	gl_FragColor = vec4(tex);
 }
 

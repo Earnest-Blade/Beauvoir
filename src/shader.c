@@ -53,14 +53,6 @@ static int bvri_link_shader(uint32_t program) {
     return BVR_OK;
 }
 
-static void bvri_enable_uniforms(bvr_shader_t* shader){
-    // start by 1 because we skip transformation uniform
-    for (size_t uniform = 1; uniform < shader->uniform_count; uniform++)
-    {
-        bvr_shader_use_uniform(&shader->uniforms[uniform], NULL);
-    }
-}
-
 static int bvri_register_shader_state(bvr_shader_t* program, bvr_shader_stage_t* shader, bvr_string_t* content, 
     const char* header, const char* name, int type){
     
@@ -366,8 +358,6 @@ void bvr_shader_use_uniform(bvr_shader_uniform_t* uniform, void* data){
                 struct bvri_texture_uniform_s* texture = (struct bvri_texture_uniform_s*)uniform->memory.data;
                 glUniform1i(uniform->location, texture->unit);
                 glUniform1i(texture->layer_location, texture->layer);
-
-                BVR_PRINTF("%i %i %i %i", uniform->location, texture->layer_location, texture->unit, texture->layer);
             }
             return;
         default:
@@ -377,8 +367,13 @@ void bvr_shader_use_uniform(bvr_shader_uniform_t* uniform, void* data){
 }
 
 void bvr_shader_enable(bvr_shader_t* shader){
-    bvri_enable_uniforms(shader);
     
+    // start at one it order to omit transform uniform
+    for (size_t uniform = 1; uniform < shader->uniform_count; uniform++)
+    {
+        bvr_shader_use_uniform(&shader->uniforms[uniform], NULL);
+    }
+
     glUseProgram(shader->program);
 }
 

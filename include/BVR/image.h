@@ -144,9 +144,6 @@ static inline int bvr_create_texture_atlas(bvr_texture_atlas_t* atlas, const cha
 }
 
 void bvr_texture_atlas_enablei(bvr_texture_atlas_t* atlas, int unit);
-static inline void bvr_texture_atlas_enable(bvr_texture_atlas_t* atlas, int x, int y, int unit) {
-    bvr_texture_atlas_enablei(atlas, y * (atlas->image.width / atlas->tile_width) + x, unit);
-}
 void bvr_texture_atlas_disable(void);
 void bvr_destroy_texture_atlas(bvr_texture_atlas_t* atlas);
 

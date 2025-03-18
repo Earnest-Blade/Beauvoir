@@ -13,6 +13,8 @@
 #ifdef _WIN32
     #include <Windows.h>
     #include <commdlg.h>
+#else
+    #include <SDL3/SDL_dialog.h>
 #endif
 
 #define CAMERA_SLIDER_MAX 1000.0f
@@ -28,24 +30,24 @@ static struct {
     char path[256];
 
     uint8_t* enabled_layers;
-} texture_infos;
+} image_viewer;
 
 static void load_texture(const char* path){
-    if(texture_infos.texture.id){
-        bvr_destroy_layered_texture(&texture_infos.texture);
+    if(image_viewer.texture.id){
+        bvr_destroy_layered_texture(&image_viewer.texture);
         
-        free(texture_infos.enabled_layers);
-        texture_infos.enabled_layers = NULL;
+        free(image_viewer.enabled_layers);
+        image_viewer.enabled_layers = NULL;
     }
 
     if(path){
-        memcpy(texture_infos.path, path, sizeof(texture_infos.path));
+        memcpy(image_viewer.path, path, sizeof(image_viewer.path));
 
-        bvr_create_layered_texture(&texture_infos.texture, path, BVR_TEXTURE_FILTER_NEAREST, BVR_TEXTURE_WRAP_REPEAT);
-        bvr_shader_set_texturei(texture_infos.texture_uniform, &texture_infos.texture.id, NULL);
+        bvr_create_layered_texture(&image_viewer.texture, path, BVR_TEXTURE_FILTER_NEAREST, BVR_TEXTURE_WRAP_REPEAT);
+        bvr_shader_set_texturei(image_viewer.texture_uniform, &image_viewer.texture.id, NULL);
     
-        texture_infos.enabled_layers = calloc(BVR_BUFFER_COUNT(texture_infos.texture.image.layers), sizeof(uint8_t));   
-        memset(texture_infos.enabled_layers, 1, BVR_BUFFER_COUNT(texture_infos.texture.image.layers)); 
+        image_viewer.enabled_layers = calloc(BVR_BUFFER_COUNT(image_viewer.texture.image.layers), sizeof(uint8_t));   
+        memset(image_viewer.enabled_layers, 1, BVR_BUFFER_COUNT(image_viewer.texture.image.layers)); 
     }
 }
 
@@ -65,18 +67,16 @@ static void open_file(void){
     ofn.lpstrTitle = "Select a file";
 
     if(GetOpenFileName(&ofn)){
-        strncpy(texture_infos.path, szfile, sizeof(texture_infos.path));
+        strncpy(image_viewer.path, szfile, sizeof(image_viewer.path));
     }
 
 #else
-    /*
-    */
-    BVR_ASSERT(0);
+    BVR_ASSERT(0 || "not implemented!");
 #endif
 }
 
 int main(){
-    memset(&texture_infos, 0, sizeof(texture_infos));
+    memset(&image_viewer, 0, sizeof(image_viewer));
 
     /* Create initial game context */
     bvr_create_book(&game);
@@ -92,12 +92,14 @@ int main(){
     bvr_add_orthographic_camera(&game.page, &game.window.framebuffer, 0.0f, 100.0f, 1.0f);
 
     /* Create image's plane mesh */
-    bvr_create_2d_square_mesh(&texture_infos.model.mesh, 480.0f, 270.0f);
+    bvr_create_2d_square_mesh(&image_viewer.model.mesh, 480.0f, 270.0f);
 
     /* Create the shader */
-    bvr_create_shader(&texture_infos.model.shader, "res/shader.glsl", BVR_VERTEX_SHADER | BVR_FRAGMENT_SHADER);
-    texture_infos.texture_uniform = bvr_shader_register_texture(
-        &texture_infos.model.shader, BVR_TEXTURE_2D_ARRAY, NULL, NULL, 
+    bvr_create_shader(&image_viewer.model.shader, "res/shader.glsl", BVR_VERTEX_SHADER | BVR_FRAGMENT_SHADER);
+
+    /* create texture uniforms */
+    image_viewer.texture_uniform = bvr_shader_register_texture(
+        &image_viewer.model.shader, BVR_TEXTURE_2D_ARRAY, NULL, NULL, 
         "bvr_texture", "bvr_texture_layer"
     );
 
@@ -114,21 +116,21 @@ int main(){
         }
 
         /* start drawing */
-        bvr_shader_enable(&texture_infos.model.shader);
-        for (int layer = 0; layer < BVR_BUFFER_COUNT(texture_infos.texture.image.layers); layer++)
+        bvr_shader_enable(&image_viewer.model.shader);
+        for (int layer = 0; layer < BVR_BUFFER_COUNT(image_viewer.texture.image.layers); layer++)
         {
-            if(texture_infos.enabled_layers[layer]){
-                texture_infos.model.transform.position[1] = layer;
+            if(image_viewer.enabled_layers[layer]){
+                image_viewer.model.transform.position[1] = layer;
                 
                 /* enable texture unit */
-                bvr_layered_texture_enable(&texture_infos.texture, layer, BVR_TEXTURE_UNIT0);
+                bvr_layered_texture_enable(&image_viewer.texture, BVR_TEXTURE_UNIT0);
 
                 /* update texture's content and push it to the shader */
-                bvr_shader_set_texturei(texture_infos.texture_uniform, NULL, &layer);
-                bvr_shader_use_uniform(texture_infos.texture_uniform, NULL);
+                bvr_shader_set_texturei(image_viewer.texture_uniform, NULL, &layer);
+                bvr_shader_use_uniform(image_viewer.texture_uniform, NULL);
     
                 /* draw the plane */
-                bvr_mesh_draw(&texture_infos.model.mesh, BVR_DRAWMODE_TRIANGLES);
+                bvr_mesh_draw(&image_viewer.model.mesh, BVR_DRAWMODE_TRIANGLES);
                 
                 /* disable texture unit */
                 bvr_layered_texture_disable();
@@ -169,14 +171,14 @@ int main(){
                 nk_label(gui.context, "-", NK_TEXT_ALIGN_CENTERED);
 
                 nk_layout_row_dynamic(gui.context, 30, 1);
-                nk_label(gui.context, texture_infos.path, NK_TEXT_ALIGN_LEFT);
+                nk_label(gui.context, image_viewer.path, NK_TEXT_ALIGN_LEFT);
                 nk_layout_row_dynamic(gui.context, 15, 1);
                 
-                for (size_t layer = 0; layer < BVR_BUFFER_COUNT(texture_infos.texture.image.layers); layer++)
+                for (size_t layer = 0; layer < BVR_BUFFER_COUNT(image_viewer.texture.image.layers); layer++)
                 {
-                    texture_infos.enabled_layers[layer] = nk_check_label(gui.context, 
-                        ((bvr_layer_t*)texture_infos.texture.image.layers.data)[layer].name.data, 
-                        texture_infos.enabled_layers[layer]
+                    image_viewer.enabled_layers[layer] = nk_check_label(gui.context, 
+                        ((bvr_layer_t*)image_viewer.texture.image.layers.data)[layer].name.data, 
+                        image_viewer.enabled_layers[layer]
                     );
                 }
 
@@ -184,11 +186,11 @@ int main(){
                 
                 if(nk_button_label(gui.context, "Select File")){
                     open_file();
-                    load_texture(texture_infos.path);
+                    load_texture(image_viewer.path);
                 }
 
                 if(nk_button_label(gui.context, "Reload")){
-                    load_texture(texture_infos.path);
+                    load_texture(image_viewer.path);
                 }
             }
             nk_end(gui.context);
@@ -201,12 +203,12 @@ int main(){
         bvr_render(&game);
     }
     
-    free(texture_infos.enabled_layers);
+    free(image_viewer.enabled_layers);
 
     bvr_destroy_nuklear(&gui);
-    bvr_destroy_shader(&texture_infos.model.shader);
-    bvr_destroy_mesh(&texture_infos.model.mesh);
-    bvr_destroy_layered_texture(&texture_infos.texture);
+    bvr_destroy_shader(&image_viewer.model.shader);
+    bvr_destroy_mesh(&image_viewer.model.mesh);
+    bvr_destroy_layered_texture(&image_viewer.texture);
     bvr_destroy_book(&game);
 
     return 0;

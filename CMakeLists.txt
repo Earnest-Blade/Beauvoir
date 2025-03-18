@@ -9,7 +9,7 @@ set(BVR_BUILD_DIR ${CMAKE_CURRENT_SOURCE_DIR}/build)
 set(BVR_BINARY_DIR ${CMAKE_SOURCE_DIR}/bin)
 set(BVR_DEMO_DIR ${CMAKE_SOURCE_DIR}/demo)
 
-set(BVR_MAIN "${BVR_DEMO_DIR}/image_viewer.c")
+set(BVR_MAIN "${BVR_DEMO_DIR}/empty_game.c")
 
 set(BVR_SDL_LIB ${BVR_LIB_DIR}/libSDL3.dll.a)
 if(NOT EXISTS ${BVR_SDL_LIB})
