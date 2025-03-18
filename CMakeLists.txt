@@ -9,7 +9,9 @@ set(BVR_BUILD_DIR ${CMAKE_CURRENT_SOURCE_DIR}/build)
 set(BVR_BINARY_DIR ${CMAKE_SOURCE_DIR}/bin)
 set(BVR_DEMO_DIR ${CMAKE_SOURCE_DIR}/demo)
 
-set(BVR_MAIN "${BVR_DEMO_DIR}/empty_game.c")
+if (NOT DEFINED BVR_MAIN_FILE)
+    set(BVR_MAIN_FILE "${BVR_DEMO_DIR}/empty_game.c")
+endif()
 
 set(BVR_SDL_LIB ${BVR_LIB_DIR}/libSDL3.dll.a)
 if(NOT EXISTS ${BVR_SDL_LIB})
@@ -34,7 +36,7 @@ endif()
 include_directories(${BVR_INCLUDE_DIR})
 
 add_compile_options(-g -w)
-add_executable(bvr ${BVR_MAIN})
+add_executable(bvr ${BVR_MAIN_FILE})
 
 find_package(OpenGL REQUIRED)
 
