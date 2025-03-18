@@ -11,3 +11,13 @@
     - add max number to string concat
     - add growth factor based strings
     - add max capacity for strings
+
+## image.c
+- Improve image compatibility
+    - add more PSD cases
+    - add more BMP compressions
+    - create custom PNG loader ?
+
+- Bugs
+    - Flipping PSD image does not work
+    - Loading too much images create a sort of mem overflow
