@@ -14,10 +14,10 @@ Project main file can be set using Cmake's flag ```-D BVR_MAIN_FILE=``` (e.g ```
 
 ### Building for Windows
 To generate Makefiles on Windows you can run 
-```cmake -G="MinGW Makefiles" -B build -D BVR_MAIN_FILE='demo/empty_game.c```. 
+```cmake -G="MinGW Makefiles" -B build -D BVR_MAIN_FILE='demo/empty_game.c'```. 
 
 To generate Visual Studio solutions, use 
-```cmake -G="Visual Studio 17 2022" -B build -D BVR_MAIN_FILE='demo/empty_game.c```. Then, open the generated ```.sln``` file or build using ```cmake --build build --config Release```. Then, link the binaries inside Visual Studio.
+```cmake -G="Visual Studio 17 2022" -B build -D BVR_MAIN_FILE='demo/empty_game.c'```. Then, open the generated ```.sln``` file or build using ```cmake --build build --config Release```. Then, link the binaries inside Visual Studio.
 
 ### Binaries
 Precompiled Windows x64 binaries can be found into the [Bin](/bin/) directory. 

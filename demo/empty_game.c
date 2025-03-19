@@ -29,7 +29,6 @@ int main(){
         /* quit the main loop if Beauvoir is not running */
         if(!bvr_is_awake(&book)){
             break;
-            
         }
 
         /* push Beauvoir's graphics to the window */
