@@ -92,7 +92,7 @@ int main(){
     bvr_add_orthographic_camera(&game.page, &game.window.framebuffer, 0.0f, 100.0f, 1.0f);
 
     /* Create image's plane mesh */
-    bvr_create_2d_square_mesh(&image_viewer.model.mesh, 480.0f, 270.0f);
+    bvr_create_2d_square_mesh(&image_viewer.model.mesh, 480.0f, 480.0f);
 
     /* Create the shader */
     bvr_create_shader(&image_viewer.model.shader, "res/shader.glsl", BVR_VERTEX_SHADER | BVR_FRAGMENT_SHADER);
@@ -103,7 +103,7 @@ int main(){
         "bvr_texture", "bvr_texture_layer"
     );
 
-    load_texture("res/texture.psd");
+    load_texture("res/texture.bmp");
 
     while (1)
     {

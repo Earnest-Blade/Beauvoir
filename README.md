@@ -4,7 +4,9 @@
 ## Overview
 Beauvoir is an OpenGL-based game framework that aims to provide a simple, yet performant and flexible way to create 2D games - but can still create 3D games - . I chose to create it in C to keep the code simple and flexible.
 
-The main purpose is to create pre-rendered games using a layer system. You can either import images from Photoshop using ```.PSD``` files or stack images manually.
+The aim of my framework is to create games around layered-based scenes. You can either import images from Photoshop using ```.PSD``` files or stack images manually. 
+
+Beauvoir can handle ```PNG```, ```PSD```, ```TIF``` and ```BMP``` through custom and fast read-only parser but more format still need to be added!
 
 The framework is still in early development, but I'm doing my best to improve it!
 
@@ -22,6 +24,7 @@ To generate Visual Studio solutions, use
 ### Binaries
 Precompiled Windows x64 binaries can be found into the [Bin](/bin/) directory. 
 
+### Example
 ```C
 /* include all Beauvoir's headers */
 #include <BVR/bvr.h>
@@ -31,8 +34,8 @@ static bvr_book_t book;
 
 int main(){
     /* create initial game's context */
-    bvr_create_book(&book);
-    bvr_create_page(&book.page);
+    bvr_create_book(&book); // book = game context
+    bvr_create_page(&book.page); // page = scene
 
     /* create the window */
     bvr_create_window(&book.window, 800, 800, "Window", 0);

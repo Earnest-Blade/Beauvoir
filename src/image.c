@@ -117,71 +117,158 @@ static int bvri_load_png(bvr_image_t* image, FILE* file){
     https://en.wikipedia.org/wiki/BMP_file_format
 */
 
-static int bvri_is_bmp(FILE* file){
-    fseek(file, 0, SEEK_SET);
+struct bvri_bmpheader_s {
+    uint8_t sig[2];
+    uint32_t size;
+    uint16_t res[2];
+    uint32_t offset;
 
+    uint32_t header_size;
+    uint32_t width;
+    uint32_t height;
+    uint16_t color_plane;
+    uint16_t bit_per_pixel;
+    uint32_t compression_method;
+    uint32_t image_size;
+    uint32_t horizontal_resolution;
+    uint32_t vertical_resolution;
+    uint32_t color_palette;
+
+    uint8_t* palette;
+    uint16_t bit_per_sample;
+};
+
+static int bvri_is_bmp(FILE* file){
     int size;
+
+    fseek(file, 0, SEEK_SET);    
     if(bvr_freadu8(file) != 'B') return 0;
     if(bvr_freadu8(file) != 'M') return 0;
-    bvr_freadu32(file); // fsize
-    bvr_freadu16(file); // res1
-    bvr_freadu16(file); // res2
-    bvr_freadu32(file); // offset
+    fseek(file, 12, SEEK_CUR);
     size = bvr_freadu32(file);
+
     return (size == 12 || size == 40 || size == 56
         || size == 108 || size == 124);
 }
 
-static int bvri_load_bmp(bvr_image_t* image, FILE* file){
-    image->format = BVR_BGR;
-    image->channels = 3;
+static uint32_t bvri_bmpmax(uint32_t max, uint32_t i){
+    return i > max ? max : i;
+}
 
-    // re-read the bitmap header
+static int bvri_load_bmp(bvr_image_t* image, FILE* file){
     fseek(file, 0, SEEK_SET);
 
-    bvr_freadu16(file); // type
-    int file_size = bvr_freadu32(file); // size
-    bvr_freadu16(file); // res 1
-    bvr_freadu16(file); // res 2
-    uint32_t offset = bvr_freadu32(file); // offset
-    uint32_t size = bvr_freadu32(file); // size
+    struct bvri_bmpheader_s header;
 
-    image->width = bvr_fread32(file); // width
-    image->height = bvr_fread32(file); // height
+    // re-read the bitmap header
+    header.sig[0] = bvr_freadu8(file);
+    header.sig[1] = bvr_freadu8(file);
+    header.size = bvr_freadu32(file);
+    header.res[0] = bvr_freadu16(file);
+    header.res[1] = bvr_freadu16(file);
+    header.offset = bvr_freadu32(file);
 
-    bvr_freadu16(file); // color plane count
-    image->depth = bvr_freadu16(file); // bit per pixels
-    uint32_t compression = bvr_freadu32(file); // compression
-    uint32_t buffer_size = bvr_freadu32(file); // image size
+    header.header_size = bvr_freadu32(file);
+    header.width = bvr_freadu32(file);
+    header.height = bvr_freadu32(file);
+    header.color_plane = bvr_freadu16(file);
+    header.bit_per_pixel = bvr_freadu16(file);
+    header.compression_method = bvr_freadu32(file);
+    header.image_size = bvr_freadu32(file);
+    header.horizontal_resolution = bvr_freadu32(file);
+    header.vertical_resolution = bvr_freadu32(file);
+    header.color_palette = bvr_freadu32(file);
+    header.palette = NULL;
+    header.bit_per_sample = 0;
 
-    bvr_fread32(file); // vertical res
-    bvr_fread32(file); // horizontal res
-    uint32_t color_type = bvr_freadu32(file);
-    bvr_freadu32(file); // number of color used
-
-    // sometimes the buffer_size can be = 0, just recalculate it
-    if(buffer_size == 0){
-        buffer_size = image->width * image->height * image->channels;
-    }
-
-    image->pixels = (uint8_t*) malloc(buffer_size * sizeof(uint8_t));
-    BVR_ASSERT(image->pixels);
-
-    if(offset == 0){
-        offset = 64;
+    // check for correct color plane
+    if(header.color_plane != 1){
+        BVR_PRINT("wrong color plane!");
+        return BVR_FAILED;
     }
     
-    // seek to the start of data's block.
-    fseek(file, offset, SEEK_SET);
+    // check for bitmasks
+    if(header.compression_method == 3){
+        fseek(file, 12, SEEK_CUR);
+    }
+    else if(header.compression_method == 6){
+        fseek(file, 16, SEEK_CUR);
+    }
 
-    if(compression == 0){
-        fread(image->pixels, sizeof(uint8_t), buffer_size, file);
+    // create color palette
+    if(header.bit_per_pixel < 8){
+        header.palette = malloc(header.color_palette * 3);
+        for (size_t color = 0; color < header.color_palette; color++)
+        {
+            header.palette[color * 3 + 0] = bvr_freadu8(file);
+            header.palette[color * 3 + 1] = bvr_freadu8(file);
+            header.palette[color * 3 + 2] = bvr_freadu8(file);
+            bvr_freadu8(file);
+        }   
+    }
+    else {  
+        // define how much pixels are stored per samples
+        switch (header.bit_per_pixel)
+        {
+        case 16: header.bit_per_sample = 2; break;
+        case 24: header.bit_per_sample = 3; break;
+        case 32: header.bit_per_sample = 4; break;
+        default: header.bit_per_sample = 0; break;
+        }
+    }
+
+    fseek(file, header.offset, SEEK_SET);
+
+    image->width = header.width;
+    image->height = abs(header.height);
+    image->channels = 3;
+    image->format = BVR_BGR;
+
+    image->pixels = malloc(image->width * image->height * image->channels);
+    BVR_ASSERT(image->pixels);
+
+    if(header.compression_method == 0){ // RAW compression
+        uint32_t stride_length = (uint32_t)floor((header.bit_per_pixel * header.width) / 32) * 4;
+        uint8_t* stride = malloc(stride_length);
+
+        for (size_t row = 0; row < image->height; row++)
+        {
+            fread(stride, sizeof(uint8_t), stride_length, file);
+
+            // use color palette 
+            if(header.bit_per_pixel < 8){
+                for (size_t stride_byte = 0; stride_byte < stride_length; stride_byte++)
+                {
+                    memcpy(
+                        image->pixels + (row * image->width + stride_byte) * image->channels,
+                        header.palette + bvri_bmpmax(header.color_palette - 1, stride[stride_byte]) * 3,
+                        sizeof(uint8_t) * 3
+                    );
+                }
+            }
+            else {
+                for (size_t stride_byte = 0; stride_byte < stride_length; stride_byte++)
+                {
+                    memcpy(
+                        image->pixels + (row * image->width + stride_byte) * image->channels,
+                        stride + stride_byte * header.bit_per_sample,
+                        sizeof(uint8_t) * header.bit_per_pixel
+                    );
+                }
+                
+            }
+        }
+        
+        free(stride);
+        stride = NULL;
     }
     else {
-        BVR_ASSERT(0 && "unmanaged BMP compression type");
+        BVR_ASSERT(0 || "compression not supported");
     }
 
-    return image->pixels != NULL;
+    free(header.palette);
+
+    return BVR_OK;
 }
 
 #endif
