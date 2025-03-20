@@ -10,7 +10,7 @@ set(BVR_BINARY_DIR ${CMAKE_SOURCE_DIR}/bin)
 set(BVR_DEMO_DIR ${CMAKE_SOURCE_DIR}/demo)
 
 if (NOT DEFINED BVR_MAIN_FILE)
-    set(BVR_MAIN_FILE "${BVR_DEMO_DIR}/empty_game.c")
+    set(BVR_MAIN_FILE "${BVR_DEMO_DIR}/image_viewer.c")
 endif()
 
 set(BVR_SDL_LIB ${BVR_LIB_DIR}/libSDL3.dll.a)

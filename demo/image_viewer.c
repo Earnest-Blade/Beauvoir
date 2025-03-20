@@ -43,7 +43,7 @@ static void load_texture(const char* path){
     if(path){
         memcpy(image_viewer.path, path, sizeof(image_viewer.path));
 
-        bvr_create_layered_texture(&image_viewer.texture, path, BVR_TEXTURE_FILTER_NEAREST, BVR_TEXTURE_WRAP_REPEAT);
+        bvr_create_layered_texture(&image_viewer.texture, path, BVR_TEXTURE_FILTER_LINEAR, BVR_TEXTURE_WRAP_REPEAT);
         bvr_shader_set_texturei(image_viewer.texture_uniform, &image_viewer.texture.id, NULL);
     
         image_viewer.enabled_layers = calloc(BVR_BUFFER_COUNT(image_viewer.texture.image.layers), sizeof(uint8_t));   

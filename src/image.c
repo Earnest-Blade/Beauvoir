@@ -992,11 +992,19 @@ static int bvri_load_psd(bvr_image_t* image, FILE* file){
                     {
                         for (size_t column = 0; column < image_data_section.columns; column++)
                         {
+#ifndef BVR_NO_FLIP
                             image->pixels[
-                                ((strip * image->width + column + layer_anchor_y) * image->channels + image_data_section.target_channel + layer_anchor_x) +
+                                (((strip + layer_anchor_y) * image->width + column + layer_anchor_x) * image->channels + image_data_section.target_channel) +
                                 (image->width * image->height * image->channels * layer)
                             ] = image_data_section.unpacked_buffer[strip * image_data_section.columns + column];
+#else
+                            image->pixels[
+                                ((strip * image->width + column) * image->channels + image_data_section.target_channel) +
+                                (image->width * image->height * image->channels * layer)
+                            ] = image_data_section.unpacked_buffer[strip * image_data_section.columns + column];
+#endif
                         }
+
                     }
                     
                     free(image_data_section.packed_buffer);
@@ -1198,7 +1206,7 @@ int bvr_create_texturef(bvr_texture_t* texture, FILE* file, int filter, int wrap
         return BVR_FAILED;
     }
 
-    if(texture->image.layers.size > sizeof(bvr_layer_t)){
+    if(BVR_BUFFER_COUNT(texture->image.layers) > 1){
         // TODO: compress images into one layer
     }
 
@@ -1266,7 +1274,7 @@ int bvr_create_texture_atlasf(bvr_texture_atlas_t* atlas, FILE* file,
         return BVR_FAILED;
     }
 
-    if(atlas->image.layers.size > sizeof(bvr_layer_t)){
+    if(BVR_BUFFER_COUNT(atlas->image.layers) > 1){
         // TODO: compress images into one layer
     }
 
@@ -1370,6 +1378,7 @@ int bvr_create_layered_texturef(bvr_layered_texture_t* texture, FILE* file, int 
 
     for (size_t layer = 0; layer < texture->image.layers.size / sizeof(bvr_layer_t); layer++)
     {
+
 #ifndef BVR_NO_FLIP
         glTexSubImage3D(
             GL_TEXTURE_2D_ARRAY, 0, 
