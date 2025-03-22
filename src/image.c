@@ -233,15 +233,19 @@ static int bvri_load_bmp(bvr_image_t* image, FILE* file){
 
         if(header.bit_per_pixel < 8){
             // palette loading
-            while (readed_bytes < stride_length * image->height)
+            for (size_t row = 0; row < image->height; row++)
             {
-                memcpy(
-                    image->pixels + (readed_bytes++ * image->channels),
-                    header.palette + bvri_bmpmax(header.color_palette - 1, bvr_freadu8(file)) * image->channels,
-                    image->channels
-                );
-            }
-            
+                readed_bytes = 0;
+                while (readed_bytes < stride_length)
+                {
+                    memcpy(
+                        image->pixels + (row * image->width + readed_bytes) * image->channels,
+                        header.palette + bvri_bmpmax(header.color_palette - 1, bvr_freadu8(file)) * image->channels,
+                        sizeof(uint8_t) * image->channels
+                    );                    
+                    readed_bytes++;
+                }
+            }            
         }
         else {
             // raw loading
