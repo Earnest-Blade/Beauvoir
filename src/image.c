@@ -135,7 +135,6 @@ struct bvri_bmpheader_s {
     uint32_t color_palette;
 
     uint8_t* palette;
-    uint16_t bit_per_sample;
 };
 
 static int bvri_is_bmp(FILE* file){
@@ -179,7 +178,6 @@ static int bvri_load_bmp(bvr_image_t* image, FILE* file){
     header.vertical_resolution = bvr_freadu32(file);
     header.color_palette = bvr_freadu32(file);
     header.palette = NULL;
-    header.bit_per_sample = 0;
 
     // check for correct color plane
     if(header.color_plane != 1){
@@ -206,61 +204,48 @@ static int bvri_load_bmp(bvr_image_t* image, FILE* file){
             bvr_freadu8(file);
         }   
     }
-    else {  
-        // define how much pixels are stored per samples
-        switch (header.bit_per_pixel)
-        {
-        case 16: header.bit_per_sample = 2; break;
-        case 24: header.bit_per_sample = 3; break;
-        case 32: header.bit_per_sample = 4; break;
-        default: header.bit_per_sample = 0; break;
-        }
-    }
 
     fseek(file, header.offset, SEEK_SET);
 
     image->width = header.width;
     image->height = abs(header.height);
-    image->channels = 3;
-    image->format = BVR_BGR;
+    image->channels = header.bit_per_pixel / 8;
+    image->depth = 8;
+    if(image->channels == 3){
+        image->format = BVR_BGR;
+    }
+    else {
+        image->format = BVR_BGRA;
+    }
 
     image->pixels = malloc(image->width * image->height * image->channels);
     BVR_ASSERT(image->pixels);
 
     if(header.compression_method == 0){ // RAW compression
-        uint32_t stride_length = (uint32_t)floor((header.bit_per_pixel * header.width) / 32) * 4;
-        uint8_t* stride = malloc(stride_length);
+        uint32_t readed_bytes = 0;
+        uint32_t stride_length = (header.width * image->channels + 3) & ~3;
 
-        for (size_t row = 0; row < image->height; row++)
-        {
-            fread(stride, sizeof(uint8_t), stride_length, file);
-
-            // use color palette 
-            if(header.bit_per_pixel < 8){
-                for (size_t stride_byte = 0; stride_byte < stride_length; stride_byte++)
-                {
-                    memcpy(
-                        image->pixels + (row * image->width + stride_byte) * image->channels,
-                        header.palette + bvri_bmpmax(header.color_palette - 1, stride[stride_byte]) * 3,
-                        sizeof(uint8_t) * 3
-                    );
-                }
+        if(header.bit_per_pixel < 8){
+            // palette loading
+            while (readed_bytes < stride_length * image->height)
+            {
+                memcpy(
+                    image->pixels + (readed_bytes * image->channels),
+                    header.palette + bvri_bmpmax(header.color_palette - 1, bvr_freadu8(file)),
+                    image->channels
+                );
             }
-            else {
-                for (size_t stride_byte = 0; stride_byte < stride_length; stride_byte++)
-                {
-                    memcpy(
-                        image->pixels + (row * image->width + stride_byte) * image->channels,
-                        stride + stride_byte * header.bit_per_sample,
-                        sizeof(uint8_t) * header.bit_per_pixel
-                    );
-                }
-                
-            }
+            
         }
-        
-        free(stride);
-        stride = NULL;
+        else {
+            // raw loading
+            for (size_t row = 0; row < image->height; row++)
+            {
+                readed_bytes = fread(image->pixels + row * image->width * image->channels, sizeof(uint8_t), stride_length, file);
+                BVR_ASSERT(readed_bytes == stride_length);
+            }
+            
+        }
     }
     else {
         BVR_ASSERT(0 || "compression not supported");
@@ -497,7 +482,8 @@ static int bvri_load_tif(bvr_image_t* image, FILE* file){
                     frame.is_tiled = 1;
                 }
                 break;
-            /*case 37724: { // TODO: handle photoshop's tags
+            /*
+            case 37724: { // TODO: handle photoshop's tags
                     if(!frame.photoshop_infos){
                         frame.photoshop_infos_count = idf.tags[tagi].data_count;
                         frame.photoshop_infos = calloc(idf.tags[tagi].data_count, sizeof(uint8_t));
@@ -511,7 +497,8 @@ static int bvri_load_tif(bvr_image_t* image, FILE* file){
                         }
                         else {BVR_ASSERT(0 || "failed to allocate photoshop informations!");}
                     }
-                }*/
+                }
+            */
             default:
                 break;
             }
@@ -1457,7 +1444,6 @@ int bvr_create_layered_texturef(bvr_layered_texture_t* texture, FILE* file, int 
     glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, (int)texture->filter);
     glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, (int)texture->filter);
 
-    BVR_PRINTF("format %i %i", texture->image.format, bvri_sizeof_format(texture->image.format, texture->image.depth));
     glTexStorage3D(GL_TEXTURE_2D_ARRAY, 1, bvri_sizeof_format(texture->image.format, texture->image.depth),
         texture->image.width, texture->image.height, 
         texture->image.layers.size / sizeof(bvr_layer_t)
