@@ -209,13 +209,19 @@ static int bvri_load_bmp(bvr_image_t* image, FILE* file){
 
     image->width = header.width;
     image->height = abs(header.height);
-    image->channels = header.bit_per_pixel / 8;
     image->depth = 8;
-    if(image->channels == 3){
+    
+    if(header.bit_per_pixel < 8){
+        image->channels = 3;
         image->format = BVR_BGR;
     }
     else {
-        image->format = BVR_BGRA;
+        image->channels = header.bit_per_pixel / 8;
+        image->format = BVR_BGR;
+
+        if(image->channels == 4){
+            image->format = BVR_BGRA;
+        }
     }
 
     image->pixels = malloc(image->width * image->height * image->channels);
@@ -223,15 +229,15 @@ static int bvri_load_bmp(bvr_image_t* image, FILE* file){
 
     if(header.compression_method == 0){ // RAW compression
         uint32_t readed_bytes = 0;
-        uint32_t stride_length = (header.width * image->channels + 3) & ~3;
+        uint32_t stride_length = ((image->width * header.bit_per_pixel) / 32 * 4 + 3) & ~3;
 
         if(header.bit_per_pixel < 8){
             // palette loading
             while (readed_bytes < stride_length * image->height)
             {
                 memcpy(
-                    image->pixels + (readed_bytes * image->channels),
-                    header.palette + bvri_bmpmax(header.color_palette - 1, bvr_freadu8(file)),
+                    image->pixels + (readed_bytes++ * image->channels),
+                    header.palette + bvri_bmpmax(header.color_palette - 1, bvr_freadu8(file)) * image->channels,
                     image->channels
                 );
             }
