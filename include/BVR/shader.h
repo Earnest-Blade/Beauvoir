@@ -20,7 +20,7 @@
 typedef struct bvr_shader_uniform_s {
     struct bvr_buffer_s memory;
     bvr_string_t name;
-    int location;
+    short location;
     int type;
 } bvr_shader_uniform_t;
 
@@ -30,7 +30,7 @@ typedef struct bvr_shader_stage_s {
 } bvr_shader_stage_t;
 
 typedef struct bvr_shader_block_s {
-    int location;
+    short location;
     int type;
     uint32_t count;
 } bvr_shader_block_t;

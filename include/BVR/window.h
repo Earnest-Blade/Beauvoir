@@ -151,6 +151,7 @@ typedef struct bvr_window_s {
         float sensivity;
         float scroll;
 
+        float mouse[2]; // mouse position
         float motion[2]; // mouse motion
         float rel_motion[2]; // relative mouse motion
         float prev_motion[2]; // previous mouse motion

@@ -54,6 +54,8 @@ int bvr_create_window(bvr_window_t* window, int width, int height, const char* t
     window->inputs.scroll = 0.0f;
     window->inputs.grab = 0;
 
+    SDL_GetMouseState(&window->inputs.mouse[0], &window->inputs.mouse[1]);
+
     // initialize GLAD
     BVR_ASSERT(gladLoadGLES2Loader((GLADloadproc)SDL_GL_GetProcAddress));
 
@@ -126,6 +128,8 @@ void bvr_window_poll_events(bvr_window_t* window){
                 window->inputs.rel_motion[1] = event.motion.yrel;
                 window->inputs.motion[0] = event.motion.x;
                 window->inputs.motion[1] = event.motion.y;
+                window->inputs.mouse[0] += window->inputs.rel_motion[0];
+                window->inputs.mouse[1] += window->inputs.rel_motion[1];
             }
             break;
         case SDL_EVENT_MOUSE_WHEEL:
@@ -185,6 +189,8 @@ int bvr_button_down(bvr_window_t* window, uint16_t button){
 }
 
 void bvr_mouse_position(bvr_window_t* window, float* x, float* y){
+    /**x = window->inputs.mouse[0];
+    *y = window->inputs.mouse[1];*/
     SDL_GetMouseState(x, y);
 }
 

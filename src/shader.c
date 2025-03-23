@@ -173,7 +173,7 @@ int bvr_create_shaderf(bvr_shader_t* shader, FILE* file, int flags){
     // create transform uniform
     shader->uniforms[0].location = glGetUniformLocation(shader->program, BVR_UNIFORM_TRANSFORM_NAME);
     shader->uniforms[0].memory.data = NULL;
-    shader->uniforms[0].memory.size = 0;
+    shader->uniforms[0].memory.size = sizeof(bvr_mat4);
     shader->uniforms[0].memory.elemsize = sizeof(bvr_mat4);
     shader->uniforms[0].name.data = NULL;
     shader->uniforms[0].name.length = 0;
@@ -291,6 +291,11 @@ void bvr_shader_set_uniform(bvr_shader_t* shader, const char* name, void* data){
 
     for (size_t i = 0; i < shader->uniform_count; i++)
     {
+        // case where name isn't initialize
+        if(!shader->uniforms[i].name.length){
+            continue;
+        }
+
         if (strcmp(shader->uniforms[i].name.data, name) == 0) {
             bvr_shader_set_uniformi(&shader->uniforms[i], data);
         }
@@ -344,6 +349,14 @@ void bvr_shader_use_uniform(bvr_shader_uniform_t* uniform, void* data){
         case BVR_INT32: 
             glUniform1iv(uniform->location, uniform->memory.size / uniform->memory.elemsize, (int*)data); 
             return;
+        
+        case BVR_VEC3:
+            glUniform3fv(uniform->location, uniform->memory.size / uniform->memory.elemsize, (float*)data);
+            return;
+
+        case BVR_VEC4:
+            glUniform4fv(uniform->location, uniform->memory.size / uniform->memory.elemsize, (float*)data);
+            return;
 
         case BVR_MAT4: 
             glUniformMatrix4fv(uniform->location, uniform->memory.size / uniform->memory.elemsize, GL_FALSE, (float*)data); 
@@ -367,14 +380,13 @@ void bvr_shader_use_uniform(bvr_shader_uniform_t* uniform, void* data){
 }
 
 void bvr_shader_enable(bvr_shader_t* shader){
+    glUseProgram(shader->program);
     
     // start at one it order to omit transform uniform
     for (size_t uniform = 1; uniform < shader->uniform_count; uniform++)
     {
         bvr_shader_use_uniform(&shader->uniforms[uniform], NULL);
     }
-
-    glUseProgram(shader->program);
 }
 
 void bvr_shader_disable(void){

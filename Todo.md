@@ -10,7 +10,6 @@
 ### image.c
 - Improve image compatibility
     - add more PSD cases
-    - improve BMP handling
     - create custom PNG loader ?
 
 - Bugs
@@ -27,3 +26,4 @@
 ### image.c
 - Bugs
     - Flipping PSD image does not work 
+    - improve BMP handling

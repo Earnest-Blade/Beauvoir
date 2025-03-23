@@ -17,6 +17,9 @@
 #define BVR_MAT3                0x1408
 #define BVR_MAT4                0x140A
 
+#define BVR_VEC3                0x140D
+#define BVR_VEC4                0x140E
+
 /*   custom   */  
 #define BVR_TEXTURE_2D          0x140B
 #define BVR_TEXTURE_2D_ARRAY    0x140C
