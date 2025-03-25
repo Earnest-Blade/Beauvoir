@@ -1,6 +1,7 @@
 #pragma once
 
 #include <BVR/window.h>
+#include <BVR/actors.h>
 #include <stdint.h>
 
 #define BVR_INCLUDE_NUKLEAR
@@ -22,6 +23,7 @@ void bvr_nuklear_handle(bvr_nuklear_t* nuklear);
 void bvr_nuklear_render(bvr_nuklear_t* nuklear);
 void bvr_destroy_nuklear(bvr_nuklear_t* nuklear);
 
+void bvr_nuklear_actor_label(bvr_nuklear_t* nuklear, struct bvr_actor_s* actor);
 void bvr_nuklear_vec3_label(bvr_nuklear_t* nuklear, const char* text, float* value);
 
 #endif

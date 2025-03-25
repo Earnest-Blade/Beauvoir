@@ -35,8 +35,8 @@ void bvr_new_frame(bvr_book_t* book){
     /* calculate camera matrices */
     bvr_mat4 projection, view;
     bvr_camera_t* camera = &book->page.camera;
-    bvr_identity_mat4(projection);
-    bvr_identity_mat4(view);
+    BVR_IDENTITY_MAT4(projection);
+    BVR_IDENTITY_MAT4(view);
 
     if(camera->mode == BVR_CAMERA_ORTHOGRAPHIC){
         float width = 1.0f / camera->framebuffer->width * camera->field_of_view.scale;
@@ -89,9 +89,8 @@ void bvr_destroy_book(bvr_book_t* book){
 int bvr_create_page(bvr_page_t* page){
     BVR_ASSERT(page);
 
-    page->actors.size = 0;
-    page->actors.data = NULL;
-    page->actors.elemsize = sizeof(struct bvr_actor_s);
+    bvr_create_pool(&page->actors, sizeof(struct bvr_actor_s*), BVR_MAX_SCENE_ACTOR_COUNT);
+    bvr_create_pool(&page->colliders, sizeof(bvr_collider_t*), BVR_COLLIDER_COLLECTION_SIZE);
 
     return BVR_OK;
 }
@@ -115,18 +114,44 @@ bvr_camera_t* bvr_add_orthographic_camera(bvr_page_t* page, bvr_framebuffer_t* f
     return &page->camera;
 }
 
+struct bvr_actor_s* bvr_add_actor(bvr_page_t* page, struct bvr_actor_s* actor){
+    BVR_ASSERT(page);
+    
+    if(actor){
+        struct bvr_actor_s** aptr = (struct bvr_actor_s**) bvr_pool_alloc(&page->actors);
+        *aptr = actor;
+
+        switch (actor->type)
+        {
+        case BVR_DYNAMIC_ACTOR:
+            bvr_add_collider(page, &((bvr_dynamic_model_t*)actor)->collider);
+            break;
+        
+        default:
+            break;
+        }
+
+        return *aptr;
+    }
+
+    return NULL;
+}
+
+bvr_collider_t* bvr_add_collider(bvr_page_t* page, bvr_collider_t* collider){
+    BVR_ASSERT(page);
+
+    if(collider){
+        bvr_collider_t** cptr = (bvr_collider_t**) bvr_pool_alloc(&page->colliders);
+        *cptr = collider;
+        return *cptr;
+    }
+
+    return NULL;
+}
+
 void bvr_destroy_page(bvr_page_t* page){
     BVR_ASSERT(page);
 
-    
-    if(page->actors.data){
-        
-        for (size_t i = 0; i < page->actors.size / page->actors.elemsize; i++)
-        {
-            // process to destroy actor
-        }
-
-        free(page->actors.data);
-        page->actors.data = NULL;
-    }
+    bvr_destroy_pool(&page->actors);
+    bvr_destroy_pool(&page->colliders);
 }

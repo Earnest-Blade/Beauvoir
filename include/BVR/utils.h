@@ -14,11 +14,10 @@
 #define BVR_UNSIGNED_INT8       0x1401
 #define BVR_UNSIGNED_INT16      0x1403
 #define BVR_UNSIGNED_INT32      0x1405
-#define BVR_MAT3                0x1408
-#define BVR_MAT4                0x140A
-
-#define BVR_VEC3                0x140D
-#define BVR_VEC4                0x140E
+#define BVR_VEC3                0x1408
+#define BVR_VEC4                0x140A
+#define BVR_MAT3                0x140D
+#define BVR_MAT4                0x140E
 
 /*   custom   */  
 #define BVR_TEXTURE_2D          0x140B

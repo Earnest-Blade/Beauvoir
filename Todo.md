@@ -15,6 +15,9 @@
 - Bugs
     - Loading too much images create a sort of mem overflow
 
+### actor.c
+- Improve model texture linking?
+
 ## DONE
 
 ### shader.c

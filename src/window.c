@@ -39,12 +39,10 @@ int bvr_create_window(bvr_window_t* window, int width, int height, const char* t
 
     // create a new window
     window->handle = SDL_CreateWindow(title, width, height, window_flags);
-    BVR_PRINTF("window %p", window->handle);
     BVR_ASSERT(window->handle);
 
     // create a new context
     window->context = SDL_GL_CreateContext(window->handle);
-    BVR_PRINTF("context %p", window->context);
     BVR_ASSERT(window->context);
     SDL_GL_MakeCurrent(window->handle, window->context);
 

@@ -136,6 +136,13 @@ void bvr_destroy_nuklear(bvr_nuklear_t* nuklear){
     nk_sdl_shutdown();
 }
 
+void bvr_nuklear_actor_label(bvr_nuklear_t* nuklear, struct bvr_actor_s* actor){
+    BVR_ASSERT(nuklear);
+    if(((struct nk_context*)nuklear->context)->begin){
+        bvr_nuklear_vec3_label(nuklear, actor->name.data, actor->transform.position);
+    }
+}
+
 void bvr_nuklear_vec3_label(bvr_nuklear_t* nuklear, const char* text, float* value){
     BVR_ASSERT(nuklear);
     if(((struct nk_context*)nuklear->context)->begin){

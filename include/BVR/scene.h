@@ -9,8 +9,12 @@
 
 #include <stdint.h>
 
-#define BVR_CAMERA_ORTHOGRAPHIC 1
-#define BVR_CAMERA_PERSPECTIVE 2
+#define BVR_CAMERA_ORTHOGRAPHIC 0x1
+#define BVR_CAMERA_PERSPECTIVE  0x2
+
+#ifndef BVR_MAX_SCENE_ACTOR_COUNT
+    #define BVR_MAX_SCENE_ACTOR_COUNT 64
+#endif
 
 #ifndef BVR_NO_FPS_CAP
     #ifndef BVR_TARGET_FRAMERATE
@@ -39,11 +43,22 @@ typedef struct bvr_camera_s {
     } field_of_view;
 } bvr_camera_t;
 
+/*
+    Contains all world's informations and data
+*/
 typedef struct bvr_page_s {
     bvr_camera_t camera;
-    struct bvr_buffer_s actors;
+
+    // all world's actors
+    bvr_pool_t actors;
+
+    // all world's colliders
+    bvr_collider_collection_t colliders;
 } bvr_page_t;
 
+/*
+    Contains all game's related data
+*/
 typedef struct bvr_book_s {
     bvr_window_t window;
     bvr_audio_stream_t audio;
@@ -64,5 +79,17 @@ void bvr_destroy_book(bvr_book_t* book);
 
 int bvr_create_page(bvr_page_t* page);
 bvr_camera_t* bvr_add_orthographic_camera(bvr_page_t* page, bvr_framebuffer_t* framebuffer, float near, float far, float scale);
+
+/*
+    Register a new actor inside page's pool. 
+    Return NULL if cannot register actor.
+*/
+struct bvr_actor_s* bvr_add_actor(bvr_page_t* page, struct bvr_actor_s* actor);
+
+/*
+    Register a new non-actor collider inside page's pool.
+    Return NULL if cannot register collider.
+*/
+bvr_collider_t* bvr_add_collider(bvr_page_t* page, bvr_collider_t* collider);
 
 void bvr_destroy_page(bvr_page_t* page);

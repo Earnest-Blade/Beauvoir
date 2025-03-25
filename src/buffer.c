@@ -104,16 +104,16 @@ void bvr_create_pool(bvr_pool_t* pool, size_t size, size_t count){
     pool->data = NULL;
     pool->next = NULL;
     pool->elemsize = size;
-    pool->count = count;
+    pool->capacity = count;
 
     if(size && count){
 
-        pool->data = calloc(pool->count, (pool->elemsize + sizeof(struct bvr_pool_block_s)));
+        pool->data = calloc(pool->capacity, (pool->elemsize + sizeof(struct bvr_pool_block_s)));
         BVR_ASSERT(pool->data);
         pool->next = (struct bvr_pool_block_s*)pool->data;
 
         struct bvr_pool_block_s* block = (struct bvr_pool_block_s*)pool->data;
-        for (size_t i = 0; i < pool->count - 1; i++)
+        for (size_t i = 0; i < pool->capacity - 1; i++)
         {
             block->next = i;
             block = (struct bvr_pool_block_s*)(pool->data + i * (pool->elemsize + sizeof(struct bvr_pool_block_s)));
@@ -136,6 +136,27 @@ void* bvr_pool_alloc(bvr_pool_t* pool){
         return (void*)(block + sizeof(struct bvr_pool_block_s));
     }
 
+    return NULL;
+}
+
+void* bvr_pool_try_get(bvr_pool_t* pool, int index){
+    BVR_ASSERT(pool);
+    
+    int counter = pool->capacity;
+    struct bvr_pool_block_s* block = (struct bvr_pool_block_s*)pool->data;
+    while (block->next != NULL || counter > 0)
+    {
+        if(index == pool->capacity - counter) {
+            return (void*)(block + sizeof(struct bvr_pool_block_s));
+        }
+
+        block = (struct bvr_pool_block_s*)(
+            pool->data + block->next * (pool->elemsize + sizeof(struct bvr_pool_block_s))
+        );
+
+        counter--;
+    }
+    
     return NULL;
 }
 
