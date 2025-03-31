@@ -61,6 +61,7 @@ typedef struct bvr_page_s {
 */
 typedef struct bvr_book_s {
     bvr_window_t window;
+    bvr_pipeline_t pipeline;
     bvr_audio_stream_t audio;
 
     bvr_page_t page;

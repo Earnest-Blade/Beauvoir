@@ -1,4 +1,5 @@
 #include <BVR/buffer.h>
+#include <BVR/graphics.h>
 
 #include <BVR/utils.h>
 

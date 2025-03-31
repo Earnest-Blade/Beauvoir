@@ -2,6 +2,8 @@
 
 #include <stdint.h>
 
+#include <BVR/graphics.h>
+
 #define BVR_KEY_UNKNOWN       0 
 #define BVR_KEY_SPACE         44    //SDL_SCANCODE_SPACE
 #define BVR_KEY_MENU          118   //SDL_SCANCODE_MENU
@@ -133,11 +135,9 @@
 #define BVR_PRESSED 1
 #define BVR_RELEASE 2
 
-typedef struct bvr_framebuffer_s {
-    int width;
-    int height;
-    int id;
-} bvr_framebuffer_t;
+#ifndef BVR_WINDOW_FRAMEBUFFER_PATH
+    #define BVR_WINDOW_FRAMEBUFFER_PATH "res/framebuffer.glsl"
+#endif
 
 typedef struct bvr_window_s {
     void* handle;

@@ -30,10 +30,7 @@ int bvr_create_window(bvr_window_t* window, int width, int height, const char* t
 
     window->handle = NULL;
     window->context = NULL;
-    window->framebuffer.id = 0;
-    window->framebuffer.width = width;
-    window->framebuffer.height = height;
-
+    
     int window_flags = SDL_WINDOW_OPENGL;
     window_flags |= SDL_WINDOW_RESIZABLE;
 
@@ -56,6 +53,8 @@ int bvr_create_window(bvr_window_t* window, int width, int height, const char* t
 
     // initialize GLAD
     BVR_ASSERT(gladLoadGLES2Loader((GLADloadproc)SDL_GL_GetProcAddress));
+
+    bvr_create_framebuffer(&window->framebuffer, width, height, BVR_WINDOW_FRAMEBUFFER_PATH);
 
     window->awake = 1;
 }
@@ -159,9 +158,6 @@ void bvr_window_poll_events(bvr_window_t* window){
     }
 
     SDL_StopTextInput(window->handle);
-    
-    glClearColor(0.f, 0.f, 0.f, 1.f);
-    glClear(GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
     glViewport(0, 0, window->framebuffer.width, window->framebuffer.height);
 }
@@ -171,6 +167,8 @@ void bvr_window_push_buffers(bvr_window_t* window){
 }
 
 void bvr_destroy_window(bvr_window_t* window){
+    bvr_destroy_framebuffer(&window->framebuffer);
+
     SDL_DestroyWindow(window->handle);
     SDL_Quit();
 

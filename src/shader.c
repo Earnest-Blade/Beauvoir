@@ -130,6 +130,23 @@ int bvr_create_shaderf(bvr_shader_t* shader, FILE* file, int flags){
     //
     shader->uniform_count = 1;
 
+    /*
+        Framebuffers shader must jump over vertex and fragment sections
+    */
+    if(BVR_HAS_FLAG(flags, BVR_FRAMEBUFFER_SHADER)){
+        bvri_register_shader_state(shader,
+            &shader->shaders[shader->shader_count++], &file_content,
+            version_header_content, "_VERTEX_", GL_VERTEX_SHADER
+        );
+        
+        bvri_register_shader_state(shader,
+            &shader->shaders[shader->shader_count++], &file_content,
+            version_header_content, "_FRAGMENT_", GL_FRAGMENT_SHADER
+        );
+
+        goto shader_cstor_bidings;
+    }
+
     // check if it contains a vertex shader and create vertex shader stage.
     if (BVR_HAS_FLAG(flags, BVR_VERTEX_SHADER)) {
         bvri_register_shader_state(shader,
@@ -157,6 +174,7 @@ int bvr_create_shaderf(bvr_shader_t* shader, FILE* file, int flags){
         BVR_PRINT("failed to compile shader!");
     }
 
+shader_cstor_bidings:
     // create default blocks
     
     // create camera block

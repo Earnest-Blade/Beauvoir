@@ -23,7 +23,7 @@ static bvr_book_t game;
 static bvr_nuklear_t gui;
 
 static struct {
-    bvr_model_t model;
+    bvr_static_model_t model;
 
     bvr_layered_texture_t texture;
     bvr_shader_uniform_t* texture_uniform;
@@ -120,7 +120,7 @@ int main(){
         for (int layer = 0; layer < BVR_BUFFER_COUNT(image_viewer.texture.image.layers); layer++)
         {
             if(image_viewer.enabled_layers[layer]){
-                image_viewer.model.transform.position[1] = layer;
+                image_viewer.model.object.transform.position[1] = layer;
                 
                 /* enable texture unit */
                 bvr_layered_texture_enable(&image_viewer.texture, BVR_TEXTURE_UNIT0);
