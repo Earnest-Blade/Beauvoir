@@ -20,7 +20,7 @@ int bvr_create_book(bvr_book_t* book){
     book->current_time = 0.0f;
 
     book->pipeline.rendering_pass.blending = BVR_BLEND_ENABLE | BVR_BLEND_FUNC_ALPHA_ONE_MINUS;
-    book->pipeline.rendering_pass.depth = BVR_DEPTH_TEST_DISABLE | BVR_DEPTH_FUNC_LESS;
+    book->pipeline.rendering_pass.depth = BVR_DEPTH_TEST_ENABLE | BVR_DEPTH_FUNC_ALWAYS;
     book->pipeline.rendering_pass.flags = 0;
 
     book->pipeline.swap_pass.blending = BVR_BLEND_DISABLE;
@@ -41,13 +41,10 @@ void bvr_new_frame(bvr_book_t* book){
     book->delta_time = (book->current_time - book->prev_time) / 1000.0f;
 
     // reset opengl states
-    /*bvr_framebuffer_enable(&book->window.framebuffer);
-    bvr_framebuffer_clear(&book->window.framebuffer, book->pipeline.clear_color);*/
+    bvr_framebuffer_enable(&book->window.framebuffer);
+    bvr_framebuffer_clear(&book->window.framebuffer, book->pipeline.clear_color);
 
     bvr_pipeline_state_enable(&book->pipeline.rendering_pass);
-    
-    /*glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA); */ 
 
     /* calculate camera matrices */
     bvr_mat4 projection, view;
@@ -80,13 +77,11 @@ void bvr_new_frame(bvr_book_t* book){
 }
 
 void bvr_render(bvr_book_t* book){
-    /*bvr_framebuffer_disable(&book->window.framebuffer);
+    bvr_framebuffer_disable(&book->window.framebuffer);
 
     bvr_pipeline_state_enable(&book->pipeline.swap_pass);
-    bvr_framebuffer_blit(&book->window.framebuffer);*/
+    bvr_framebuffer_blit(&book->window.framebuffer);
     
-    bvr_pipeline_state_enable(&book->pipeline.swap_pass);
-
     bvr_window_push_buffers(&book->window);
 
 #ifndef BVR_NO_FPS_CAP

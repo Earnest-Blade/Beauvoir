@@ -26,8 +26,8 @@ in V_DATA {
 uniform sampler2D bvr_texture;
 
 void main() {
-	vec4 tex = texture(bvr_texture, vec2(vertex.uvs));
-	gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0);
+	vec4 tex = texture(bvr_texture, vertex.uvs);
+	gl_FragColor = vec4(tex.rgb, 1.0);
 }
 
 #endif

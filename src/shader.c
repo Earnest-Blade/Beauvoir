@@ -169,12 +169,12 @@ int bvr_create_shaderf(bvr_shader_t* shader, FILE* file, int flags){
         BVR_PRINT("missing fragment shader!");
     }
 
+shader_cstor_bidings:
     // try to compile shader
     if (!bvri_link_shader(shader->program)) {
         BVR_PRINT("failed to compile shader!");
     }
 
-shader_cstor_bidings:
     // create default blocks
     
     // create camera block

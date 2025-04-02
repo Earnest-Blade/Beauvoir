@@ -75,12 +75,12 @@ int bvr_create_framebuffer(bvr_framebuffer_t* framebuffer, int width, int height
 
     {
         const float quad[24] = {
-            -1.0f, 1.0f, 0.0f, 1.0f,
+            -1.0f,  1.0f, 0.0f, 1.0f,
             -1.0f, -1.0f, 0.0f, 0.0f,
-            1.0f, -1.0f, 1.0f, 0.0f,
-            -1.0f, 1.0f, 0.0f, 1.0f,
-            1.0f, -1.0f, 1.0f, 0.0f,
-            1.0f, 1.0f, 1.0f, 1.0f,
+            1.0f,  -1.0f, 1.0f, 0.0f,
+            -1.0f,  1.0f, 0.0f, 1.0f,
+            1.0f,  -1.0f, 1.0f, 0.0f,
+            1.0f,   1.0f, 1.0f, 1.0f,
         };
 
         glGenVertexArrays(1, &framebuffer->vertex_buffer);
@@ -94,7 +94,7 @@ int bvr_create_framebuffer(bvr_framebuffer_t* framebuffer, int width, int height
         glEnableVertexAttribArray(0);
         glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
         glEnableVertexAttribArray(1);
-        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
+        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)8);
     }
 
     bvr_create_shader(&framebuffer->shader, shader, BVR_FRAMEBUFFER_SHADER);

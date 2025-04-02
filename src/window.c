@@ -53,6 +53,7 @@ int bvr_create_window(bvr_window_t* window, int width, int height, const char* t
 
     // initialize GLAD
     BVR_ASSERT(gladLoadGLES2Loader((GLADloadproc)SDL_GL_GetProcAddress));
+    BVR_PRINT(glGetString(GL_VERSION));
 
     bvr_create_framebuffer(&window->framebuffer, width, height, BVR_WINDOW_FRAMEBUFFER_PATH);
 

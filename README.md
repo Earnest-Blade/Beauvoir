@@ -2,7 +2,7 @@
 > 'Beauvoir' just like Simone de Beauvoir
 
 ## Overview
-Beauvoir is an OpenGL-based game framework that aims to provide a simple, yet performant and flexible way to create 2D games - but can still create 3D games - . I chose to create it in C to keep the code simple and flexible.
+Beauvoir is an OpenGL-based game framework that aims to provide a simple, yet performant and flexible way to create 2D games - but can still create 3D games - . I chose to create it in C and OpenGL ES 3.2 to keep the code simple and flexible.
 
 The aim of my framework is to create games around layered-based scenes. You can either import images from Photoshop using ```.PSD``` files or stack images manually. 
 
@@ -54,6 +54,8 @@ int main(){
             break;
             
         }
+
+        /* rendering */
 
         /* push Beauvoir's graphics to the window */
         bvr_render(&book);
