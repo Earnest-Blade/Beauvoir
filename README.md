@@ -77,3 +77,4 @@ You can find submodules in the [Extern](/extern/) folder.
 - [Zlib](https://github.com/madler/zlib)
 - [Nuklear](https://github.com/vurtun/nuklear)
 - [Libpng16](https://github.com/pnggroup/libpng)
+- [Linmath](https://github.com/datenwolf/linmath.h)

@@ -47,7 +47,7 @@ typedef struct bvr_pipeline_s {
     */
     struct bvr_pipeline_state_s swap_pass;
 
-    bvr_vec3 clear_color;
+    vec3 clear_color;
 } bvr_pipeline_t;
 
 typedef struct bvr_framebuffer_s {
@@ -66,6 +66,6 @@ void bvr_pipeline_state_enable(struct bvr_pipeline_state_s* state);
 int bvr_create_framebuffer(bvr_framebuffer_t* framebuffer, int width, int height, const char* shader);
 void bvr_framebuffer_enable(bvr_framebuffer_t* framebuffer);
 void bvr_framebuffer_disable(bvr_framebuffer_t* framebuffer);
-void bvr_framebuffer_clear(bvr_framebuffer_t* framebuffer, bvr_vec3 color);
+void bvr_framebuffer_clear(bvr_framebuffer_t* framebuffer, vec3 color);
 void bvr_framebuffer_blit(bvr_framebuffer_t* framebuffer);
 void bvr_destroy_framebuffer(bvr_framebuffer_t* framebuffer);

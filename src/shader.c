@@ -87,6 +87,31 @@ static int bvri_register_shader_state(bvr_shader_t* program, bvr_shader_stage_t*
     bvr_destroy_string(&shader_str);
 }
 
+void bvr_create_uniform_buffer(uint32_t* buffer, size_t size){
+    glGenBuffers(1, buffer);
+    glBindBuffer(GL_UNIFORM_BUFFER, *buffer);
+    glBufferData(GL_UNIFORM_BUFFER, size, NULL, GL_DYNAMIC_DRAW);
+    glBindBuffer(GL_UNIFORM_BUFFER, 0);
+
+    glBindBufferRange(GL_UNIFORM_BUFFER, 0, *buffer, 0, size);
+}
+
+void bvr_enable_uniform_buffer(uint32_t buffer){
+    glBindBuffer(GL_UNIFORM_BUFFER, buffer);
+}
+
+void bvr_uniform_buffer_set(uint32_t buffer, uint32_t offset, size_t size, void* data){
+    glBufferSubData(GL_UNIFORM_BUFFER, offset, size, data);
+}
+
+void bvr_destroy_uniform_buffer(uint32_t* buffer){
+    if(!buffer){
+        return;
+    }
+
+    glDeleteBuffers(1, buffer);
+}
+
 int bvr_create_shaderf(bvr_shader_t* shader, FILE* file, int flags){
     BVR_ASSERT(shader);
     BVR_ASSERT(file);
@@ -191,8 +216,8 @@ shader_cstor_bidings:
     // create transform uniform
     shader->uniforms[0].location = glGetUniformLocation(shader->program, BVR_UNIFORM_TRANSFORM_NAME);
     shader->uniforms[0].memory.data = NULL;
-    shader->uniforms[0].memory.size = sizeof(bvr_mat4);
-    shader->uniforms[0].memory.elemsize = sizeof(bvr_mat4);
+    shader->uniforms[0].memory.size = sizeof(mat4x4);
+    shader->uniforms[0].memory.elemsize = sizeof(mat4x4);
     shader->uniforms[0].name.data = NULL;
     shader->uniforms[0].name.length = 0;
     shader->uniforms[0].type = BVR_MAT4;

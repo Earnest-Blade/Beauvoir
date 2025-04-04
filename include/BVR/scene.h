@@ -70,27 +70,48 @@ typedef struct bvr_book_s {
     uint64_t prev_time, current_time;
 } bvr_book_t;
 
+/*
+    Create a new game context
+*/
 int bvr_create_book(bvr_book_t* book);
+
+/*
+    Return BVR_OK if the game is still running.
+*/
 static inline int bvr_is_awake(bvr_book_t* book){
     return book->window.awake;
 }
+
+/*
+    ask Beauvoir to prepare a new frame
+*/
 void bvr_new_frame(bvr_book_t* book);
+
+void bvr_update(bvr_book_t* book);
+/*
+    push Beauvoir's graphics to the window
+*/
 void bvr_render(bvr_book_t* book);
+
 void bvr_destroy_book(bvr_book_t* book);
 
+/*
+    Create a new scene
+*/
 int bvr_create_page(bvr_page_t* page);
+
 bvr_camera_t* bvr_add_orthographic_camera(bvr_page_t* page, bvr_framebuffer_t* framebuffer, float near, float far, float scale);
 
 /*
     Register a new actor inside page's pool. 
     Return NULL if cannot register actor.
 */
-struct bvr_actor_s* bvr_add_actor(bvr_page_t* page, struct bvr_actor_s* actor);
+struct bvr_actor_s* bvr_link_actor_to_page(bvr_page_t* page, struct bvr_actor_s* actor);
 
 /*
     Register a new non-actor collider inside page's pool.
     Return NULL if cannot register collider.
 */
-bvr_collider_t* bvr_add_collider(bvr_page_t* page, bvr_collider_t* collider);
+bvr_collider_t* bvr_link_collider_to_page(bvr_page_t* page, bvr_collider_t* collider);
 
 void bvr_destroy_page(bvr_page_t* page);

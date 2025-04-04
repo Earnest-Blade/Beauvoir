@@ -4,7 +4,7 @@
 #include <BVR/math.h>
 
 #ifndef BVR_COLLIDER_COLLECTION_SIZE
-    #define BVR_COLLIDER_COLLECTION_SIZE 512
+    #define BVR_COLLIDER_COLLECTION_SIZE 128
 #endif
 
 /*
@@ -12,9 +12,29 @@
 */
 typedef struct bvr_pool_s bvr_collider_collection_t;
 
+struct bvr_body_s {
+    float acceleration;
+    vec3 direction;
+
+    char aggressive;
+};
+
 typedef struct bvr_collider_s {
-    struct bvr_buffer_s capsule;
+    struct bvr_body_s body;
+    struct bvr_buffer_s geometry;
+
+    struct bvr_transform_s* transform;
 } bvr_collider_t;
 
+struct bvr_collision_result_s {
+    int collide;
+
+    float distance;
+    vec3 direction;
+};
+
+void bvr_body_add_force(struct bvr_body_s* body, float x, float y, float z);
+
 void bvr_create_collider(bvr_collider_t* collider, float* vertices, size_t count);
+void bvr_compare_colliders(bvr_collider_t* a, bvr_collider_t* b, struct bvr_collision_result_s* result);
 void bvr_destroy_collider(bvr_collider_t* collider);

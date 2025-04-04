@@ -9,6 +9,8 @@
 
 #define BVR_BUFFER_COUNT(buffer)((unsigned long long)(buffer.size / buffer.elemsize))
 
+#define BVR_POOL_NEXT(pool, elemsize, block) block = (struct bvr_pool_block_s*)(pool + block->next * (elemsize + sizeof(struct bvr_pool_block_s)));
+
 struct bvr_buffer_s {
     char* data;
     unsigned long long size;
@@ -27,14 +29,14 @@ typedef struct bvr_pool_s {
     char* data;
 
     /*
-        Pool's data is structure as such :
+        Pool's data is structured as such :
 
         | next data block id |
         |        ----        |
         |        data        |
     
 
-        after that, all informations are aligned to this pattern.
+        everything is aligned to this pattern.
     */
     struct bvr_pool_block_s {
         unsigned char next;
@@ -75,5 +77,6 @@ void bvr_destroy_string(bvr_string_t* string);
 void bvr_create_pool(bvr_pool_t* pool, size_t size, size_t count);
 void* bvr_pool_alloc(bvr_pool_t* pool);
 void* bvr_pool_try_get(bvr_pool_t* pool, int index);
+
 void bvr_pool_free(bvr_pool_t* pool, void* ptr);
 void bvr_destroy_pool(bvr_pool_t* pool);

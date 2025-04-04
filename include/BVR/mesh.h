@@ -7,6 +7,12 @@
 
 #define BVR_DRAWMODE_TRIANGLES 0x0004
 
+/*
+    !! MESH BUFFERS DONT WORK LIKE OTHERS BUFFERS !!
+    char* data; -> contains data 
+    unsigned long long size; -> count of vertices
+    unsigned int elemsize; -> type 
+*/
 typedef struct bvr_buffer_s bvr_mesh_buffer_t;
 
 typedef enum bvr_mesh_array_attrib_e {
@@ -39,7 +45,7 @@ typedef struct bvr_mesh_s {
     uint32_t element_buffer;
 
     int element_type;
-    uint32_t element_count;
+    uint32_t element_count, vertex_count;
     uint32_t attrib_count, stride;
 } bvr_mesh_t;
 
@@ -50,7 +56,7 @@ void bvr_destroy_mesh(bvr_mesh_t* mesh);
 #ifdef BVR_GEOMETRY_IMPLEMENTATION
 
 static inline void bvr_create_2d_square_mesh(bvr_mesh_t* mesh, float width, float height){
-    float vertices[] = {
+    float vertices[16] = {
         -width,  height, 0, 1,
         -width, -height, 0, 0,
          width, -height, 1, 0,

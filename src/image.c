@@ -1140,6 +1140,7 @@ int bvr_create_image(bvr_image_t* image, FILE* file){
 
     int status = 0;
     
+    //I should change image format order so that it will reduce signature errors.
 #ifndef BVR_NO_PNG
     if(bvri_is_png(file)){ 
         status = bvri_load_png(image, file);
@@ -1178,7 +1179,7 @@ int bvr_create_image(bvr_image_t* image, FILE* file){
     This layer will have the same size as the image.
     This layer will be named "layer0".
 */
-static void bvri_create_default_layer(bvr_image_t* image){
+static void bvri_create_empty_layer(bvr_image_t* image){
     BVR_ASSERT(image);
 
     image->layers.data = malloc(image->layers.elemsize);
@@ -1438,7 +1439,7 @@ int bvr_create_layered_texturef(bvr_layered_texture_t* texture, FILE* file, int 
     }
 
     if(!texture->image.layers.data){
-        bvri_create_default_layer(&texture->image);
+        bvri_create_empty_layer(&texture->image);
     }
 
     glGenTextures(1, &texture->id);

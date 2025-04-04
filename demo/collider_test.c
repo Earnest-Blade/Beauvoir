@@ -1,7 +1,3 @@
-/*
-    This file contains the fundation of every Beauvoir projects.
-*/
-
 /* include all Beauvoir's headers */
 #define BVR_GEOMETRY_IMPLEMENTATION
 #include <BVR/bvr.h>
@@ -13,6 +9,7 @@ static bvr_book_t book;
 static bvr_nuklear_t gui;
 
 static bvr_static_model_t player;
+static bvr_static_model_t other_object;
 
 void draw_nk(){
 #ifdef BVR_INCLUDE_NUKLEAR
@@ -68,17 +65,32 @@ int main(){
 
     bvr_add_orthographic_camera(&book.page, &book.window.framebuffer, 0.1f, 100.0f, 1.0f);
 
-    bvr_create_actor(&player.object, "player", BVR_DYNAMIC_ACTOR);
-    bvr_add_actor(&book.page, &player.object);
-
+    // create player objects
     bvr_create_2d_square_mesh(&player.mesh, 10.0f, 10.0f);
     bvr_create_shader(&player.shader, "res/monochrome.glsl", BVR_VERTEX_SHADER | BVR_FRAGMENT_SHADER);
     bvr_shader_register_uniform(&player.shader, BVR_VEC3, 1, "bvr_color");
-    
+
+    bvr_create_2d_square_mesh(&other_object.mesh, 50.0f, 50.0f);
+    bvr_create_shader(&other_object.shader, "res/monochrome.glsl", BVR_VERTEX_SHADER | BVR_FRAGMENT_SHADER);
+    bvr_shader_register_uniform(&other_object.shader, BVR_VEC3, 1, "bvr_color");
+
     {
-        bvr_vec3 color = {1.0f, 0.0f, 1.0f};
+        vec3 color = {1.0f, 0.0f, 1.0f};
         bvr_shader_set_uniform(&player.shader, "bvr_color", &color);
+
+        color[0] = 0.0f;
+        color[1] = 1.0f;
+        bvr_shader_set_uniform(&other_object.shader, "bvr_color", &color);
     }
+
+    bvr_create_actor(&player.object, "player", BVR_DYNAMIC_ACTOR, 
+        BVR_DYNACTOR_AGGRESSIVE | BVR_DYNACTOR_CREATE_COLLIDER_FROM_VERTICES);
+
+    bvr_create_actor(&other_object.object, "other_object", BVR_DYNAMIC_ACTOR, 
+        BVR_DYNACTOR_PASSIVE | BVR_DYNACTOR_CREATE_COLLIDER_FROM_VERTICES);
+
+    bvr_link_actor_to_page(&book.page, &player.object);
+    bvr_link_actor_to_page(&book.page, &other_object.object);
 
     /* main loop */
     while (1)
@@ -96,10 +108,12 @@ int main(){
         player.object.transform.position[0] = (x - (book.window.framebuffer.width / 2)) * 2;
         player.object.transform.position[1] = (-y + (book.window.framebuffer.height / 2)) * 2;
 
-        //bvr_model_draw(&player, BVR_DRAWMODE_TRIANGLES);
-        bvr_draw_static_model(&player, BVR_DRAWMODE_TRIANGLES);
+        bvr_update(&book);
 
-        draw_nk();
+        bvr_draw_static_model(&player, BVR_DRAWMODE_TRIANGLES);
+        bvr_draw_static_model(&other_object, BVR_DRAWMODE_TRIANGLES);
+
+        //draw_nk();
 
         /* push Beauvoir's graphics to the window */
         bvr_render(&book);

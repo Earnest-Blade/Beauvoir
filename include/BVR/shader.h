@@ -49,6 +49,11 @@ typedef struct bvr_shader_s {
     int flags;
 } bvr_shader_t;
 
+void bvr_create_uniform_buffer(uint32_t* buffer, size_t size);
+void bvr_enable_uniform_buffer(uint32_t buffer);
+void bvr_uniform_buffer_set(uint32_t buffer, uint32_t offset, size_t size, void* data);
+void bvr_destroy_uniform_buffer(uint32_t* buffer);
+
 int bvr_create_shaderf(bvr_shader_t* shader, FILE* file, int flags);
 static inline int bvr_create_shader(bvr_shader_t* shader, const char* path, int flags){
     FILE* file = fopen(path, "rb");

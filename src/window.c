@@ -126,6 +126,7 @@ void bvr_window_poll_events(bvr_window_t* window){
                 window->inputs.rel_motion[1] = event.motion.yrel;
                 window->inputs.motion[0] = event.motion.x;
                 window->inputs.motion[1] = event.motion.y;
+                
                 window->inputs.mouse[0] += window->inputs.rel_motion[0];
                 window->inputs.mouse[1] += window->inputs.rel_motion[1];
             }
@@ -186,8 +187,6 @@ int bvr_button_down(bvr_window_t* window, uint16_t button){
 }
 
 void bvr_mouse_position(bvr_window_t* window, float* x, float* y){
-    /**x = window->inputs.mouse[0];
-    *y = window->inputs.mouse[1];*/
     SDL_GetMouseState(x, y);
 }
 

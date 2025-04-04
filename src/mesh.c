@@ -27,6 +27,7 @@ int bvr_create_mesh(bvr_mesh_t* mesh, bvr_mesh_buffer_t* vertices, bvr_mesh_buff
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, elements->size, elements->data, GL_STATIC_DRAW);
 
     mesh->element_type = elements->elemsize;
+    mesh->vertex_count = vertices->size / bvr_sizeof(vertices->elemsize);
     mesh->element_count = elements->size / bvr_sizeof(elements->elemsize);
     
     switch (attrib)
@@ -105,11 +106,15 @@ void bvr_mesh_draw(bvr_mesh_t* mesh, int drawmode){
     glBindBuffer(GL_ARRAY_BUFFER, mesh->vertex_buffer);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh->element_buffer);
 
-    for (size_t i = 0; i < mesh->attrib_count; i++){ glEnableVertexAttribArray(i); }
+    for (size_t i = 0; i < mesh->attrib_count; i++){ 
+        glEnableVertexAttribArray(i); 
+    }
     
     glDrawElements(drawmode, mesh->element_count, mesh->element_type, NULL);
 
-    for (size_t i = 0; i < mesh->attrib_count; i++){ glDisableVertexAttribArray(i); }
+    for (size_t i = 0; i < mesh->attrib_count; i++){ 
+        glDisableVertexAttribArray(i); 
+    }
 
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);

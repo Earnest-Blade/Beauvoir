@@ -141,7 +141,7 @@ void bvr_framebuffer_disable(bvr_framebuffer_t* framebuffer){
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-void bvr_framebuffer_clear(bvr_framebuffer_t* framebuffer, bvr_vec3 color){
+void bvr_framebuffer_clear(bvr_framebuffer_t* framebuffer, vec3 color){
     glClearColor(0, 0, 0, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }

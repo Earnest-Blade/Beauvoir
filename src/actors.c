@@ -4,29 +4,98 @@
 
 #include <stdlib.h>
 
-static void bvri_calculate_transform(struct bvr_actor_s* actor){
+#include <GLAD/glad.h>
+
+/*
+    
+*/
+static void bvri_update_transform(struct bvr_actor_s* actor){
     BVR_ASSERT(actor);
 
     BVR_IDENTITY_MAT4(actor->transform.matrix);
+
+    // copy translation to the translate matrix
     actor->transform.matrix[3][0] = actor->transform.position[0];
     actor->transform.matrix[3][1] = actor->transform.position[1];
     actor->transform.matrix[3][2] = actor->transform.position[2];
 }
 
-void bvr_create_actor(struct bvr_actor_s* actor, const char* name, bvr_actor_type_t type){
+/*
+    Constructor for any dynamic actor.
+*/
+static void bvri_create_dynamic_actor(bvr_dynamic_model_t* actor, int flags){
+    BVR_ASSERT(actor);
+
+    bvr_create_collider(&actor->collider, NULL, 0);
+
+    if(BVR_HAS_FLAG(flags, BVR_DYNACTOR_AGGRESSIVE)){
+        actor->collider.body.aggressive = 1;
+        BVR_PRINTF("created a new collider %x", actor->collider);
+    }
+
+    if(BVR_HAS_FLAG(flags, BVR_DYNACTOR_CREATE_COLLIDER_FROM_VERTICES)){
+        if(actor->mesh.vertex_buffer){
+            float* vertices_ptr;
+            float vertices[4];
+
+            glBindBuffer(GL_ARRAY_BUFFER, actor->mesh.vertex_buffer);
+            vertices_ptr = glMapBufferRange(GL_ARRAY_BUFFER, 0, actor->mesh.vertex_count, GL_MAP_READ_BIT);
+            BVR_ASSERT(vertices_ptr);
+            BVR_ASSERT(actor->mesh.vertex_count == 16);
+
+            /*memcpy(&vertices[0], &vertices_ptr[0 * (actor->mesh.stride / sizeof(float))], sizeof(vec3)); 
+            memcpy(&vertices[1], &vertices_ptr[1 * (actor->mesh.stride / sizeof(float))], sizeof(vec3));
+            memcpy(&vertices[2], &vertices_ptr[2 * (actor->mesh.stride / sizeof(float))], sizeof(vec3));
+            memcpy(&vertices[3], &vertices_ptr[3 * (actor->mesh.stride / sizeof(float))], sizeof(vec3));*/
+
+            vertices[0] = 0.0f; // top
+            vertices[1] = 0.0f;  // left
+            vertices[2] = -vertices_ptr[0]; // bottom
+            vertices[3] = vertices_ptr[1];  // right
+
+            /* we might just want to allocate */
+            bvr_create_collider(&actor->collider, (float*)vertices, 4);
+
+            glUnmapBuffer(GL_ARRAY_BUFFER);
+            glBindBuffer(GL_ARRAY_BUFFER, 0);
+        }
+        else {
+            BVR_PRINT("failed to copy vertices data!");
+        }
+    }
+
+    actor->collider.transform = &actor->object.transform;
+}
+
+void bvr_create_actor(struct bvr_actor_s* actor, const char* name, bvr_actor_type_t type, int flags){
     BVR_ASSERT(actor);
 
     actor->type = type;
     actor->id = (uint32_t)actor;
+    actor->flags = flags;
     
     BVR_IDENTITY_VEC3(actor->transform.position);
     BVR_IDENTITY_VEC3(actor->transform.rotation);
-    actor->transform.scale[0] = 1.0f;
-    actor->transform.scale[1] = 1.0f;
-    actor->transform.scale[2] = 1.0f;
+    BVR_SCALE_VEC3(actor->transform.scale, 1.0f);
 
     BVR_IDENTITY_MAT4(actor->transform.matrix);
     bvr_create_string(&actor->name, name);
+
+    switch (type)
+    {
+    case BVR_EMPTY_ACTOR:
+        /* doing nothing */
+        break;
+    
+    case BVR_STATIC_ACTOR:
+        break;
+    
+    case BVR_DYNAMIC_ACTOR:
+        bvri_create_dynamic_actor((bvr_dynamic_model_t*)actor, flags);
+        break;
+    default:
+        break;
+    }
 }
 
 void bvr_destroy_actor(struct bvr_actor_s* actor){
@@ -34,7 +103,7 @@ void bvr_destroy_actor(struct bvr_actor_s* actor){
 }
 
 void bvr_draw_static_model(bvr_static_model_t* actor, int drawmode){
-    bvri_calculate_transform((struct bvr_actor_s*)actor);
+    bvri_update_transform((struct bvr_actor_s*)actor);
 
     bvr_shader_enable(&actor->shader);
     bvr_shader_use_uniform(&actor->shader.uniforms[0], &actor->object.transform.matrix[0][0]);
