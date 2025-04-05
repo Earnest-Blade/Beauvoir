@@ -150,7 +150,7 @@ void* bvr_pool_try_get(bvr_pool_t* pool, int index){
             return (void*)(block + sizeof(struct bvr_pool_block_s));
         }
 
-        BVR_POOL_NEXT(pool->data, pool->elemsize, block);
+        block = (struct bvr_pool_block_s*)(pool->data + block->next * (pool->elemsize + sizeof(struct bvr_pool_block_s)));
 
         counter--;
     }

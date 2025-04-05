@@ -8,9 +8,11 @@
 
 #include <stdio.h>
 
-#define BVR_DYNACTOR_PASSIVE 0x001
-#define BVR_DYNACTOR_AGGRESSIVE 0x002
-#define BVR_DYNACTOR_CREATE_COLLIDER_FROM_VERTICES 0x004
+#define BVR_ACTOR_NOT_FREE                          0x00001
+
+#define BVR_DYNACTOR_PASSIVE                        0x00100
+#define BVR_DYNACTOR_AGGRESSIVE                     0x00200
+#define BVR_DYNACTOR_CREATE_COLLIDER_FROM_VERTICES  0x00400
 
 typedef enum bvr_actor_type_e {
     BVR_EMPTY_ACTOR = 0x00,

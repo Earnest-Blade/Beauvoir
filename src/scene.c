@@ -6,8 +6,6 @@
 
 #include <malloc.h>
 
-#include <GLAD/glad.h>
-
 int bvr_create_book(bvr_book_t* book){
     BVR_ASSERT(book);
 
@@ -73,15 +71,11 @@ void bvr_new_frame(bvr_book_t* book){
     bvr_enable_uniform_buffer(book->page.camera.buffer);
     bvr_uniform_buffer_set(book->page.camera.buffer, 0, sizeof(mat4x4), &projection[0][0]);
     bvr_uniform_buffer_set(book->page.camera.buffer, sizeof(mat4x4), sizeof(mat4x4), &view[0][0]);
-
-    /*glBindBuffer(GL_UNIFORM_BUFFER, book->page.camera.buffer);
-    glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(mat4x4), &projection[0][0]);
-    glBufferSubData(GL_UNIFORM_BUFFER, sizeof(mat4x4), sizeof(mat4x4), &view[0][0]);
-    glBindBuffer(GL_UNIFORM_BUFFER, 0);*/
+    bvr_enable_uniform_buffer(0);
 }
 
 void bvr_update(bvr_book_t* book){
-    bvr_collider_t* collider, *other;
+    /*bvr_collider_t* collider, *other;
     struct bvr_collision_result_s result;
     
     struct bvr_pool_block_s* other_block;
@@ -114,7 +108,7 @@ void bvr_update(bvr_book_t* book){
         }
 
         BVR_POOL_NEXT(book->page.colliders.data, book->page.colliders.elemsize, collider_block);
-    }
+    }*/
     
 }
 
@@ -167,13 +161,6 @@ bvr_camera_t* bvr_add_orthographic_camera(bvr_page_t* page, bvr_framebuffer_t* f
 
     bvr_create_uniform_buffer(&page->camera.buffer, 2 * sizeof(mat4x4));
 
-    /*glGenBuffers(1, &page->camera.buffer);
-    glBindBuffer(GL_UNIFORM_BUFFER, page->camera.buffer);
-    glBufferData(GL_UNIFORM_BUFFER, 2 * sizeof(mat4x4), NULL, GL_DYNAMIC_DRAW);
-    glBindBuffer(GL_UNIFORM_BUFFER, 0);
-
-    glBindBufferRange(GL_UNIFORM_BUFFER, 0, page->camera.buffer, 0, 2 * sizeof(mat4x4));*/
-
     return &page->camera;
 }
 
@@ -216,6 +203,7 @@ void bvr_destroy_page(bvr_page_t* page){
     BVR_ASSERT(page);
 
     bvr_destroy_uniform_buffer(&page->camera.buffer);
+
     bvr_destroy_pool(&page->actors);
     bvr_destroy_pool(&page->colliders);
 }
