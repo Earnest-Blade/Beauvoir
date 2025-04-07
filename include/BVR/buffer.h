@@ -9,14 +9,13 @@
 
 #define BVR_BUFFER_COUNT(buffer)((unsigned long long)(buffer.size / buffer.elemsize))
 
-// || (block ## ##a) == &(first ## ##a)
 #define BVR_POOL_FOR_EACH(a, pool)    \
     struct bvr_pool_block_s (first ## ##a) = {0};   \
     struct bvr_pool_block_s* (block ## ##a) = &(first ## ##a); \
     while(                                                     \
-        ((int)(((block ## ##a)  = (struct bvr_pool_block_s*)(pool.data + ((block ## ##a)->next * (pool.elemsize + sizeof(struct bvr_pool_block_s))))) \
-        && (c = *(client_t**)((block ## ##a)  + sizeof(struct bvr_pool_block_s)))))*0\
-        || ((block ## ##a)->next || (block ## ##a) == &(first ## ##a))\
+        ((int)(((block ## ##a) = (struct bvr_pool_block_s*)(pool.data + ((block ## ##a)->next * (pool.elemsize + sizeof(struct bvr_pool_block_s))))) \
+        && (a = *(typeof(a)*)((block ## ##a) + sizeof(struct bvr_pool_block_s)))))*0 \
+        || ((block ## ##a)->next || (block ## ##a) == &(first ## ##a)) \
     )                                                                       
 
 struct bvr_buffer_s {

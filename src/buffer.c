@@ -69,7 +69,7 @@ void bvr_string_insert(bvr_string_t* string, const size_t offset, const char* va
 
     if(value) {
         const size_t vlen = strlen(value);
-        BVR_PRINTF("string %x ; string size %i", string->data, string->length);
+        //BVR_PRINTF("string %x ; string size %i", string->data, string->length);
 
         string->length += vlen;
         string->data = realloc(string->data, string->length);
@@ -130,6 +130,11 @@ void* bvr_pool_alloc(bvr_pool_t* pool){
     if(pool->next){
         struct bvr_pool_block_s* block = pool->next;
         
+        if(block->next >= pool->capacity){
+            BVR_PRINT("pool is full");
+            return NULL;
+        }
+
         pool->next = (struct bvr_pool_block_s*)(
             pool->data + block->next * (pool->elemsize + sizeof(struct bvr_pool_block_s))
         );
@@ -144,7 +149,7 @@ void* bvr_pool_try_get(bvr_pool_t* pool, int index){
     
     int counter = pool->capacity;
     struct bvr_pool_block_s* block = (struct bvr_pool_block_s*)pool->data;
-    while (block->next != NULL || counter > 0)
+    while (block->next || counter > 0)
     {
         if(index == pool->capacity - counter) {
             return (void*)(block + sizeof(struct bvr_pool_block_s));

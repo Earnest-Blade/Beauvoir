@@ -10,11 +10,11 @@ int main(){
     } client_t;
 
     bvr_pool_t pool;
-    bvr_create_pool(&pool, sizeof(client_t*), 5);
+    bvr_create_pool(&pool, sizeof(client_t*), 25);
     
-    client_t clients[4];
+    client_t clients[20];
     
-    for (size_t i = 0; i < 4; i++)
+    for (size_t i = 0; i < 20; i++)
     {
         clients[i].id = i;
         clients[i].age = i + 30;
@@ -28,7 +28,9 @@ int main(){
     
     client_t* c;
     BVR_POOL_FOR_EACH(c, pool){
-        BVR_PRINTF("client %x", c->id);
+        if(!c) break;
+        
+        BVR_PRINTF("client %i", c->age);
     }
 
     return 0;

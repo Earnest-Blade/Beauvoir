@@ -28,9 +28,10 @@ static void bvri_create_dynamic_actor(bvr_dynamic_model_t* actor, int flags){
 
     bvr_create_collider(&actor->collider, NULL, 0);
 
+    BVR_PRINTF("created a new collider %x %x", actor, &actor->collider);
+
     if(BVR_HAS_FLAG(flags, BVR_DYNACTOR_AGGRESSIVE)){
-        actor->collider.body.aggressive = 1;
-        BVR_PRINTF("created a new collider %x", actor->collider);
+        actor->collider.body.mode = 1;
     }
 
     if(BVR_HAS_FLAG(flags, BVR_DYNACTOR_CREATE_COLLIDER_FROM_VERTICES)){
@@ -43,18 +44,17 @@ static void bvri_create_dynamic_actor(bvr_dynamic_model_t* actor, int flags){
             BVR_ASSERT(vertices_ptr);
             BVR_ASSERT(actor->mesh.vertex_count == 16);
 
-            /*memcpy(&vertices[0], &vertices_ptr[0 * (actor->mesh.stride / sizeof(float))], sizeof(vec3)); 
-            memcpy(&vertices[1], &vertices_ptr[1 * (actor->mesh.stride / sizeof(float))], sizeof(vec3));
-            memcpy(&vertices[2], &vertices_ptr[2 * (actor->mesh.stride / sizeof(float))], sizeof(vec3));
-            memcpy(&vertices[3], &vertices_ptr[3 * (actor->mesh.stride / sizeof(float))], sizeof(vec3));*/
-
             vertices[0] = 0.0f; // top
             vertices[1] = 0.0f;  // left
-            vertices[2] = -vertices_ptr[0]; // bottom
-            vertices[3] = vertices_ptr[1];  // right
+            vertices[2] = -vertices_ptr[0]; // bottom   // height
+            vertices[3] = vertices_ptr[1];  // right    // width
 
-            /* we might just want to allocate */
-            bvr_create_collider(&actor->collider, (float*)vertices, 4);
+            actor->collider.geometry.elemsize = sizeof(float);
+            actor->collider.geometry.size = 4 * sizeof(float);
+            actor->collider.geometry.data = malloc(actor->collider.geometry.size);
+            BVR_ASSERT(actor->collider.geometry.data);
+
+            memcpy(actor->collider.geometry.data, vertices, actor->collider.geometry.size);
 
             glUnmapBuffer(GL_ARRAY_BUFFER);
             glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -80,6 +80,8 @@ void bvr_create_actor(struct bvr_actor_s* actor, const char* name, bvr_actor_typ
 
     BVR_IDENTITY_MAT4(actor->transform.matrix);
     bvr_create_string(&actor->name, name);
+
+    BVR_PRINTF("created a new actor %x", actor);
 
     switch (type)
     {

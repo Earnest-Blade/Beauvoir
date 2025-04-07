@@ -16,7 +16,8 @@ struct bvr_body_s {
     float acceleration;
     vec3 direction;
 
-    char aggressive;
+    /* is the body passive or aggressive? */
+    char mode;
 };
 
 typedef struct bvr_collider_s {
@@ -34,6 +35,7 @@ struct bvr_collision_result_s {
 };
 
 void bvr_body_add_force(struct bvr_body_s* body, float x, float y, float z);
+void bvr_body_apply_motion(struct bvr_body_s* body, struct bvr_transform_s* transform);
 
 void bvr_create_collider(bvr_collider_t* collider, float* vertices, size_t count);
 void bvr_compare_colliders(bvr_collider_t* a, bvr_collider_t* b, struct bvr_collision_result_s* result);

@@ -75,41 +75,32 @@ void bvr_new_frame(bvr_book_t* book){
 }
 
 void bvr_update(bvr_book_t* book){
-    /*bvr_collider_t* collider, *other;
-    struct bvr_collision_result_s result;
-    
-    struct bvr_pool_block_s* other_block;
-    struct bvr_pool_block_s* collider_block = (struct bvr_pool_block_s*) book->page.colliders.data;
+    bvr_collider_t* collider;
+    bvr_collider_t* other;
 
-    while (collider_block && collider_block != book->page.colliders.next)
-    {
-        collider = *(bvr_collider_t**)(collider_block + sizeof(char));
-        BVR_BREAK();
+    BVR_POOL_FOR_EACH(collider, book->page.colliders){        
+        if(!collider){
+            break;
+        }
+        
+        bvr_body_apply_motion(&collider->body, collider->transform);
+        
+        if(collider->body.mode){
+            struct bvr_collision_result_s result;
 
-        if(collider->body.aggressive){            
-            other_block = (struct bvr_pool_block_s*) book->page.colliders.data;
-            
-            while (other_block && other_block != book->page.colliders.next)
-            {
-                other = *(bvr_collider_t**)(other_block + sizeof(char));
-                
-                bvr_compare_colliders(collider, other, &result);
-
-                if(result.collide){
+            BVR_POOL_FOR_EACH(other, book->page.colliders){
+                if(!other){
                     break;
                 }
-
-                BVR_POOL_NEXT(book->page.colliders.data, book->page.colliders.elemsize, other_block);
+    
+                bvr_compare_colliders(collider, other, &result);
             }
-            
+
             if(result.collide){
-                BVR_PRINT("touching!");
+                BVR_PRINT("collider");
             }
         }
-
-        BVR_POOL_NEXT(book->page.colliders.data, book->page.colliders.elemsize, collider_block);
-    }*/
-    
+    }
 }
 
 void bvr_render(bvr_book_t* book){

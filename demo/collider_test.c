@@ -8,8 +8,8 @@
 static bvr_book_t book;
 static bvr_nuklear_t gui;
 
-static bvr_static_model_t player;
-static bvr_static_model_t other_object;
+static bvr_dynamic_model_t player;
+static bvr_dynamic_model_t other_object;
 
 void draw_nk(){
 #ifdef BVR_INCLUDE_NUKLEAR
@@ -38,11 +38,9 @@ void draw_nk(){
             }
             nk_layout_row_dynamic(gui.context, 15, 1);
             
-            for (size_t i = 0; i < 1; i++)
-            {
-                bvr_nuklear_actor_label(&gui, *(struct bvr_actor_s**)(bvr_pool_try_get(&book.page.actors, i)));
-            }
-            
+            struct bvr_actor_s** actor = (struct bvr_actor_s**)(bvr_pool_try_get(&book.page.actors, 0));
+            bvr_nuklear_actor_label(&gui, *actor);
+            bvr_nuklear_vec3_label(&gui, "direction", ((bvr_dynamic_model_t*)*actor)->collider.body.direction);            
         }
         nk_end(gui.context);
         bvr_nuklear_render(&gui);
@@ -103,17 +101,18 @@ int main(){
             break;
         }
 
-        float x, y;
-        bvr_mouse_position(&book.window, &x, &y);
-        player.object.transform.position[0] = (x - (book.window.framebuffer.width / 2)) * 2;
-        player.object.transform.position[1] = (-y + (book.window.framebuffer.height / 2)) * 2;
+        bvr_body_add_force(&player.collider.body, 
+            book.window.inputs.rel_motion[0] * book.delta_time, 
+            book.window.inputs.rel_motion[1] * book.delta_time, 
+            0
+        );
 
         bvr_update(&book);
 
-        bvr_draw_static_model(&player, BVR_DRAWMODE_TRIANGLES);
-        bvr_draw_static_model(&other_object, BVR_DRAWMODE_TRIANGLES);
+        bvr_draw_static_model((bvr_static_model_t*)&player, BVR_DRAWMODE_TRIANGLES);
+        bvr_draw_static_model((bvr_static_model_t*)&other_object, BVR_DRAWMODE_TRIANGLES);
 
-        //draw_nk();
+        draw_nk();
 
         /* push Beauvoir's graphics to the window */
         bvr_render(&book);
