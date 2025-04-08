@@ -30,8 +30,13 @@ static void bvri_create_dynamic_actor(bvr_dynamic_model_t* actor, int flags){
 
     BVR_PRINTF("created a new collider %x %x", actor, &actor->collider);
 
+    actor->collider.body.mode = BVR_COLLISION_DISABLE;
+    if(BVR_HAS_FLAG(flags, BVR_COLLISION_ENABLE)){
+        actor->collider.body.mode |= BVR_COLLISION_ENABLE;
+    }
+
     if(BVR_HAS_FLAG(flags, BVR_DYNACTOR_AGGRESSIVE)){
-        actor->collider.body.mode = 1;
+        actor->collider.body.mode |= 0x04; // aggressive
     }
 
     if(BVR_HAS_FLAG(flags, BVR_DYNACTOR_CREATE_COLLIDER_FROM_VERTICES)){
@@ -44,10 +49,10 @@ static void bvri_create_dynamic_actor(bvr_dynamic_model_t* actor, int flags){
             BVR_ASSERT(vertices_ptr);
             BVR_ASSERT(actor->mesh.vertex_count == 16);
 
-            vertices[0] = 0.0f; // top
-            vertices[1] = 0.0f;  // left
-            vertices[2] = -vertices_ptr[0]; // bottom   // height
-            vertices[3] = vertices_ptr[1];  // right    // width
+            vertices[0] = vertices_ptr[0]; // top
+            vertices[1] = -vertices_ptr[1];  // left
+            vertices[2] = -vertices_ptr[0] * 2; // bottom   // height
+            vertices[3] = vertices_ptr[1] * 2;  // right    // width
 
             actor->collider.geometry.elemsize = sizeof(float);
             actor->collider.geometry.size = 4 * sizeof(float);

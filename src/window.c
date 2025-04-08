@@ -65,6 +65,7 @@ void bvr_window_poll_events(bvr_window_t* window){
 
     memset(window->inputs.keys, 0, BVR_KEYBOARD_SIZE * sizeof(char));
     memset(window->inputs.buttons, 0, BVR_MOUSE_SIZE * sizeof(char));
+    memset(window->inputs.relative_motion, 0, sizeof(window->inputs.relative_motion));
 
     SDL_StartTextInput(window->handle);
 
@@ -122,13 +123,13 @@ void bvr_window_poll_events(bvr_window_t* window){
             {
                 window->inputs.prev_motion[0] = window->inputs.motion[0];
                 window->inputs.prev_motion[1] = window->inputs.motion[1];
-                window->inputs.rel_motion[0] = event.motion.xrel;
-                window->inputs.rel_motion[1] = event.motion.yrel;
+                window->inputs.relative_motion[0] = event.motion.xrel;
+                window->inputs.relative_motion[1] = event.motion.yrel;
                 window->inputs.motion[0] = event.motion.x;
                 window->inputs.motion[1] = event.motion.y;
                 
-                window->inputs.mouse[0] += window->inputs.rel_motion[0];
-                window->inputs.mouse[1] += window->inputs.rel_motion[1];
+                window->inputs.mouse[0] += window->inputs.relative_motion[0];
+                window->inputs.mouse[1] += window->inputs.relative_motion[1];
             }
             break;
         case SDL_EVENT_MOUSE_WHEEL:
@@ -188,6 +189,11 @@ int bvr_button_down(bvr_window_t* window, uint16_t button){
 
 void bvr_mouse_position(bvr_window_t* window, float* x, float* y){
     SDL_GetMouseState(x, y);
+}
+
+void bvr_mouse_relative_position(bvr_window_t* window, float* x, float *y){
+    *x = window->inputs.relative_motion[0];
+    *y = window->inputs.relative_motion[1];
 }
 
 uint64_t bvr_frames(){

@@ -41,6 +41,7 @@ void draw_nk(){
             struct bvr_actor_s** actor = (struct bvr_actor_s**)(bvr_pool_try_get(&book.page.actors, 0));
             bvr_nuklear_actor_label(&gui, *actor);
             bvr_nuklear_vec3_label(&gui, "direction", ((bvr_dynamic_model_t*)*actor)->collider.body.direction);            
+            nk_label(gui.context, BVR_FORMAT("acceleration %f", ((bvr_dynamic_model_t*)*actor)->collider.body.acceleration), NK_TEXT_ALIGN_LEFT);
         }
         nk_end(gui.context);
         bvr_nuklear_render(&gui);
@@ -82,13 +83,15 @@ int main(){
     }
 
     bvr_create_actor(&player.object, "player", BVR_DYNAMIC_ACTOR, 
-        BVR_DYNACTOR_AGGRESSIVE | BVR_DYNACTOR_CREATE_COLLIDER_FROM_VERTICES);
+        BVR_COLLISION_ENABLE | BVR_DYNACTOR_AGGRESSIVE | BVR_DYNACTOR_CREATE_COLLIDER_FROM_VERTICES);
 
     bvr_create_actor(&other_object.object, "other_object", BVR_DYNAMIC_ACTOR, 
-        BVR_DYNACTOR_PASSIVE | BVR_DYNACTOR_CREATE_COLLIDER_FROM_VERTICES);
+        BVR_COLLISION_ENABLE | BVR_DYNACTOR_PASSIVE | BVR_DYNACTOR_CREATE_COLLIDER_FROM_VERTICES);
 
     bvr_link_actor_to_page(&book.page, &player.object);
     bvr_link_actor_to_page(&book.page, &other_object.object);
+
+    vec2 axis = {0, 0};
 
     /* main loop */
     while (1)
@@ -101,18 +104,36 @@ int main(){
             break;
         }
 
+        if(bvr_key_down(&book.window, BVR_KEY_R)){
+            bvr_mouse_position(&book.window,
+                &player.object.transform.position[0],
+                &player.object.transform.position[1]
+            );
+        
+            player.object.transform.position[0] = (player.object.transform.position[0] - (book.window.framebuffer.width / 2)) * 2;
+            player.object.transform.position[1] = (-player.object.transform.position[1] + (book.window.framebuffer.height / 2)) * 2;
+        }
+
+        axis[0] = bvr_key_down(&book.window, BVR_KEY_RIGHT);
+        axis[0] += -bvr_key_down(&book.window, BVR_KEY_LEFT);
+        
+        axis[1] = bvr_key_down(&book.window, BVR_KEY_UP);
+        axis[1] += -bvr_key_down(&book.window, BVR_KEY_DOWN);
+
+        //bvr_screen_to_world_coords(&book, relative_motion);
+
         bvr_body_add_force(&player.collider.body, 
-            book.window.inputs.rel_motion[0] * book.delta_time, 
-            book.window.inputs.rel_motion[1] * book.delta_time, 
+            (axis[0]) * 2, 
+            (axis[1]) * 2, 
             0
         );
-
-        bvr_update(&book);
 
         bvr_draw_static_model((bvr_static_model_t*)&player, BVR_DRAWMODE_TRIANGLES);
         bvr_draw_static_model((bvr_static_model_t*)&other_object, BVR_DRAWMODE_TRIANGLES);
 
         draw_nk();
+
+        bvr_update(&book);
 
         /* push Beauvoir's graphics to the window */
         bvr_render(&book);

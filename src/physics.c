@@ -13,20 +13,27 @@ void bvr_body_add_force(struct bvr_body_s* body, float x, float y, float z){
     body->direction[2] = z;
     body->acceleration = vec3_len(body->direction);
 
-    vec3_norm(body->direction, body->direction);
+    if(body->acceleration){
+        vec3_norm(body->direction, body->direction);
+    }
+    else {
+        BVR_IDENTITY_VEC3(body->direction);
+    }
 }
 
 void bvr_body_apply_motion(struct bvr_body_s* body, struct bvr_transform_s* transform){
     BVR_ASSERT(body);
     BVR_ASSERT(transform);
 
-    vec3 translate;
-    BVR_IDENTITY_VEC3(translate);
-
-    vec3_add(translate, translate, body->direction);
-    vec3_scale(translate, translate, body->acceleration);
-
-    //vec3_add(transform->position, transform->position, translate);
+    if(body->acceleration){
+        vec3 translate;
+        BVR_IDENTITY_VEC3(translate);
+    
+        vec3_add(translate, translate, body->direction);
+        vec3_scale(translate, translate, body->acceleration);
+        vec3_add(transform->position, transform->position, translate);
+    
+    }
 
     body->acceleration = 0.0f;
     BVR_IDENTITY_VEC3(body->direction);
@@ -57,6 +64,7 @@ void bvr_compare_colliders(bvr_collider_t* a, bvr_collider_t* b, struct bvr_coll
 
     result->collide = 0;
     result->distance = 0.0f;
+    result->other = NULL;
     BVR_IDENTITY_VEC3(result->direction);
 
     if(a == b){
@@ -65,11 +73,13 @@ void bvr_compare_colliders(bvr_collider_t* a, bvr_collider_t* b, struct bvr_coll
     }
 
     float geometry_a[4], geometry_b[4];
-    memcpy(&geometry_a[0], a->transform->position, sizeof(float) * 2);
-    memcpy(&geometry_b[0], b->transform->position, sizeof(float) * 2);
+    memcpy(&geometry_a[0], &((float*)a->geometry.data)[0], sizeof(float) * 2);
+    memcpy(&geometry_b[0], &((float*)b->geometry.data)[0], sizeof(float) * 2);
     memcpy(&geometry_a[2], &((float*)a->geometry.data)[2], sizeof(float) * 2);
     memcpy(&geometry_b[2], &((float*)b->geometry.data)[2], sizeof(float) * 2);
-
+    
+    vec3_add(geometry_a, geometry_a, a->transform->position);
+    vec3_add(geometry_b, geometry_b, b->transform->position);
     vec3_add(geometry_a, geometry_a, a->body.direction);
     vec3_add(geometry_b, geometry_b, b->body.direction);
 
@@ -79,6 +89,7 @@ void bvr_compare_colliders(bvr_collider_t* a, bvr_collider_t* b, struct bvr_coll
         geometry_a[1] + geometry_a[2] > geometry_b[1]){
 
         result->collide = 1;
+        result->other = b;
     }
 }
 

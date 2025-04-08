@@ -7,6 +7,9 @@
     #define BVR_COLLIDER_COLLECTION_SIZE 128
 #endif
 
+#define BVR_COLLISION_DISABLE 0x0
+#define BVR_COLLISION_ENABLE 0x1
+
 /*
     Contains an array of collider pointers.
 */
@@ -32,6 +35,8 @@ struct bvr_collision_result_s {
 
     float distance;
     vec3 direction;
+
+    bvr_collider_t* other;
 };
 
 void bvr_body_add_force(struct bvr_body_s* body, float x, float y, float z);

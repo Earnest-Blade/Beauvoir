@@ -102,6 +102,8 @@ int bvr_create_page(bvr_page_t* page);
 
 bvr_camera_t* bvr_add_orthographic_camera(bvr_page_t* page, bvr_framebuffer_t* framebuffer, float near, float far, float scale);
 
+void bvr_screen_to_world_coords(bvr_book_t* book, vec3 coords);
+
 /*
     Register a new actor inside page's pool. 
     Return NULL if cannot register actor.

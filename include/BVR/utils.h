@@ -51,6 +51,8 @@ void bvri_break(const char* __file, unsigned long long __line);
 #define BVR_PRINT(message)(void)(bvri_wmessage(stdout, __LINE__, __FILE__, message))
 #define BVR_PRINTF(message, ...)(void)(bvri_wmessage(stdout, __LINE__, __FILE__, message, __VA_ARGS__))
 
+#define BVR_PRINT_VEC3(message, vec3)(void)(bvri_wmessage(stdout, __LINE__, __FILE__, "%s (%f %f %f)", message, vec3[0], vec3[1], vec3[2]))
+
 #ifndef BVR_ASSERT_FORCE_EXIT
 #define BVR_ASSERT(expression) (void) (                                         \
     (((expression) == 0) ? bvri_wassert_break(#expression, __FILE__, __LINE__) : 0)  \

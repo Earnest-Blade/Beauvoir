@@ -55,8 +55,8 @@ void bvr_new_frame(bvr_book_t* book){
         float height = 1.0f / camera->framebuffer->height * camera->field_of_view.scale;
         float farnear = 1.0f / (camera->far - camera->near);
 
-        projection[0][0] = 1.0f * width;
-        projection[1][1] = 1.0f * height;
+        projection[0][0] = width;
+        projection[1][1] = height;
         projection[2][2] = farnear;
         projection[3][0] = -width;
         projection[3][1] = -height;
@@ -83,9 +83,14 @@ void bvr_update(bvr_book_t* book){
             break;
         }
         
-        bvr_body_apply_motion(&collider->body, collider->transform);
-        
-        if(collider->body.mode){
+        // collision are disabled
+        if(collider->body.mode == 0){
+            bvr_body_apply_motion(&collider->body, collider->transform);
+            continue;
+        }
+
+        if(BVR_HAS_FLAG(collider->body.mode, 0x4)){
+
             struct bvr_collision_result_s result;
 
             BVR_POOL_FOR_EACH(other, book->page.colliders){
@@ -96,8 +101,9 @@ void bvr_update(bvr_book_t* book){
                 bvr_compare_colliders(collider, other, &result);
             }
 
-            if(result.collide){
-                BVR_PRINT("collider");
+            if(!result.collide){
+                bvr_body_apply_motion(&collider->body, collider->transform);
+
             }
         }
     }
@@ -153,6 +159,49 @@ bvr_camera_t* bvr_add_orthographic_camera(bvr_page_t* page, bvr_framebuffer_t* f
     bvr_create_uniform_buffer(&page->camera.buffer, 2 * sizeof(mat4x4));
 
     return &page->camera;
+}
+
+void bvr_screen_to_world_coords(bvr_book_t* book, vec3 coords){
+    BVR_ASSERT(book);
+
+    if(!coords){
+        return;
+    }
+
+    if(book->page.camera.mode == BVR_CAMERA_ORTHOGRAPHIC){
+        vec4 viewport, result;        
+        mat4x4 projection, inv;
+        BVR_IDENTITY_MAT4(projection);
+        BVR_IDENTITY_MAT4(inv);
+
+        float width =    1.0f / book->page.camera.framebuffer->width * book->page.camera.field_of_view.scale;
+        float height =  -1.0f / book->page.camera.framebuffer->height * book->page.camera.field_of_view.scale;
+        float farnear = -1.0f / (book->page.camera.far - book->page.camera.near);
+
+        projection[0][0] = 1.0f * width;
+        projection[1][1] = 1.0f * height;
+        projection[2][2] = farnear;
+        projection[3][0] = width;
+        projection[3][1] = height;
+        projection[3][2] = book->page.camera.near * farnear;
+        projection[3][3] =  1.0f;
+
+        mat4x4_invert(inv, projection);
+        viewport[0] = coords[0] * width; 
+        viewport[1] = coords[1] * height;
+        viewport[2] = coords[2] * farnear;
+        viewport[3] = 0.0f;
+
+        vec4_sub(result, result, viewport);
+        vec4_scale(viewport, result, 2);
+
+        mat4x4_mul_vec4(result, inv, viewport);
+        coords[0] = result[0];
+        coords[1] = result[1];
+        coords[2] = result[2];
+
+        BVR_PRINT_VEC3("", viewport);
+    }
 }
 
 struct bvr_actor_s* bvr_link_actor_to_page(bvr_page_t* page, struct bvr_actor_s* actor){

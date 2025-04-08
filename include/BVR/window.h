@@ -153,7 +153,7 @@ typedef struct bvr_window_s {
 
         float mouse[2]; // mouse position
         float motion[2]; // mouse motion
-        float rel_motion[2]; // relative mouse motion
+        float relative_motion[2]; // relative mouse motion
         float prev_motion[2]; // previous mouse motion
 
         int grab;
@@ -172,7 +172,9 @@ void bvr_destroy_window(bvr_window_t* window);
 
 int bvr_key_down(bvr_window_t* window, uint16_t key);
 int bvr_button_down(bvr_window_t* window, uint16_t button);
+
 void bvr_mouse_position(bvr_window_t* window, float* x, float* y);
+void bvr_mouse_relative_position(bvr_window_t* window, float* x, float *y);
 
 /*
     Returns the number of milliseconds since SDL has started.

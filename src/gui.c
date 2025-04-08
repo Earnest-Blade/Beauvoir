@@ -104,7 +104,7 @@ void bvr_nuklear_handle(bvr_nuklear_t* nuklear){
         if (((struct nk_context*)nuklear->context)->input.mouse.grabbed) {
             int x = (int)((struct nk_context*)nuklear->context)->input.mouse.prev.x;
             int y = (int)((struct nk_context*)nuklear->context)->input.mouse.prev.y;
-            nk_input_motion(nuklear->context, x + nuklear->window->inputs.rel_motion[0], y + nuklear->window->inputs.rel_motion[1]);
+            nk_input_motion(nuklear->context, x + nuklear->window->inputs.relative_motion[0], y + nuklear->window->inputs.relative_motion[1]);
         }
         else {
             nk_input_motion(nuklear->context, nuklear->window->inputs.motion[0], nuklear->window->inputs.motion[1]);
