@@ -8,8 +8,10 @@
 static bvr_book_t book;
 static bvr_nuklear_t gui;
 
-static bvr_dynamic_model_t player;
-static bvr_dynamic_model_t other_object;
+static struct {
+    bvr_static_model_t model;
+    bvr_texture_t texture;
+} bitmap;
 
 void draw_nk(){
 #ifdef BVR_INCLUDE_NUKLEAR
@@ -37,12 +39,8 @@ void draw_nk(){
                 nk_slider_float(gui.context, 1.0f, &book.page.camera.field_of_view.scale, 10.0f, 0.1f);
             }
             nk_layout_row_dynamic(gui.context, 15, 1);
-            
-            struct bvr_actor_s** actor = (struct bvr_actor_s**)(bvr_pool_try_get(&book.page.actors, 0));
-            bvr_nuklear_actor_label(&gui, *actor);
-            bvr_nuklear_vec3_label(&gui, "direction", ((bvr_dynamic_model_t*)*actor)->collider.body.direction);            
-            nk_label(gui.context, BVR_FORMAT("acceleration %f", ((bvr_dynamic_model_t*)*actor)->collider.body.acceleration), NK_TEXT_ALIGN_LEFT);
         }
+
         nk_end(gui.context);
         bvr_nuklear_render(&gui);
     }
@@ -63,35 +61,21 @@ int main(){
     bvr_create_audio_stream(&book.audio, BVR_DEFAULT_SAMPLE_RATE, BVR_DEFAULT_AUDIO_BUFFER_SIZE);
 
     bvr_add_orthographic_camera(&book.page, &book.window.framebuffer, 0.1f, 100.0f, 1.0f);
+    
+    /* Create image's plane mesh */
+    bvr_create_2d_square_mesh(&bitmap.model.mesh, 0.8f, 0.8f);
 
-    // create player objects
-    bvr_create_2d_square_mesh(&player.mesh, 10.0f, 10.0f);
-    bvr_create_shader(&player.shader, "res/monochrome.glsl", BVR_VERTEX_SHADER | BVR_FRAGMENT_SHADER);
-    bvr_shader_register_uniform(&player.shader, BVR_VEC3, 1, "bvr_color");
+    /* Create the shader */
+    bvr_create_shader(&bitmap.model.shader, "res/framebuffer.glsl", BVR_VERTEX_SHADER | BVR_FRAGMENT_SHADER);
 
-    bvr_create_2d_square_mesh(&other_object.mesh, 50.0f, 50.0f);
-    bvr_create_shader(&other_object.shader, "res/monochrome.glsl", BVR_VERTEX_SHADER | BVR_FRAGMENT_SHADER);
-    bvr_shader_register_uniform(&other_object.shader, BVR_VEC3, 1, "bvr_color");
+    /* create texture uniforms */
+    bvr_shader_register_texture(
+        &bitmap.model.shader, BVR_TEXTURE_2D, NULL, NULL, 
+        "bvr_texture", NULL
+    );
 
-    {
-        vec3 color = {1.0f, 0.0f, 1.0f};
-        bvr_shader_set_uniform(&player.shader, "bvr_color", &color);
-
-        color[0] = 0.0f;
-        color[1] = 1.0f;
-        bvr_shader_set_uniform(&other_object.shader, "bvr_color", &color);
-    }
-
-    bvr_create_actor(&player.object, "player", BVR_DYNAMIC_ACTOR, 
-        BVR_COLLISION_ENABLE | BVR_DYNACTOR_AGGRESSIVE | BVR_DYNACTOR_CREATE_COLLIDER_FROM_VERTICES);
-
-    bvr_create_actor(&other_object.object, "other_object", BVR_DYNAMIC_ACTOR, 
-        BVR_COLLISION_ENABLE | BVR_DYNACTOR_PASSIVE | BVR_DYNACTOR_CREATE_COLLIDER_FROM_VERTICES);
-
-    bvr_link_actor_to_page(&book.page, &player.object);
-    bvr_link_actor_to_page(&book.page, &other_object.object);
-
-    vec2 axis = {0, 0};
+    bvr_create_texture(&bitmap.texture, "res/collision_bitmap.bmp", BVR_TEXTURE_FILTER_LINEAR, BVR_TEXTURE_WRAP_REPEAT);
+    bvr_shader_set_texture(&bitmap.model.shader, "bvr_texture", &bitmap.texture.id, NULL);
 
     /* main loop */
     while (1)
@@ -104,45 +88,16 @@ int main(){
             break;
         }
 
-        if(bvr_key_down(&book.window, BVR_KEY_R)){
-            bvr_mouse_position(&book.window,
-                &player.object.transform.position[0],
-                &player.object.transform.position[1]
-            );
-        
-            player.object.transform.position[0] = (player.object.transform.position[0] - (book.window.framebuffer.width / 2)) * 2;
-            player.object.transform.position[1] = (-player.object.transform.position[1] + (book.window.framebuffer.height / 2)) * 2;
-        }
-
-        axis[0] = bvr_key_down(&book.window, BVR_KEY_RIGHT);
-        axis[0] += -bvr_key_down(&book.window, BVR_KEY_LEFT);
-        
-        axis[1] = bvr_key_down(&book.window, BVR_KEY_UP);
-        axis[1] += -bvr_key_down(&book.window, BVR_KEY_DOWN);
-
-        //bvr_screen_to_world_coords(&book, relative_motion);
-
-        bvr_body_add_force(&player.collider.body, 
-            (axis[0]) * 2, 
-            (axis[1]) * 2, 
-            0
-        );
-
-        bvr_draw_static_model((bvr_static_model_t*)&player, BVR_DRAWMODE_TRIANGLES);
-        bvr_draw_static_model((bvr_static_model_t*)&other_object, BVR_DRAWMODE_TRIANGLES);
+        bvr_texture_enable(&bitmap.texture, BVR_TEXTURE_UNIT0);
+        bvr_draw_static_model(&bitmap.model, BVR_DRAWMODE_TRIANGLES);
 
         draw_nk();
-
-        bvr_update(&book);
 
         /* push Beauvoir's graphics to the window */
         bvr_render(&book);
     }
     
     /* free */
-    bvr_destroy_shader(&player.shader);
-    bvr_destroy_mesh(&player.mesh);
-    bvr_destroy_actor(&player.object);
     bvr_destroy_book(&book);
 
     return 0;

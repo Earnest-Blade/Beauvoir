@@ -133,10 +133,14 @@ struct bvri_bmpheader_s {
     uint32_t horizontal_resolution;
     uint32_t vertical_resolution;
     uint32_t color_palette;
+    uint32_t important_color;
 
     uint8_t* palette;
 };
 
+/*
+    Check for signature
+*/
 static int bvri_is_bmp(FILE* file){
     int size;
 
@@ -150,6 +154,9 @@ static int bvri_is_bmp(FILE* file){
         || size == 108 || size == 124);
 }
 
+/*
+    Return the bigger number
+*/
 static uint32_t bvri_bmpmax(uint32_t max, uint32_t i){
     return i > max ? max : i;
 }
@@ -167,6 +174,7 @@ static int bvri_load_bmp(bvr_image_t* image, FILE* file){
     header.res[1] = bvr_freadu16(file);
     header.offset = bvr_freadu32(file);
 
+    // DIB header
     header.header_size = bvr_freadu32(file);
     header.width = bvr_freadu32(file);
     header.height = bvr_freadu32(file);
@@ -177,6 +185,7 @@ static int bvri_load_bmp(bvr_image_t* image, FILE* file){
     header.horizontal_resolution = bvr_freadu32(file);
     header.vertical_resolution = bvr_freadu32(file);
     header.color_palette = bvr_freadu32(file);
+    header.important_color = bvr_fread32(file);
     header.palette = NULL;
 
     // check for correct color plane
@@ -202,15 +211,19 @@ static int bvri_load_bmp(bvr_image_t* image, FILE* file){
             header.palette[color * 3 + 1] = bvr_freadu8(file);
             header.palette[color * 3 + 2] = bvr_freadu8(file);
             bvr_freadu8(file);
+
+            BVR_PRINTF("palette color %i %i %i", header.palette[color * 3], header.palette[color * 3 + 1], header.palette[color * 3 + 2]);
         }   
     }
 
+    // seek to pixel array
     fseek(file, header.offset, SEEK_SET);
 
     image->width = header.width;
     image->height = abs(header.height);
     image->depth = 8;
     
+    // define correct channel and format based on bpp
     if(header.bit_per_pixel < 8){
         image->channels = 3;
         image->format = BVR_BGR;
@@ -227,41 +240,63 @@ static int bvri_load_bmp(bvr_image_t* image, FILE* file){
     image->pixels = malloc(image->width * image->height * image->channels);
     BVR_ASSERT(image->pixels);
 
-    if(header.compression_method == 0){ // RAW compression
-        uint32_t readed_bytes = 0;
-        uint32_t stride_length = ((image->width * header.bit_per_pixel) / 32 * 4 + 3) & ~3;
+    // RAW compression
+    if(header.compression_method == 0){
+        uint32_t packed_bytes = 0;
+        uint32_t unpacked_bytes = 0;
+        uint32_t stride_length = ((int)ceilf(image->width * header.bit_per_pixel) / 32 * 4 + 3) & ~3;
 
+        // load image from palette
         if(header.bit_per_pixel < 8){
-            // palette loading
+            // because repetitive image might have a shorter stride length
+            // we need to duplicate pixels to copy the correct number of pixels to get the full width.
+            uint32_t stride_rle = image->width / stride_length;
+            uint8_t buffer[4];
+
             for (size_t row = 0; row < image->height; row++)
             {
-                readed_bytes = 0;
-                while (readed_bytes < stride_length)
+                packed_bytes = 0;
+                unpacked_bytes = 0;
+
+                while (packed_bytes < stride_length)
                 {
+                    // copy packed data into 
                     memcpy(
-                        image->pixels + (row * image->width + readed_bytes) * image->channels,
+                        buffer,
                         header.palette + bvri_bmpmax(header.color_palette - 1, bvr_freadu8(file)) * image->channels,
-                        sizeof(uint8_t) * image->channels
-                    );             
+                        image->channels * sizeof(uint8_t)
+                    );         
                            
-                    readed_bytes++;
+                    while (packed_bytes * stride_rle - unpacked_bytes)
+                    {
+                        // copy the buffer 'stride_rle' times
+                        memcpy(
+                            image->pixels + (row * image->width + unpacked_bytes) * image->channels,
+                            buffer, image->channels * sizeof(uint8_t)
+                        );
+
+                        unpacked_bytes++;
+                    }
+                    
+                    packed_bytes++;
                 }
             }            
         }
+        // load image with raw data
         else {
-            // raw loading
+            // we just copy all data row per row
             for (size_t row = 0; row < image->height; row++)
             {
-                readed_bytes = fread(image->pixels + row * image->width * image->channels, sizeof(uint8_t), stride_length, file);
-                BVR_ASSERT(readed_bytes == stride_length);
+                packed_bytes = fread(image->pixels + row * image->width * image->channels, sizeof(uint8_t), stride_length, file);
+                BVR_ASSERT(packed_bytes == stride_length);
             }
-            
         }
     }
     else {
         BVR_ASSERT(0 || "compression not supported");
     }
 
+    // try to free color palette
     free(header.palette);
 
     return BVR_OK;
@@ -669,6 +704,9 @@ static int bvri_is_psd(FILE* file){
             && version == 1; 
 }
 
+/*
+    Create a new string from PSD's pascal-typed string
+*/
 static void bvri_psd_read_pascal_string(bvr_string_t* string, FILE* file){
     string->data = NULL;
     string->length = (size_t)bvr_freadu8(file) + 1;
@@ -764,7 +802,7 @@ static int bvri_load_psd(bvr_image_t* image, FILE* file){
             ressources_section.block.id = bvr_freadu16_be(file);
 
             bvri_psd_read_pascal_string(&ressources_section.block.name, file);
-            bvr_freadu8(file); // read an empty character used as padding
+            bvr_freadu8(file); // filler byte
 
             ressources_section.block.data.size = bvr_freadu32_be(file);
             ressources_section.block.data.elemsize = ressources_section.block.data.size;

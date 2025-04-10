@@ -363,7 +363,7 @@ void bvr_shader_set_texture(bvr_shader_t* shader, const char* name, int* id, int
     BVR_ASSERT(shader);
     BVR_ASSERT(name);
 
-    for (size_t i = 0; i < shader->uniform_count; i++)
+    for (size_t i = 1; i < shader->uniform_count; i++)
     {
         if (strcmp(shader->uniforms[i].name.data, name) == 0) {
             bvr_shader_set_texturei(&shader->uniforms[i], id, layer);
