@@ -7,3 +7,9 @@
 [submodule "extern/Nuklear"]
 	path = extern/Nuklear
 	url = https://github.com/Immediate-Mode-UI/Nuklear
+[submodule "extern/Zlib"]
+	path = extern/Zlib
+	url = https://github.com/madler/zlib
+[submodule "extern/Lpng"]
+	path = extern/Lpng
+	url = https://github.com/pnggroup/libpng
