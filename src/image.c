@@ -618,7 +618,7 @@ static int bvri_load_tif(bvr_image_t* image, FILE* file){
 
         switch (image->channels)
         {
-        case 1: image->format = BVR_RED; break;
+        case 1: image->format = BVR_R; break;
         case 2: image->format = BVR_RG; break;
         case 3: image->format = BVR_RGB; break;
         case 4: image->format = BVR_RGBA; break;
@@ -940,8 +940,8 @@ static int bvri_load_psd(bvr_image_t* image, FILE* file){
 
     switch (image->channels)
     {
-    case 0: image->format = BVR_RED; break; // monochrome
-    case 1: image->format = BVR_RED; break; // gray-scale
+    case 0: image->format = BVR_R; break; // monochrome
+    case 1: image->format = BVR_R; break; // gray-scale
     case 2: image->format = BVR_RG; break;
     case 3: image->format = BVR_RGB; break; // rgb
     case 4: image->format = BVR_RGBA; break;
@@ -1162,56 +1162,6 @@ static int bvri_load_psd(bvr_image_t* image, FILE* file){
 
 #endif
 
-int bvr_create_image(bvr_image_t* image, FILE* file){
-    BVR_ASSERT(image);
-    BVR_ASSERT(file);
-
-    image->width = 0;
-    image->height = 0;
-    image->depth = 0;
-    image->format = 0;
-    image->channels = 0;
-    image->pixels = NULL;
-    image->layers.data = NULL;
-    image->layers.size = 0;
-    image->layers.elemsize = sizeof(bvr_layer_t);
-
-    int status = 0;
-    
-    //I should change image format order so that it will reduce signature errors.
-#ifndef BVR_NO_PNG
-    if(bvri_is_png(file)){ 
-        status = bvri_load_png(image, file);
-    }
-#endif
-
-#ifndef BVR_NO_BMP
-    if(bvri_is_bmp(file) && !status){
-        status = bvri_load_bmp(image, file);
-    }
-#endif
-
-#ifndef BVR_NO_TIF
-    if(bvri_is_tif(file) && !status){
-        status = bvri_load_tif(image, file);
-    }
-#endif
-
-#ifndef BVR_NO_PSD
-    if(bvri_is_psd(file) && !status){
-        status = bvri_load_psd(image, file);
-    }
-#endif
-
-#ifndef BVR_NO_FLIP
-    if(image->pixels && status){
-        bvr_flip_image_vertically(image);
-    }
-#endif
-
-    return status;
-}
-
 /*
     Create a default layer on an image.
     This layer will have the same size as the image.
@@ -1264,6 +1214,92 @@ static void bvri_flip_image_vertically_raw(uint8_t* pixels, int stride, int widt
     }
 }
 
+int bvr_create_imagef(bvr_image_t* image, FILE* file){
+    BVR_ASSERT(image);
+    BVR_ASSERT(file);
+
+    int status = 0;
+
+    image->width = 0;
+    image->height = 0;
+    image->depth = 0;
+    image->format = 0;
+    image->channels = 0;
+    image->pixels = NULL;
+    image->layers.data = NULL;
+    image->layers.size = 0;
+    image->layers.elemsize = sizeof(bvr_layer_t);
+
+    // I should change image format order so that it will reduce signature errors.
+#ifndef BVR_NO_PNG
+    if(bvri_is_png(file)){ 
+        status = bvri_load_png(image, file);
+    }
+#endif
+
+#ifndef BVR_NO_BMP
+    if(bvri_is_bmp(file) && !status){
+        status = bvri_load_bmp(image, file);
+    }
+#endif
+
+#ifndef BVR_NO_TIF
+    if(bvri_is_tif(file) && !status){
+        status = bvri_load_tif(image, file);
+    }
+#endif
+
+#ifndef BVR_NO_PSD
+    if(bvri_is_psd(file) && !status){
+        status = bvri_load_psd(image, file);
+    }
+#endif
+
+#ifndef BVR_NO_FLIP
+    if(image->pixels && status){
+        bvr_flip_image_vertically(image);
+    }
+#endif
+
+    return status;
+}
+
+int bvr_create_bitmap(bvr_image_t* bitmap, const char* path, int channel){
+    BVR_ASSERT(bitmap);
+    BVR_ASSERT(path);
+
+    bvr_image_t image;
+    FILE* file = fopen(path, "rb");
+    bvr_create_imagef(&image, file);
+    if(!image.pixels){
+        fclose(file);
+
+        BVR_PRINT("failed to open image!");
+        return BVR_FAILED;
+    }
+
+    bitmap->width = image.width;
+    bitmap->height = image.height;
+    bitmap->depth = image.depth;
+    bitmap->format = BVR_R;
+    bitmap->channels = 1;
+    bitmap->layers.data = NULL;
+    bitmap->layers.size = 0;
+    bitmap->layers.elemsize = sizeof(bvr_layer_t);
+
+    bitmap->pixels = malloc(bitmap->width * bitmap->height);
+    BVR_ASSERT(bitmap->pixels);
+
+    memset(bitmap->pixels, 0, bitmap->width * bitmap->height);
+
+    bvr_image_get_channel_pixels(&image, channel, bitmap->pixels);
+
+    fclose(file);
+    bvr_destroy_image(&image);
+    
+    return BVR_OK;
+}
+
 void bvr_flip_image_vertically(bvr_image_t* image){
     BVR_ASSERT(image);
 
@@ -1273,6 +1309,28 @@ void bvr_flip_image_vertically(bvr_image_t* image){
             image->width * image->channels, image->width, image->height, image->channels
         );
     }
+}
+
+int bvr_image_get_channel_pixels(bvr_image_t* image, int channel, uint8_t* buffer){
+    BVR_ASSERT(image);
+    BVR_ASSERT(image->pixels);
+    BVR_ASSERT(buffer);
+
+    /*
+        RED=0x0
+        GREEN=0x1
+        BLUE=0x2
+        ALPHA=0x3
+    */
+    for (size_t y = 0; y < image->height; y++)
+    {
+        for (size_t x = 0; x < image->width; x++)
+        {
+            buffer[y * image->width + x] = image->pixels[(y * image->width + x) * image->channels + channel];
+        }
+        
+    }
+    
 }
 
 void bvr_destroy_image(bvr_image_t* image){
@@ -1294,7 +1352,7 @@ static int bvri_sizeof_format(int format, int depth){
     if(depth == 16){
         switch (format)
         {
-        case BVR_RED: return BVR_RED16;
+        case BVR_R: return BVR_RED16;
         case BVR_RG: return BVR_RG16;
         case BVR_RGB: case BVR_BGR: return BVR_RGB16;
         case BVR_RGBA: case BVR_BGRA: return BVR_RGBA16;
@@ -1305,7 +1363,7 @@ static int bvri_sizeof_format(int format, int depth){
 
     switch (format)
     {
-    case BVR_RED: return BVR_RED8;
+    case BVR_R: return BVR_RED8;
     case BVR_RG: return BVR_RG8;
     case BVR_RGB: case BVR_BGR: return BVR_RGB8;
     case BVR_RGBA: case BVR_BGRA: return BVR_RGBA8;
@@ -1314,23 +1372,15 @@ static int bvri_sizeof_format(int format, int depth){
     }
 }
 
-int bvr_create_texturef(bvr_texture_t* texture, FILE* file, int filter, int wrap){
+int bvr_create_texture_from_image(bvr_texture_t* texture, bvr_image_t* image, int filter, int wrap){
     BVR_ASSERT(texture);
-    BVR_ASSERT(file);
-
-    memset(texture, 0, sizeof(bvr_texture_t));
+    BVR_ASSERT(image);
 
     texture->filter = filter;
     texture->wrap = wrap;
     texture->id = 0;
 
-    bvr_create_image(&texture->image, file);
-    if(!texture->image.pixels){
-        BVR_PRINT("invalid image!");
-        return BVR_FAILED;
-    }
-
-    if(BVR_BUFFER_COUNT(texture->image.layers) > 1){
+    if(BVR_BUFFER_COUNT(image->layers) > 1){
         // TODO: compress images into one layer
     }
 
@@ -1338,8 +1388,8 @@ int bvr_create_texturef(bvr_texture_t* texture, FILE* file, int filter, int wrap
     glBindTexture(GL_TEXTURE_2D, texture->id);
 
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-    glPixelStorei(GL_UNPACK_ROW_LENGTH, texture->image.width);
-    glPixelStorei(GL_UNPACK_IMAGE_HEIGHT, texture->image.height);
+    glPixelStorei(GL_UNPACK_ROW_LENGTH, image->width);
+    glPixelStorei(GL_UNPACK_IMAGE_HEIGHT, image->height);
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 1);
@@ -1348,18 +1398,32 @@ int bvr_create_texturef(bvr_texture_t* texture, FILE* file, int filter, int wrap
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, (int)texture->filter);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, (int)texture->filter);
 
-    int format = texture->image.format;
-    int internal_format = bvri_sizeof_format(texture->image.format, texture->image.depth);
-    glTexStorage2D(GL_TEXTURE_2D, 1, internal_format, texture->image.width, texture->image.height);
-    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, texture->image.width, texture->image.height, format, GL_UNSIGNED_BYTE, texture->image.pixels);
+    int format = image->format;
+    int internal_format = bvri_sizeof_format(image->format, image->depth);
+
+    glTexStorage2D(GL_TEXTURE_2D, 1, internal_format, image->width, image->height);
+    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, image->width, image->height, format, GL_UNSIGNED_BYTE, image->pixels);
     glGenerateMipmap(GL_TEXTURE_2D);
 
     glBindTexture(GL_TEXTURE_2D, 0);
 
-    free(texture->image.pixels);
-    texture->image.pixels = NULL;
+    free(image->pixels);
+    image->pixels = NULL;
 
     return BVR_OK;
+}
+
+int bvr_create_texturef(bvr_texture_t* texture, FILE* file, int filter, int wrap){
+    BVR_ASSERT(texture);
+    BVR_ASSERT(file);
+
+    bvr_create_imagef(&texture->image, file);
+    if(!texture->image.pixels){
+        BVR_PRINT("invalid image!");
+        return BVR_FAILED;
+    }
+
+    return bvr_create_texture_from_image(texture, &texture->image, filter, wrap);    
 }
 
 void bvr_texture_enable(bvr_texture_t* texture, int unit){
@@ -1392,7 +1456,7 @@ int bvr_create_texture_atlasf(bvr_texture_atlas_t* atlas, FILE* file,
 
     atlas->id = 0;
     
-    bvr_create_image(&atlas->image, file);
+    bvr_create_imagef(&atlas->image, file);
     if(!atlas->image.pixels){
         BVR_PRINT("invalid image!");
         return BVR_FAILED;
@@ -1466,7 +1530,7 @@ int bvr_create_layered_texturef(bvr_layered_texture_t* texture, FILE* file, int 
 
     texture->id = 0;
 
-    bvr_create_image(&texture->image, file);
+    bvr_create_imagef(&texture->image, file);
     if(!texture->image.pixels){
         BVR_PRINT("invalid image!");
         return BVR_FAILED;

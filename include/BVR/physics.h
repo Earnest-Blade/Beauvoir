@@ -7,8 +7,9 @@
     #define BVR_COLLIDER_COLLECTION_SIZE 128
 #endif
 
-#define BVR_COLLISION_DISABLE 0x0
-#define BVR_COLLISION_ENABLE 0x1
+#define BVR_COLLISION_DISABLE   0x0
+#define BVR_COLLISION_ENABLE    0x1
+#define BVR_COLLISION_AABB      0x2
 
 /*
     Contains an array of collider pointers.
