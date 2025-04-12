@@ -72,6 +72,11 @@ void bvr_compare_colliders(bvr_collider_t* a, bvr_collider_t* b, struct bvr_coll
         return;
     }
 
+    if(!BVR_HAS_FLAG(a->body.mode, BVR_COLLISION_AABB) || !BVR_HAS_FLAG(b->body.mode, BVR_COLLISION_AABB)){
+        BVR_PRINT("collision mode not supported :(");
+        return;
+    }
+
     float geometry_a[4], geometry_b[4];
     memcpy(&geometry_a[0], &((float*)a->geometry.data)[0], sizeof(float) * 2);
     memcpy(&geometry_b[0], &((float*)b->geometry.data)[0], sizeof(float) * 2);

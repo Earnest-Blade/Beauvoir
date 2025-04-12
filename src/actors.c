@@ -27,10 +27,9 @@ static void bvri_create_dynamic_actor(bvr_dynamic_model_t* actor, int flags){
     BVR_ASSERT(actor);
 
     bvr_create_collider(&actor->collider, NULL, 0);
+    actor->collider.transform = &actor->object.transform;
 
-    BVR_PRINTF("created a new collider %x %x", actor, &actor->collider);
-
-    actor->collider.body.mode = BVR_COLLISION_DISABLE;
+    actor->collider.body.mode = BVR_COLLISION_DISABLE | BVR_COLLISION_AABB;
     if(BVR_HAS_FLAG(flags, BVR_COLLISION_ENABLE)){
         actor->collider.body.mode |= BVR_COLLISION_ENABLE;
     }
@@ -69,7 +68,111 @@ static void bvri_create_dynamic_actor(bvr_dynamic_model_t* actor, int flags){
         }
     }
 
-    actor->collider.transform = &actor->object.transform;
+}
+
+static void bvri_create_bitmap_layer(bvr_bitmap_layer_t* layer, int flags){
+    BVR_ASSERT(layer);
+
+    bvr_create_collider(&layer->collider, NULL, 0);
+    layer->collider.transform = &layer->object.transform;
+
+    layer->collider.body.mode = BVR_COLLISION_DISABLE | BVR_COLLISION_AABB;
+    if(BVR_HAS_FLAG(flags, BVR_COLLISION_ENABLE)){
+        layer->collider.body.mode |= BVR_COLLISION_ENABLE;
+    }
+
+    if(BVR_HAS_FLAG(flags, BVR_DYNACTOR_AGGRESSIVE)){
+        layer->collider.body.mode |= 0x04; // aggressive
+    }
+
+    /*
+        Here, we're trying to bind collision boxes by using a bit map
+    */
+    if(BVR_HAS_FLAG(flags, BVR_BITMAP_CREATE_COLLIDER)){
+        BVR_ASSERT(layer->bitmap.image.pixels);
+
+        struct bvr_bounds_s rects[BVR_BUFFER_SIZE / 2];
+        uint8_t* pixels = malloc(layer->bitmap.image.width * layer->bitmap.image.height);
+        memcpy(pixels, layer->bitmap.image.pixels, layer->bitmap.image.width * layer->bitmap.image.height);
+
+        int x, y;
+        int rect_width, rect_height, rc;
+        int rect_count = 0;
+
+        for (size_t i = 0; i < layer->bitmap.image.width * layer->bitmap.image.height; i++)
+        {
+            // skip null pixels
+            if(pixels[i] == 0){
+                continue;
+            }
+
+            y = i / layer->bitmap.image.width;
+            x = i % layer->bitmap.image.width;
+            rc = 1;
+            rect_width = 0;
+            rect_height = 0;
+
+            // scan horizontal line until there is a non-null pixel 
+            while (x + rect_width < layer->bitmap.image.width && 
+                pixels[y * layer->bitmap.image.width + x + rect_width] > 0)
+            {
+                rect_width++;
+            }
+            
+            // then, scan vertical line from the end of the rectangle until it reaches a non-null pixel
+            while (y + rect_height < layer->bitmap.image.height && rc)
+            {
+                // for each vertical line check if the width is still correct 
+                for (size_t dx = 0; dx < rect_width; dx++)
+                {
+                    // if not, it's the end of the rectangle
+                    if(pixels[(y + rect_height) * layer->bitmap.image.width + x + dx] == 0){
+                        rc = 0;
+                        break;
+                    }
+                }
+                
+                rect_height++;
+            }
+
+            // clear the rectangle that we found 
+            for (size_t dy = 0; dy < rect_height; dy++)
+            {
+                for (size_t dx = 0; dx < rect_width; dx++)
+                {
+                    pixels[(y + dy) * layer->bitmap.image.width + x + dx] = 0;
+                }
+                
+            }
+            
+            rects[rect_count].coords[0] = (float)x;
+            rects[rect_count].coords[1] = (float)y;
+            rects[rect_count].width = rect_width - 1;
+            rects[rect_count].height = rect_height - 2;
+
+            
+            BVR_PRINTF("x %f y %f w %i h %i", 
+                rects[rect_count].coords[0], rects[rect_count].coords[1], 
+                rects[rect_count].width, rects[rect_count].height
+            );
+
+            rect_count++;
+
+            if(rect_count >= BVR_BUFFER_SIZE / 2){
+                BVR_PRINT("skipping colliders, there is too much sub rectangles...");
+                break;
+            }
+        }
+
+        layer->collider.geometry.elemsize = sizeof(struct bvr_bounds_s);
+        layer->collider.geometry.size = rect_count * sizeof(struct bvr_bounds_s);
+        layer->collider.geometry.data = malloc(layer->collider.geometry.size);
+        BVR_ASSERT(layer->collider.geometry.data);
+        
+        memcpy(layer->collider.geometry.data, &rects, layer->collider.geometry.size);
+
+        free(pixels);
+    }
 }
 
 void bvr_create_actor(struct bvr_actor_s* actor, const char* name, bvr_actor_type_t type, int flags){
@@ -94,12 +197,20 @@ void bvr_create_actor(struct bvr_actor_s* actor, const char* name, bvr_actor_typ
         /* doing nothing */
         break;
     
+    case BVR_LAYER_ACTOR:
+        break;
+    
+    case BVR_BITMAP_ACTOR:
+        bvri_create_bitmap_layer((bvr_bitmap_layer_t*)actor, flags);
+        break;
+
     case BVR_STATIC_ACTOR:
         break;
     
     case BVR_DYNAMIC_ACTOR:
         bvri_create_dynamic_actor((bvr_dynamic_model_t*)actor, flags);
         break;
+
     default:
         break;
     }

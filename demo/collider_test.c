@@ -2,16 +2,15 @@
 #define BVR_GEOMETRY_IMPLEMENTATION
 #include <BVR/bvr.h>
 
+#include <malloc.h>
+
 #define CAMERA_SLIDER_MAX 100.0f
 
 /* game's context */
 static bvr_book_t book;
 static bvr_nuklear_t gui;
 
-static struct {
-    bvr_static_model_t model;
-    bvr_texture_t texture;
-} bitmap;
+static bvr_bitmap_layer_t map;
 
 void draw_nk(){
 #ifdef BVR_INCLUDE_NUKLEAR
@@ -61,21 +60,19 @@ int main(){
     bvr_create_audio_stream(&book.audio, BVR_DEFAULT_SAMPLE_RATE, BVR_DEFAULT_AUDIO_BUFFER_SIZE);
 
     bvr_add_orthographic_camera(&book.page, &book.window.framebuffer, 0.1f, 100.0f, 1.0f);
+
+    bvr_create_2d_square_mesh(&map.mesh, 0.8f, 0.8f);
+    bvr_create_shader(&map.shader, "res/framebuffer.glsl", BVR_VERTEX_SHADER | BVR_FRAGMENT_SHADER);
+    bvr_create_bitmap(&map.bitmap.image, "res/collision_bitmap.bmp", BVR_BLUE);
+    bvr_shader_register_texture(&map.shader, BVR_TEXTURE_2D, &map.bitmap.id, NULL, "bvr_texture", NULL);
     
-    /* Create image's plane mesh */
-    bvr_create_2d_square_mesh(&bitmap.model.mesh, 0.8f, 0.8f);
-
-    /* Create the shader */
-    bvr_create_shader(&bitmap.model.shader, "res/framebuffer.glsl", BVR_VERTEX_SHADER | BVR_FRAGMENT_SHADER);
-
-    /* create texture uniforms */
-    bvr_shader_register_texture(
-        &bitmap.model.shader, BVR_TEXTURE_2D, NULL, NULL, 
-        "bvr_texture", NULL
+    bvr_create_actor(&map.object, "map", BVR_BITMAP_ACTOR, 
+        BVR_COLLISION_ENABLE | BVR_DYNACTOR_PASSIVE | BVR_BITMAP_CREATE_COLLIDER
     );
 
-    bvr_create_texture(&bitmap.texture, "res/collision_bitmap.bmp", BVR_TEXTURE_FILTER_LINEAR, BVR_TEXTURE_WRAP_REPEAT);
-    bvr_shader_set_texture(&bitmap.model.shader, "bvr_texture", &bitmap.texture.id, NULL);
+    bvr_link_actor_to_page(&book.page, &map.object);
+    bvr_create_texture_from_image(&map.bitmap, &map.bitmap.image, BVR_TEXTURE_FILTER_LINEAR, BVR_TEXTURE_WRAP_REPEAT);
+
 
     /* main loop */
     while (1)
@@ -88,8 +85,10 @@ int main(){
             break;
         }
 
-        bvr_texture_enable(&bitmap.texture, BVR_TEXTURE_UNIT0);
-        bvr_draw_static_model(&bitmap.model, BVR_DRAWMODE_TRIANGLES);
+        bvr_update(&book);
+
+        bvr_texture_enable(&map.bitmap, BVR_TEXTURE_UNIT0);
+        bvr_draw_static_model((bvr_static_model_t*)&map, BVR_DRAWMODE_TRIANGLES);
 
         draw_nk();
 

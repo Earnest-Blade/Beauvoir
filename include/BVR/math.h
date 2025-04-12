@@ -10,10 +10,10 @@ struct bvr_transform_s {
     float matrix[4][4];
 };
 
-struct bvr_bounds {
+struct bvr_bounds_s {
     vec2 coords;
-    uint32_t width;
-    uint32_t height;
+    unsigned int width;
+    unsigned int height;
 };
 
 #ifndef BVR_MATH_IMPLEMENTATION

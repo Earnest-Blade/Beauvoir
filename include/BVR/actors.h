@@ -14,11 +14,14 @@
 #define BVR_DYNACTOR_AGGRESSIVE                     0x00200
 #define BVR_DYNACTOR_CREATE_COLLIDER_FROM_VERTICES  0x00400
 
+#define BVR_BITMAP_CREATE_COLLIDER                  0x00800
+
 typedef enum bvr_actor_type_e {
-    BVR_EMPTY_ACTOR = 0x00,
-    BVR_LAYER_ACTOR = 0x01,
-    BVR_STATIC_ACTOR = 0x02,
-    BVR_DYNAMIC_ACTOR = 0x04
+    BVR_EMPTY_ACTOR,
+    BVR_LAYER_ACTOR,
+    BVR_BITMAP_ACTOR,
+    BVR_STATIC_ACTOR,
+    BVR_DYNAMIC_ACTOR
 } bvr_actor_type_t;
 
 /*
@@ -47,9 +50,19 @@ typedef struct bvr_dynamic_model_s {
 
     bvr_mesh_t mesh;
     bvr_shader_t shader;
-
     bvr_collider_t collider;
+
 } bvr_dynamic_model_t;
+
+typedef struct bvr_bitmap_layer_s {
+    struct bvr_actor_s object;
+
+    bvr_mesh_t mesh;
+    bvr_shader_t shader;
+    bvr_collider_t collider;
+
+    bvr_texture_t bitmap;
+} bvr_bitmap_layer_t;
 
 /*
     Initialize a generic actor.
