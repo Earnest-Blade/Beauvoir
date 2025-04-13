@@ -33,7 +33,7 @@ in V_DATA {
 uniform vec3 bvr_color;
 
 void main() {
-	gl_FragColor = vec4(bvr_color, 0.5);
+	gl_FragColor = vec4(bvr_color, 1.0);
 }
 
 #endif

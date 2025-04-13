@@ -26,6 +26,7 @@ int bvr_create_mesh(bvr_mesh_t* mesh, bvr_mesh_buffer_t* vertices, bvr_mesh_buff
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh->element_buffer);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, elements->size, elements->data, GL_STATIC_DRAW);
 
+    mesh->attrib = attrib;
     mesh->element_type = elements->elemsize;
     mesh->vertex_count = vertices->size / bvr_sizeof(vertices->elemsize);
     mesh->element_count = elements->size / bvr_sizeof(elements->elemsize);

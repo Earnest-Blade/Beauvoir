@@ -82,7 +82,7 @@ void bvr_window_poll_events(bvr_window_t* window){
         case SDL_EVENT_KEY_UP:
         case SDL_EVENT_KEY_DOWN:
             {
-                int down = (event.type == SDL_EVENT_KEY_DOWN) + 1;
+                int down = (event.type == SDL_EVENT_KEY_DOWN) + BVR_KEY_DOWN - 1;
                 if(event.key.mod){
                     switch (event.key.mod)
                     {
@@ -180,11 +180,11 @@ void bvr_destroy_window(bvr_window_t* window){
 }
 
 int bvr_key_down(bvr_window_t* window, uint16_t key){
-    return window->inputs.keys[key] == BVR_RELEASE;
+    return window->inputs.keys[key] == BVR_KEY_DOWN;
 }
 
 int bvr_button_down(bvr_window_t* window, uint16_t button){
-    return window->inputs.buttons[button] == BVR_RELEASE;
+    return window->inputs.buttons[button] == BVR_KEY_DOWN;
 }
 
 void bvr_mouse_position(bvr_window_t* window, float* x, float* y){

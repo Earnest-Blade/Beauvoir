@@ -23,7 +23,7 @@ static bvr_book_t game;
 static bvr_nuklear_t gui;
 
 static struct {
-    bvr_static_model_t model;
+    bvr_static_actor_t model;
 
     bvr_layered_texture_t texture;
     bvr_shader_uniform_t* texture_uniform;

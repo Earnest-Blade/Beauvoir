@@ -84,11 +84,12 @@ void bvr_update(bvr_book_t* book){
         }
         
         // collision are disabled
-        if(collider->body.mode == 0){
+        if(BVR_HAS_FLAG(collider->body.mode, BVR_COLLISION_DISABLE)){
             bvr_body_apply_motion(&collider->body, collider->transform);
             continue;
         }
 
+        // if this actor is aggressive
         if(BVR_HAS_FLAG(collider->body.mode, 0x4)){
 
             struct bvr_collision_result_s result;
@@ -214,7 +215,7 @@ struct bvr_actor_s* bvr_link_actor_to_page(bvr_page_t* page, struct bvr_actor_s*
         switch (actor->type)
         {
         case BVR_DYNAMIC_ACTOR:
-            bvr_link_collider_to_page(page, &((bvr_dynamic_model_t*)actor)->collider);
+            bvr_link_collider_to_page(page, &((bvr_dynamic_actor_t*)actor)->collider);
             break;
         
         default:
@@ -241,6 +242,20 @@ bvr_collider_t* bvr_link_collider_to_page(bvr_page_t* page, bvr_collider_t* coll
 
 void bvr_destroy_page(bvr_page_t* page){
     BVR_ASSERT(page);
+
+    struct bvr_actor_s* actor;
+    BVR_POOL_FOR_EACH(actor, page->actors){
+        if(!actor) break;
+
+        bvr_destroy_actor(actor);
+    }
+
+    bvr_collider_t* collider;
+    BVR_POOL_FOR_EACH(collider, page->colliders){
+        if(!collider) break;
+
+        collider = NULL;
+    }
 
     bvr_destroy_uniform_buffer(&page->camera.buffer);
 

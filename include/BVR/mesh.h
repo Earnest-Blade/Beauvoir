@@ -45,6 +45,7 @@ typedef struct bvr_mesh_s {
     uint32_t element_buffer;
 
     int element_type;
+    bvr_mesh_array_attrib_t attrib;
     uint32_t element_count, vertex_count;
     uint32_t attrib_count, stride;
 } bvr_mesh_t;
