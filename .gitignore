@@ -14,3 +14,9 @@ bin/*.exe
 build/
 share/
 CMakeFiles/
+licenses/
+cmake/
+pkgconfig/
+
+# Beauvoir in-dev folders and files
+res/

@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2024 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2025 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -22,11 +22,25 @@
 /**
  * # CategoryStdinc
  *
- * This is a general header that includes C language support. It implements a
- * subset of the C runtime APIs, but with an `SDL_` prefix. For most common
- * use cases, these should behave the same way as their C runtime equivalents,
- * but they may differ in how or whether they handle certain edge cases. When
- * in doubt, consult the documentation for details.
+ * SDL provides its own implementation of some of the most important C runtime
+ * functions.
+ *
+ * Using these functions allows an app to have access to common C
+ * functionality without depending on a specific C runtime (or a C runtime at
+ * all). More importantly, the SDL implementations work identically across
+ * platforms, so apps can avoid surprises like snprintf() behaving differently
+ * between Windows and Linux builds, or itoa() only existing on some
+ * platforms.
+ *
+ * For many of the most common functions, like SDL_memcpy, SDL might just call
+ * through to the usual C runtime behind the scenes, if it makes sense to do
+ * so (if it's faster and always available/reliable on a given platform),
+ * reducing library size and offering the most optimized option.
+ *
+ * SDL also offers other C-runtime-adjacent functionality in this header that
+ * either isn't, strictly speaking, part of any C runtime standards, like
+ * SDL_crc32() and SDL_reinterpret_cast, etc. It also offers a few better
+ * options, like SDL_strlcpy(), which functions as a safer form of strcpy().
  */
 
 #ifndef SDL_stdinc_h_
@@ -45,6 +59,11 @@
 #endif
 
 #ifndef __cplusplus
+#if defined(__has_include) && !defined(SDL_INCLUDE_STDBOOL_H)
+#if __has_include(<stdbool.h>)
+#define SDL_INCLUDE_STDBOOL_H
+#endif
+#endif
 #if (defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901L) || \
     (defined(_MSC_VER) && (_MSC_VER >= 1910 /* Visual Studio 2017 */)) || \
     defined(SDL_INCLUDE_STDBOOL_H)
@@ -5577,7 +5596,7 @@ extern SDL_DECLSPEC double SDLCALL SDL_sin(double x);
  * Range: `-1 <= y <= 1`
  *
  * This function operates on single-precision floating point values, use
- * SDL_sinf for double-precision floats.
+ * SDL_sin for double-precision floats.
  *
  * This function may use a different approximation across different versions,
  * platforms and configurations. i.e, it can return a different value given

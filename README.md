@@ -2,9 +2,9 @@
 > 'Beauvoir' just like Simone de Beauvoir
 
 ## Overview
-Beauvoir is an OpenGL-based game framework that aims to provide a simple, yet performant and flexible way to create 2D games - but can still create 3D games - . I chose to create it in C and OpenGL ES 3.2 to keep the code simple and flexible.
+Beauvoir is an OpenGL-based game framework that aims to provide a simple, yet performant and flexible way to create 2D games - but it can also be used to create 3D games. I chose to create it in C and OpenGL ES 3.2 to keep the code simple and flexible.
 
-The aim of my framework is to create games around layered-based scenes. You can either import images from Photoshop using ```.PSD``` files or stack images manually. 
+The goal of the framework is to create games around layered-based scenes. You can either import images from Photoshop using ```.PSD``` files or stack images manually. 
 
 Beauvoir can handle ```PNG```, ```PSD```, ```TIF``` and ```BMP``` through custom and fast read-only parser but more format still need to be added!
 
@@ -12,17 +12,19 @@ The framework is still in early development, but I'm doing my best to improve it
 
 ## Getting Started
 Beauvoir can be compiled through CMake into Makefiles and Visual Studio solutions. 
-Project main file can be set using Cmake's flag ```-D BVR_MAIN_FILE=``` (e.g ```-BVR_MAIN_FILE='demo/image_viewer.c'```)
+Project main file can be set using Cmake's flag ```-D BVR_MAIN_FILE=``` (e.g. ```-BVR_MAIN_FILE='demo/image_viewer.c'```)
 
 ### Building for Windows
-To generate Makefiles on Windows you can run 
+To generate Makefiles on Windows, you can run 
 ```cmake -G="MinGW Makefiles" -B build -D BVR_MAIN_FILE='demo/empty_game.c'```. 
 
 To generate Visual Studio solutions, use 
-```cmake -G="Visual Studio 17 2022" -B build -D BVR_MAIN_FILE='demo/empty_game.c'```. Then, open the generated ```.sln``` file or build using ```cmake --build build --config Release```. Then, link the binaries inside Visual Studio.
+```cmake -G="Visual Studio 17 2022" -B build -D BVR_MAIN_FILE='demo/empty_game.c'```. Then, open the generated ```.sln``` file or build using ```cmake --build build --config Release```. After that, link the binaries inside Visual Studio.
 
 ### Binaries
-Precompiled Windows x64 binaries can be found into the [Bin](/bin/) directory. 
+Precompiled Windows x64 binaries can be found in the [Bin](/bin/) directory. But you can build you own binaries and libraries by using the ```build.sh``` or ```build.bat``` files.
+
+You can define your own CMake build target by changing the "BVR_GENERATOR" in either of those files.
 
 ### Example
 ```C
