@@ -1,5 +1,7 @@
 #pragma once
 
+#include <BVR/internal.h>
+
 #include <stdio.h>
 #include <string.h>
 
@@ -9,14 +11,28 @@
 
 #define BVR_BUFFER_COUNT(buffer)((unsigned long long)(buffer.size / buffer.elemsize))
 
-#define BVR_POOL_FOR_EACH(a, pool)    \
-    struct bvr_pool_block_s (first ## ##a) = {0};   \
-    struct bvr_pool_block_s* (block ## ##a) = &(first ## ##a); \
-    while(                                                     \
-        ((int)(((block ## ##a) = (struct bvr_pool_block_s*)(pool.data + ((block ## ##a)->next * (pool.elemsize + sizeof(struct bvr_pool_block_s))))) \
-        && (a = *(typeof(a)*)((block ## ##a) + sizeof(struct bvr_pool_block_s)))))*0 \
-        || ((block ## ##a)->next || (block ## ##a) == &(first ## ##a)) \
-    )                                                                       
+// Clang specific macro
+#ifdef __clang__
+    #define BVR_POOL_FOR_EACH(a, pool)                                        \
+        struct bvr_pool_block_s first_##a = {0};                                    \
+        struct bvr_pool_block_s* block_##a = &first_##a;                            \
+        while (                                                                     \
+            ((block_##a = (struct bvr_pool_block_s*)(                              \
+                (pool).data + (block_##a->next * ((pool).elemsize + sizeof(struct bvr_pool_block_s))))), \
+            (a = *(typeof(a)*)((char*)block_##a + sizeof(struct bvr_pool_block_s))),     \
+            (block_##a->next || block_##a == &first_##a))                           \
+        )
+// GCC specific macro
+#else
+    #define BVR_POOL_FOR_EACH(a, pool)    \
+        struct bvr_pool_block_s (first ## ##a) = {0};   \
+        struct bvr_pool_block_s* (block ## ##a) = &(first ## ##a); \
+        while(                                                     \
+            ((int)(((block ## ##a) = (struct bvr_pool_block_s*)(pool.data + ((block ## ##a)->next * (pool.elemsize + sizeof(struct bvr_pool_block_s))))) \
+            && (a = *(typeof(a)*)((block ## ##a) + sizeof(struct bvr_pool_block_s)))))*0 \
+            || ((block ## ##a)->next || (block ## ##a) == &(first ## ##a)) \
+        )                                                                       
+#endif
 
 struct bvr_buffer_s {
     char* data;

@@ -20,6 +20,7 @@ set(BVR_BINARY_DIR ${BVR_CURRENT_DIR}/bin)
 set(BVR_DEMO_DIR ${BVR_CURRENT_DIR}/dev)
 
 # Define main file
+# Development only
 if(NOT ${BVR_TARGET_SHARED})
     if (NOT DEFINED BVR_MAIN_FILE)
         set(BVR_MAIN_FILE "${BVR_DEMO_DIR}/collider_test.c")

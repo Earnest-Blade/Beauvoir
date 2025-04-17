@@ -68,9 +68,9 @@ int bvr_create_window(bvr_window_t* window, int width, int height, const char* t
 void bvr_window_poll_events(bvr_window_t* window){
     SDL_Event event;
 
-    memset(window->inputs.keys, 0, BVR_KEYBOARD_SIZE * sizeof(char));
-    memset(window->inputs.buttons, 0, BVR_MOUSE_SIZE * sizeof(char));
-    memset(window->inputs.relative_motion, 0, sizeof(window->inputs.relative_motion));
+    // memset(window->inputs.keys, 0, BVR_KEYBOARD_SIZE * sizeof(char));
+    // memset(window->inputs.buttons, 0, BVR_MOUSE_SIZE * sizeof(char));
+    // memset(window->inputs.relative_motion, 0, sizeof(window->inputs.relative_motion));
 
     SDL_StartTextInput(window->handle);
 
