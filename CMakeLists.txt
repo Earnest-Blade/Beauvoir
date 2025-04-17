@@ -17,7 +17,7 @@ set(BVR_LIB_DIR ${BVR_CURRENT_DIR}/lib)
 set(BVR_BUILD_DIR ${BVR_CURRENT_DIR}/build)
 set(BVR_BINARY_DIR ${BVR_CURRENT_DIR}/bin)
 
-set(BVR_DEMO_DIR ${BVR_CURRENT_DIR}/demo)
+set(BVR_DEMO_DIR ${BVR_CURRENT_DIR}/dev)
 
 # Define main file
 if(NOT ${BVR_TARGET_SHARED})

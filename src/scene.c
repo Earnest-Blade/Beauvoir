@@ -86,6 +86,7 @@ void bvr_update(bvr_book_t* book){
         // collision are disabled
         if(BVR_HAS_FLAG(collider->body.mode, BVR_COLLISION_DISABLE)){
             bvr_body_apply_motion(&collider->body, collider->transform);
+            
             continue;
         }
 
@@ -104,7 +105,6 @@ void bvr_update(bvr_book_t* book){
 
             if(!result.collide){
                 bvr_body_apply_motion(&collider->body, collider->transform);
-
             }
         }
     }

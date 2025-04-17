@@ -31,7 +31,7 @@ static void bvri_create_dynamic_actor(bvr_dynamic_actor_t* actor, int flags){
 
     actor->collider.body.mode = BVR_COLLISION_DISABLE | BVR_COLLISION_AABB;
     if(BVR_HAS_FLAG(flags, BVR_COLLISION_ENABLE)){
-        actor->collider.body.mode |= BVR_COLLISION_ENABLE;
+        actor->collider.body.mode = BVR_COLLISION_ENABLE;
     }
 
     if(BVR_HAS_FLAG(flags, BVR_DYNACTOR_AGGRESSIVE)){
@@ -97,7 +97,7 @@ static void bvri_create_bitmap_layer(bvr_bitmap_layer_t* layer, int flags){
 
     layer->collider.body.mode = BVR_COLLISION_DISABLE | BVR_COLLISION_AABB;
     if(BVR_HAS_FLAG(flags, BVR_COLLISION_ENABLE)){
-        layer->collider.body.mode |= BVR_COLLISION_ENABLE;
+        layer->collider.body.mode = BVR_COLLISION_ENABLE;
     }
 
     if(BVR_HAS_FLAG(flags, BVR_DYNACTOR_AGGRESSIVE)){
