@@ -14,6 +14,8 @@ int main(){
     bvr_create_book(&book);
     bvr_create_page(&book.page);
 
+    BVR_PRINT("eeee");
+
     /* create the window */
     bvr_create_window(&book.window, 800, 800, "Window", 0);
     

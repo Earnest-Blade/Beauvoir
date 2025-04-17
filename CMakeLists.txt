@@ -2,24 +2,34 @@ cmake_minimum_required(VERSION 3.16.3)
 
 project(bvr)
 
-# Setting up Beauvoir paths
-set(BVR_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src)
-set(BVR_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include)
-set(BVR_LIB_DIR ${CMAKE_CURRENT_SOURCE_DIR}/lib)
-set(BVR_BUILD_DIR ${CMAKE_CURRENT_SOURCE_DIR}/build)
-set(BVR_BINARY_DIR ${CMAKE_SOURCE_DIR}/bin)
+if(NOT DEFINED BVR_TARGET_SHARED)
+    set(BVR_TARGET_SHARED OFF)
+endif()
 
-set(BVR_DEMO_DIR ${CMAKE_SOURCE_DIR}/demo)
+# Setting up Beauvoir paths
+if(NOT DEFINED BVR_CURRENT_DIR)
+    set(BVR_CURRENT_DIR ${CMAKE_CURRENT_SOURCE_DIR})
+endif()
+
+set(BVR_SOURCE_DIR ${BVR_CURRENT_DIR}/src)
+set(BVR_INCLUDE_DIR ${BVR_CURRENT_DIR}/include)
+set(BVR_LIB_DIR ${BVR_CURRENT_DIR}/lib)
+set(BVR_BUILD_DIR ${BVR_CURRENT_DIR}/build)
+set(BVR_BINARY_DIR ${BVR_CURRENT_DIR}/bin)
+
+set(BVR_DEMO_DIR ${BVR_CURRENT_DIR}/demo)
 
 # Define main file
-if (NOT DEFINED BVR_MAIN_FILE)
-    set(BVR_MAIN_FILE "${BVR_DEMO_DIR}/collider_test.c")
+if(NOT ${BVR_TARGET_SHARED})
+    if (NOT DEFINED BVR_MAIN_FILE)
+        set(BVR_MAIN_FILE "${BVR_DEMO_DIR}/collider_test.c")
+    endif()
 endif()
 
 ## Check for modules
 set(BVR_THIRD_PARTY_MODULES_NAMES "SDL" "PortAudio" "Zlib" "LPng")
 foreach(BVR_THIRD_PARTY_MODULES_ITEM ${BVR_THIRD_PARTY_MODULES_NAMES})
-    set(BVR_THIRD_PARTY_MODULES_ITEM_PATH "${CMAKE_SOURCE_DIR}/extern/${BVR_THIRD_PARTY_MODULES_ITEM}")
+    set(BVR_THIRD_PARTY_MODULES_ITEM_PATH "${BVR_CURRENT_DIR}/extern/${BVR_THIRD_PARTY_MODULES_ITEM}")
 
     if(EXISTS ${BVR_THIRD_PARTY_MODULES_ITEM_PATH})
         message("found ${BVR_THIRD_PARTY_MODULES_ITEM} (${BVR_THIRD_PARTY_MODULES_ITEM_PATH})")
@@ -59,7 +69,13 @@ endif()
 include_directories(${BVR_INCLUDE_DIR})
 
 add_compile_options(-g -w)
-add_executable(bvr ${BVR_MAIN_FILE})
+
+if(${BVR_TARGET_SHARED})
+    add_library(bvr SHARED)
+else()
+    add_executable(bvr ${BVR_MAIN_FILE})
+endif()
+
 
 target_link_libraries(bvr PUBLIC
     ${OPENGL_LIBRARIES}

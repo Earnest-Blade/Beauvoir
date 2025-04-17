@@ -66,7 +66,6 @@ void bvr_pipeline_state_enable(struct bvr_pipeline_state_s* state){
 int bvr_create_framebuffer(bvr_framebuffer_t* framebuffer, int width, int height, const char* shader){
     BVR_ASSERT(framebuffer);
     BVR_ASSERT(width > 0 && height > 0);
-    BVR_ASSERT(shader);
 
     framebuffer->width = width;
     framebuffer->height = height;
@@ -97,7 +96,34 @@ int bvr_create_framebuffer(bvr_framebuffer_t* framebuffer, int width, int height
         glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)8);
     }
 
-    bvr_create_shader(&framebuffer->shader, shader, BVR_FRAMEBUFFER_SHADER);
+    if(shader){
+        bvr_create_shader(&framebuffer->shader, shader, BVR_FRAMEBUFFER_SHADER);
+    }
+    else {
+        const char* vertex_shader = 
+            "#version 400\n"
+            "layout(location=0) in vec2 in_position;\n"
+            "layout(location=1) in vec2 in_uvs;\n"
+            "out V_DATA {\n"
+            "	vec2 uvs;\n"
+            "} vertex;\n"
+            "void main() {\n"
+            "	gl_Position = vec4(in_position, 0.0, 1.0);\n"
+            "	vertex.uvs = in_uvs;\n"
+            "}";
+        const char* fragment_shader = 
+            "#version 400\n"
+            "in V_DATA {\n"
+	        "vec2 uvs;\n"
+            "} vertex;\n"
+            "uniform sampler2D bvr_texture;\n"
+            "void main() {\n"
+            	"vec4 tex = texture(bvr_texture, vertex.uvs);\n"
+            	"gl_FragColor = vec4(tex.rgb, 1.0);\n"
+            "}";
+        
+        bvri_create_shader_vert_frag(&framebuffer->shader, vertex_shader, fragment_shader);
+    }
 
     glGenFramebuffers(1, &framebuffer->buffer);
     glBindFramebuffer(GL_FRAMEBUFFER, framebuffer->buffer);

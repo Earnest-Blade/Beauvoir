@@ -62,6 +62,14 @@ static inline int bvr_create_shader(bvr_shader_t* shader, const char* path, int 
     return a;
 } 
 
+/*
+    Create an empty shader only with vertex and fragment shaders.
+    Internal usages only.
+
+    TODO: try to find another way to define this function
+*/
+int bvri_create_shader_vert_frag(bvr_shader_t* shader, const char* vert, const char* frag);
+
 bvr_shader_uniform_t* bvr_shader_register_uniform(bvr_shader_t* shader, int type, int count, const char* name);
 bvr_shader_uniform_t* bvr_shader_register_texture(bvr_shader_t* shader, int type, int* id, int* layer, const char* name, const char* layer_name);
 

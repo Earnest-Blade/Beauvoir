@@ -135,6 +135,8 @@
 #define BVR_PRESSED 1
 #define BVR_RELEASE 2
 
+#define BVR_WINDOW_USER_FRAMEBUFFER 0x01
+
 #ifndef BVR_WINDOW_FRAMEBUFFER_PATH
     #define BVR_WINDOW_FRAMEBUFFER_PATH "res/framebuffer.glsl"
 #endif

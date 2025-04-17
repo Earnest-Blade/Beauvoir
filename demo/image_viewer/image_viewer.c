@@ -97,7 +97,7 @@ int main(){
     bvr_create_2d_square_mesh(&image_viewer.model.mesh, 480.0f, 480.0f);
 
     /* Create the shader */
-    bvr_create_shader(&image_viewer.model.shader, "res/shader.glsl", BVR_VERTEX_SHADER | BVR_FRAGMENT_SHADER);
+    bvr_create_shader(&image_viewer.model.shader, "../shader.glsl", BVR_VERTEX_SHADER | BVR_FRAGMENT_SHADER);
 
     /* create texture uniforms */
     image_viewer.texture_uniform = bvr_shader_register_texture(
@@ -105,7 +105,7 @@ int main(){
         "bvr_texture", "bvr_texture_layer"
     );
 
-    load_texture("res/texture.bmp");
+    load_texture("../scene.tif");
 
     while (1)
     {

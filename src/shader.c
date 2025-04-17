@@ -200,6 +200,11 @@ shader_cstor_bidings:
         BVR_PRINT("failed to compile shader!");
     }
 
+    if(BVR_HAS_FLAG(flags, BVR_FRAMEBUFFER_SHADER)){
+        bvr_destroy_string(&file_content);
+        return BVR_OK;
+    }
+
     // create default blocks
     
     // create camera block
@@ -228,6 +233,31 @@ shader_cstor_bidings:
     bvr_destroy_string(&file_content);
 
     return BVR_OK;
+}
+
+int bvri_create_shader_vert_frag(bvr_shader_t* shader, const char* vert, const char* frag){
+    BVR_ASSERT(shader);
+    BVR_ASSERT(vert);
+    BVR_ASSERT(frag);
+
+    shader->program = glCreateProgram();
+    shader->flags = 0;
+    shader->shader_count = 2;
+    shader->uniform_count = 0;
+    shader->block_count = 0;
+
+    bvr_string_t vertex;
+    bvr_string_t fragment;
+
+    bvr_create_string(&vertex, vert);
+    bvr_create_string(&fragment, frag);
+
+    bvri_compile_shader(&shader->shaders[0].shader, &vertex, GL_VERTEX_SHADER);
+    bvri_compile_shader(&shader->shaders[1].shader, &fragment, GL_FRAGMENT_SHADER);
+    
+    glAttachShader(shader->program, shader->shaders[0].shader);
+    glAttachShader(shader->program, shader->shaders[1].shader);
+    bvri_link_shader(shader->program);
 }
 
 bvr_shader_uniform_t* bvr_shader_register_uniform(bvr_shader_t* shader, int type, int count, const char* name){
