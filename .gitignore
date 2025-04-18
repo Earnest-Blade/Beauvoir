@@ -1,5 +1,6 @@
 # files
 *.dll
+*.a
 *.exe
 *.pdb
 *.c.txt

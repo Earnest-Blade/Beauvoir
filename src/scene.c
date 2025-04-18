@@ -75,14 +75,15 @@ void bvr_new_frame(bvr_book_t* book){
 }
 
 void bvr_update(bvr_book_t* book){
-    bvr_collider_t* collider;
-    bvr_collider_t* other;
+    bvr_collider_t* collider = NULL;
+    bvr_collider_t* other = NULL;
 
     BVR_POOL_FOR_EACH(collider, book->page.colliders){        
+
         if(!collider){
             break;
         }
-        
+
         // collision are disabled
         if(!BVR_HAS_FLAG(collider->body.mode, BVR_COLLISION_ENABLE)){
             bvr_body_apply_motion(&collider->body, collider->transform);
@@ -94,7 +95,6 @@ void bvr_update(bvr_book_t* book){
         if(BVR_HAS_FLAG(collider->body.mode, BVR_COLLISION_AGRESSIVE)){
 
             struct bvr_collision_result_s result;
-            result.collide = 0;
 
             BVR_POOL_FOR_EACH(other, book->page.colliders){
                 if(!other){
@@ -102,9 +102,13 @@ void bvr_update(bvr_book_t* book){
                 }
 
                 bvr_compare_colliders(collider, other, &result);
+
+                if(result.collide == 1){
+                    break;
+                }
             }
 
-            if(result.collide != 1){
+            if(result.collide <= 0){
                 bvr_body_apply_motion(&collider->body, collider->transform);
             }
         }
@@ -215,6 +219,8 @@ struct bvr_actor_s* bvr_link_actor_to_page(bvr_page_t* page, struct bvr_actor_s*
 
         switch (actor->type)
         {
+        case BVR_BITMAP_ACTOR:
+            bvr_link_collider_to_page(page, &((bvr_bitmap_layer_t*)actor)->collider);
         case BVR_DYNAMIC_ACTOR:
             bvr_link_collider_to_page(page, &((bvr_dynamic_actor_t*)actor)->collider);
             break;

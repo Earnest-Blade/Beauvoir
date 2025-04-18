@@ -24,7 +24,7 @@ To generate Visual Studio solutions, use
 ### Binaries
 Precompiled Windows x64 binaries can be found in the [Bin](/bin/) directory. But you can build you own binaries and libraries by using the ```build.sh``` or ```build.bat``` files.
 
-You can define your own CMake build target by changing the "BVR_GENERATOR" in either of those files.
+You can define your own CMake build target and compiler by changing "BVR_GENERATOR" and "BVR_CC" (or "BVR_CXX") variables in either of those files.
 
 ### Example
 ```C

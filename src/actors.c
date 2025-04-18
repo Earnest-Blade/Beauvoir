@@ -166,7 +166,7 @@ static void bvri_create_bitmap_layer(bvr_bitmap_layer_t* layer, int flags){
             rects[rect_count].coords[1] = (float)y;
             rects[rect_count].width = rect_width - 1;
             rects[rect_count].height = rect_height - 2;
-            //BVR_PRINTF("%f %f %i %i", rects[rect_count].coords[0], rects[rect_count].coords[1], rects[rect_count].width, rects[rect_count].height);
+            BVR_PRINTF("%f %f %i %i", rects[rect_count].coords[0], rects[rect_count].coords[1], rects[rect_count].width, rects[rect_count].height);
             rect_count++;
 
 

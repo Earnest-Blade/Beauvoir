@@ -68,11 +68,16 @@ static int bvri_aabb(struct bvr_bounds_s* a, struct bvr_bounds_s* b, vec3 a_iner
     vec2_add(va, a->coords, a_inertia);
     vec2_add(vb, b->coords, b_inertia);
 
-    return (
-        vb[0] >= va[0] + a->width  || // right check
-        vb[0] + b->width <= va[0]  || // left check
-        vb[1] >= va[1] + a->height || // bottom check
-        vb[1] + b->height <= va[1]    // top check
+    va[0] -= a->width;
+    va[1] -= a->height; 
+    vb[0] -= b->width;
+    vb[1] -= b->height;
+
+    return !(
+        vb[0] >= va[0] + a->width * 2.0f  || // right check
+        vb[0] + b->width * 2.0f <= va[0]  || // left check
+        vb[1] >= va[1] + a->height * 2.0f || // bottom check
+        vb[1] + b->height * 2.0f <= va[1]    // top check
     );
 }
 
@@ -108,10 +113,11 @@ void bvr_compare_colliders(bvr_collider_t* a, bvr_collider_t* b, struct bvr_coll
             vec2_add(ba.coords, ba.coords, a->transform->position);
             vec2_add(bb.coords, bb.coords, b->transform->position);
 
-            BVR_PRINTF("%f %f %i %i", ba.coords[0], ba.coords[1], ba.width, ba.height);
-            BVR_PRINTF("%f %f %i %i", bb.coords[0], bb.coords[1], bb.width, bb.height);
+            vec3 intertia_a, intertia_b;
+            vec3_scale(intertia_a, a->body.direction, a->body.acceleration);
+            vec3_scale(intertia_b, b->body.direction, b->body.acceleration);
 
-            if(bvri_aabb(&ba, &bb, a->body.direction, b->body.direction)){
+            if(bvri_aabb(&ba, &bb, intertia_a, intertia_b)){
                 result->collide = BVR_OK;
                 result->other = b;
             

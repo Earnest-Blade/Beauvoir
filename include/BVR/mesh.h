@@ -5,7 +5,6 @@
 #include <BVR/utils.h>
 #include <BVR/buffer.h>
 
-
 typedef enum bvr_drawmode_e {
     BVR_DRAWMODE_LINES = 0x0001,
     BVR_DRAWMODE_TRIANGLES = 0x0004

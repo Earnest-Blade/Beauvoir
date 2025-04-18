@@ -1,6 +1,8 @@
 #! /bin/bash
 
 BVR_GENERATOR="MinGW Makefiles"
+BVR_CC="gcc"
+BVR_CXX="g++"
 BVR_BULID_DIR="$PWD/build/"
 BVR_EXTERNAL_MODULES="SDL PortAudio Zlib Lpng"
 
@@ -26,12 +28,12 @@ for MOD in $BVR_EXTERNAL_MODULES; do
         BVR_MODULE_FLAGS="" 
 
         if [ "$MOD" = "PortAudio" ]; then 
-            BVR_MODULE_FLAGS="PA_BUILD_SHARED_LIBS=ON PA_USE_WASAPI=OFF PA_USE_WDMKS=OFF PA_USE_WDMKS_DEVICE_INFO=OFF"
+            BVR_MODULE_FLAGS="-DPA_BUILD_SHARED_LIBS=ON -DPA_USE_WASAPI=OFF -DPA_USE_WDMKS=OFF -DPA_USE_WDMKS_DEVICE_INFO=OFF"
         else 
             BVR_MODULE_FLAGS=""
         fi
 
-        cmake "$MODULE_PATH/CmakeLists.txt" -G="$BVR_GENERATOR" -B="$BVR_BULID_DIR/$MOD" -D CMAKE_INSTALL_PREFIX="$PWD" "$BVR_MODULE_FLAGS"
+        cmake "$MODULE_PATH/CmakeLists.txt" -G="$BVR_GENERATOR" -B="$BVR_BULID_DIR/$MOD" -D CMAKE_INSTALL_PREFIX="$PWD" "$BVR_MODULE_FLAGS" -DCMAKE_C_COMPILER="$BVR_CC" -DCMAKE_CXX_COMPILER="$BVR_CXX"
         cmake --build "$BVR_BULID_DIR/$MOD" --target install
 
     else 

@@ -45,38 +45,48 @@ foreach(BVR_THIRD_PARTY_PACKAGES_ITEM ${BVR_THIRD_PARTY_PACKAGES})
     find_package(${BVR_THIRD_PARTY_PACKAGES_ITEM} REQUIRED)
 endforeach()
 
-## SETUP FOR STATIC LIB
+## SETUP FOR DLLs
 #
-set(BVR_SDL_LIB ${BVR_LIB_DIR}/SDL3.lib)
+if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+    set(BVR_SDL_LIB ${BVR_LIB_DIR}/SDL3.lib)
+    set(BVR_PORT_AUDIO_LIB ${BVR_LIB_DIR}/portaudio.lib)
+    set(BVR_Z_LIB ${BVR_LIB_DIR}/zsd.lib)
+    set(BVR_PNG_LIB ${BVR_LIB_DIR}/libpng16d.lib)
+
+elseif(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    set(BVR_SDL_LIB ${BVR_LIB_DIR}/libSDL3.dll.a)
+    set(BVR_PORT_AUDIO_LIB ${BVR_LIB_DIR}/libportaudio.dll.a)
+    set(BVR_Z_LIB ${BVR_LIB_DIR}/libz.dll.a)
+    set(BVR_PNG_LIB ${BVR_LIB_DIR}/libpng16.dll.a)
+endif()
+
 if(NOT EXISTS ${BVR_SDL_LIB})
     message(FATAL_ERROR "Cannot find SDL3 '${BVR_SDL_LIB}'")
 endif()
 
-set(BVR_PORT_AUDIO_LIB ${BVR_LIB_DIR}/portaudio.lib)
 if(NOT EXISTS ${BVR_PORT_AUDIO_LIB})
     message(FATAL_ERROR "Cannot find PortAudio '${BVR_PORT_AUDIO_LIB}'")
 endif()
 
-set(BVR_Z_LIB ${BVR_LIB_DIR}/zsd.lib)
 if(NOT EXISTS ${BVR_Z_LIB})
     message(FATAL_ERROR "Cannot find Zlib '${BVR_Z_LIB}'")
 endif()
 
-set(BVR_PNG_LIB ${BVR_LIB_DIR}/libpng16d.lib)
 if(NOT EXISTS ${BVR_PNG_LIB})
     message(FATAL_ERROR "Cannot find lPng '${BVR_PNG_LIB}'")
 endif()
 
 include_directories(${BVR_INCLUDE_DIR})
 
-add_compile_options(-g -w)
 
 if(${BVR_TARGET_SHARED})
     add_library(bvr SHARED)
+    message("Successfully create a new library")
 else()
+    add_compile_options(-g -w)
     add_executable(bvr ${BVR_MAIN_FILE})
+    message("Successfully create a new executable")
 endif()
-
 
 target_link_libraries(bvr PUBLIC
     ${OPENGL_LIBRARIES}
