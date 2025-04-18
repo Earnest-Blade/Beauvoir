@@ -73,13 +73,21 @@ int bvr_create_framebuffer(bvr_framebuffer_t* framebuffer, int width, int height
     framebuffer->prev_height = height;
 
     {
+        /*const float quad[24] = {
+            -1.0f,   1.0f, 0.0f, 1.0f,
+            -1.0f,  -1.0f, 0.0f, 0.0f,
+             1.0f,  -1.0f, 1.0f, 0.0f,
+            -1.0f,   1.0f, 0.0f, 1.0f,
+             1.0f,  -1.0f, 1.0f, 0.0f,
+             1.0f,   1.0f, 1.0f, 1.0f,
+        };*/
         const float quad[24] = {
-            -1.0f,  1.0f, 0.0f, 1.0f,
-            -1.0f, -1.0f, 0.0f, 0.0f,
-            1.0f,  -1.0f, 1.0f, 0.0f,
-            -1.0f,  1.0f, 0.0f, 1.0f,
-            1.0f,  -1.0f, 1.0f, 0.0f,
-            1.0f,   1.0f, 1.0f, 1.0f,
+            0.0f,  height,      0.0f, 0.0f,
+            0.0f,  0.0f,        0.0f, 1.0f,
+            width,  0.0f,       1.0f, 1.0f,
+            0.0f,   height,     0.0f, 0.0f,
+            width,  0.0f,       1.0f, 1.0f,
+            width,  height,     1.0f, 0.0f,
         };
 
         glGenVertexArrays(1, &framebuffer->vertex_buffer);
@@ -104,11 +112,12 @@ int bvr_create_framebuffer(bvr_framebuffer_t* framebuffer, int width, int height
             "#version 400\n"
             "layout(location=0) in vec2 in_position;\n"
             "layout(location=1) in vec2 in_uvs;\n"
+            "uniform mat4 bvr_proj;\n"
             "out V_DATA {\n"
             "	vec2 uvs;\n"
             "} vertex;\n"
             "void main() {\n"
-            "	gl_Position = vec4(in_position, 0.0, 1.0);\n"
+            "	gl_Position = bvr_proj * vec4(in_position, 0.0, 1.0);\n"
             "	vertex.uvs = in_uvs;\n"
             "}";
         const char* fragment_shader = 
@@ -123,6 +132,7 @@ int bvr_create_framebuffer(bvr_framebuffer_t* framebuffer, int width, int height
             "}";
         
         bvri_create_shader_vert_frag(&framebuffer->shader, vertex_shader, fragment_shader);
+        bvr_shader_register_uniform(&framebuffer->shader, BVR_MAT4, 1, "bvr_proj");
     }
 
     glGenFramebuffers(1, &framebuffer->buffer);
@@ -161,10 +171,23 @@ void bvr_framebuffer_enable(bvr_framebuffer_t* framebuffer){
     framebuffer->prev_height = viewport[3];
 
     glViewport(0, 0, framebuffer->width, framebuffer->height);
+
+    mat4x4 ortho = {
+        {  2.0f,  0.0f,  0.0f, 0.0f },
+        {  0.0f, -2.0f,  0.0f, 0.0f },
+        {  0.0f,  0.0f, -1.0f, 0.0f },
+        { -1.0f,  1.0f,  0.0f, 1.0f },
+    };
+
+    ortho[0][0] /= (float)framebuffer->width;
+    ortho[1][1] /= (float)framebuffer->height;
+
+    bvr_shader_set_uniformi(&framebuffer->shader.uniforms[1], &ortho[0][0]);
 }
 
 void bvr_framebuffer_disable(bvr_framebuffer_t* framebuffer){
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glViewport(0, 0, framebuffer->prev_width, framebuffer->prev_height);
 }
 
 void bvr_framebuffer_clear(bvr_framebuffer_t* framebuffer, vec3 color){

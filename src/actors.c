@@ -20,23 +20,30 @@ static void bvri_update_transform(struct bvr_actor_s* actor){
     actor->transform.matrix[3][2] = actor->transform.position[2];
 }
 
+static void bvri_create_generic_dynactor(bvr_dynamic_actor_t* actor, int flags){
+    bvr_create_collider(&actor->collider, NULL, 0);
+    actor->collider.transform = &actor->object.transform;
+
+    actor->collider.body.mode = BVR_COLLISION_DISABLE | BVR_COLLISION_AABB;
+    if(BVR_HAS_FLAG(flags, BVR_COLLISION_ENABLE)){
+        actor->collider.body.mode |= BVR_COLLISION_ENABLE;
+    }
+
+    if(BVR_HAS_FLAG(flags, BVR_DYNACTOR_AGGRESSIVE)){
+        actor->collider.body.mode |= BVR_COLLISION_AGRESSIVE; // aggressive
+    }
+    else {
+        actor->collider.body.mode |= BVR_COLLISION_PASSIVE;
+    }
+}
+
 /*
     Constructor for any dynamic actor.
 */
 static void bvri_create_dynamic_actor(bvr_dynamic_actor_t* actor, int flags){
     BVR_ASSERT(actor);
 
-    bvr_create_collider(&actor->collider, NULL, 0);
-    actor->collider.transform = &actor->object.transform;
-
-    actor->collider.body.mode = BVR_COLLISION_DISABLE | BVR_COLLISION_AABB;
-    if(BVR_HAS_FLAG(flags, BVR_COLLISION_ENABLE)){
-        actor->collider.body.mode = BVR_COLLISION_ENABLE;
-    }
-
-    if(BVR_HAS_FLAG(flags, BVR_DYNACTOR_AGGRESSIVE)){
-        actor->collider.body.mode |= 0x04; // aggressive
-    }
+    bvri_create_generic_dynactor(actor, flags);
 
     // generate bounding boxes by using mesh's vertices
     if(BVR_HAS_FLAG(flags, BVR_DYNACTOR_CREATE_COLLIDER_FROM_VERTICES)){
@@ -92,17 +99,7 @@ static void bvri_create_dynamic_actor(bvr_dynamic_actor_t* actor, int flags){
 static void bvri_create_bitmap_layer(bvr_bitmap_layer_t* layer, int flags){
     BVR_ASSERT(layer);
 
-    bvr_create_collider(&layer->collider, NULL, 0);
-    layer->collider.transform = &layer->object.transform;
-
-    layer->collider.body.mode = BVR_COLLISION_DISABLE | BVR_COLLISION_AABB;
-    if(BVR_HAS_FLAG(flags, BVR_COLLISION_ENABLE)){
-        layer->collider.body.mode = BVR_COLLISION_ENABLE;
-    }
-
-    if(BVR_HAS_FLAG(flags, BVR_DYNACTOR_AGGRESSIVE)){
-        layer->collider.body.mode |= 0x04; // aggressive
-    }
+    bvri_create_generic_dynactor((bvr_dynamic_actor_t*)layer, flags);
 
     /*
         Here, we're trying to bind collision boxes by using a bit map
@@ -169,7 +166,9 @@ static void bvri_create_bitmap_layer(bvr_bitmap_layer_t* layer, int flags){
             rects[rect_count].coords[1] = (float)y;
             rects[rect_count].width = rect_width - 1;
             rects[rect_count].height = rect_height - 2;
+            //BVR_PRINTF("%f %f %i %i", rects[rect_count].coords[0], rects[rect_count].coords[1], rects[rect_count].width, rects[rect_count].height);
             rect_count++;
+
 
             if(rect_count >= BVR_BUFFER_SIZE / 2){
                 BVR_PRINT("skipping colliders, there is too much sub rectangles...");

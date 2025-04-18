@@ -55,6 +55,7 @@ int bvr_create_window(bvr_window_t* window, int width, int height, const char* t
     BVR_ASSERT(gladLoadGLES2Loader((GLADloadproc)SDL_GL_GetProcAddress));
     BVR_PRINT(glGetString(GL_VERSION));
 
+    // create framebuffer
     if(BVR_HAS_FLAG(flags, BVR_WINDOW_USER_FRAMEBUFFER)){
         bvr_create_framebuffer(&window->framebuffer, width, height, BVR_WINDOW_FRAMEBUFFER_PATH);
     }
@@ -145,8 +146,10 @@ void bvr_window_poll_events(bvr_window_t* window){
         case SDL_EVENT_WINDOW_RESIZED:
             {
                 if(event.display.data1 & event.display.data2){
-                    window->framebuffer.width = event.display.data1;
-                    window->framebuffer.height = event.display.data2;
+                    //window->framebuffer.width = event.display.data1;
+                    //window->framebuffer.height = event.display.data2;
+
+                    glViewport(0, 0, window->framebuffer.width, window->framebuffer.height);
                 }
             }
             break;

@@ -5,7 +5,11 @@
 #include <BVR/utils.h>
 #include <BVR/buffer.h>
 
-#define BVR_DRAWMODE_TRIANGLES 0x0004
+
+typedef enum bvr_drawmode_e {
+    BVR_DRAWMODE_LINES = 0x0001,
+    BVR_DRAWMODE_TRIANGLES = 0x0004
+} bvr_drawmode_t;
 
 /*
     !! MESH BUFFERS DONT WORK LIKE OTHERS BUFFERS !!

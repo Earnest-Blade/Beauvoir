@@ -57,6 +57,25 @@ void bvr_create_collider(bvr_collider_t* collider, float* vertices, size_t count
     BVR_IDENTITY_VEC3(collider->body.direction);
 }
 
+/*
+    Check for AABB collision between two in-mouvement bounds
+*/
+static int bvri_aabb(struct bvr_bounds_s* a, struct bvr_bounds_s* b, vec3 a_inertia, vec3 b_inertia){
+    vec3 va, vb;
+    BVR_IDENTITY_VEC3(va);
+    BVR_IDENTITY_VEC3(vb);
+
+    vec2_add(va, a->coords, a_inertia);
+    vec2_add(vb, b->coords, b_inertia);
+
+    return (
+        vb[0] >= va[0] + a->width  || // right check
+        vb[0] + b->width <= va[0]  || // left check
+        vb[1] >= va[1] + a->height || // bottom check
+        vb[1] + b->height <= va[1]    // top check
+    );
+}
+
 void bvr_compare_colliders(bvr_collider_t* a, bvr_collider_t* b, struct bvr_collision_result_s* result){
     BVR_ASSERT(a);
     BVR_ASSERT(b);
@@ -73,28 +92,32 @@ void bvr_compare_colliders(bvr_collider_t* a, bvr_collider_t* b, struct bvr_coll
     }
 
     if(!BVR_HAS_FLAG(a->body.mode, BVR_COLLISION_AABB) || !BVR_HAS_FLAG(b->body.mode, BVR_COLLISION_AABB)){
-        BVR_PRINT("collision mode not supported :(");
+        BVR_PRINT("collision type not supported :(");
         return;
     }
 
-    float geometry_a[4], geometry_b[4];
-    memcpy(&geometry_a[0], &((float*)a->geometry.data)[0], sizeof(float) * 2);
-    memcpy(&geometry_b[0], &((float*)b->geometry.data)[0], sizeof(float) * 2);
-    memcpy(&geometry_a[2], &((float*)a->geometry.data)[2], sizeof(float) * 2);
-    memcpy(&geometry_b[2], &((float*)b->geometry.data)[2], sizeof(float) * 2);
-    
-    vec3_add(geometry_a, geometry_a, a->transform->position);
-    vec3_add(geometry_b, geometry_b, b->transform->position);
-    vec3_add(geometry_a, geometry_a, a->body.direction);
-    vec3_add(geometry_b, geometry_b, b->body.direction);
+    struct bvr_bounds_s ba, bb;
 
-    if(geometry_a[0] < geometry_b[0] + geometry_b[3] &&
-        geometry_a[0] + geometry_a[3] > geometry_b[0] &&
-        geometry_a[1] < geometry_b[1] + geometry_b[2] &&
-        geometry_a[1] + geometry_a[2] > geometry_b[1]){
+    for (size_t ax = 0; ax < BVR_BUFFER_COUNT(a->geometry); ax++)
+    {
+        for (size_t bx = 0; bx < BVR_BUFFER_COUNT(b->geometry); bx++)
+        {
+            memcpy(&ba, a->geometry.data + ax * sizeof(struct bvr_bounds_s), sizeof(struct bvr_bounds_s));
+            memcpy(&bb, b->geometry.data + bx * sizeof(struct bvr_bounds_s), sizeof(struct bvr_bounds_s));
 
-        result->collide = 1;
-        result->other = b;
+            vec2_add(ba.coords, ba.coords, a->transform->position);
+            vec2_add(bb.coords, bb.coords, b->transform->position);
+
+            BVR_PRINTF("%f %f %i %i", ba.coords[0], ba.coords[1], ba.width, ba.height);
+            BVR_PRINTF("%f %f %i %i", bb.coords[0], bb.coords[1], bb.width, bb.height);
+
+            if(bvri_aabb(&ba, &bb, a->body.direction, b->body.direction)){
+                result->collide = BVR_OK;
+                result->other = b;
+            
+                return;
+            }
+        }
     }
 }
 

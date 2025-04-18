@@ -1,6 +1,7 @@
 # files
 *.dll
 *.exe
+*.pdb
 *.c.txt
 *.cmake
 Makefile

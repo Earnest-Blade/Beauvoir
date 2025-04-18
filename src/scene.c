@@ -84,26 +84,27 @@ void bvr_update(bvr_book_t* book){
         }
         
         // collision are disabled
-        if(BVR_HAS_FLAG(collider->body.mode, BVR_COLLISION_DISABLE)){
+        if(!BVR_HAS_FLAG(collider->body.mode, BVR_COLLISION_ENABLE)){
             bvr_body_apply_motion(&collider->body, collider->transform);
             
             continue;
         }
 
         // if this actor is aggressive
-        if(BVR_HAS_FLAG(collider->body.mode, 0x4)){
+        if(BVR_HAS_FLAG(collider->body.mode, BVR_COLLISION_AGRESSIVE)){
 
             struct bvr_collision_result_s result;
+            result.collide = 0;
 
             BVR_POOL_FOR_EACH(other, book->page.colliders){
                 if(!other){
                     break;
                 }
-    
+
                 bvr_compare_colliders(collider, other, &result);
             }
 
-            if(!result.collide){
+            if(result.collide != 1){
                 bvr_body_apply_motion(&collider->body, collider->transform);
             }
         }

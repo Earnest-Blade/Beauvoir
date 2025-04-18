@@ -243,8 +243,8 @@ int bvri_create_shader_vert_frag(bvr_shader_t* shader, const char* vert, const c
     shader->program = glCreateProgram();
     shader->flags = 0;
     shader->shader_count = 2;
-    shader->uniform_count = 0;
-    shader->block_count = 0;
+    shader->uniform_count = 1;
+    shader->block_count = 1;
 
     bvr_string_t vertex;
     bvr_string_t fragment;

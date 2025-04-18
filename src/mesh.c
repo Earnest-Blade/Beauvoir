@@ -110,7 +110,7 @@ void bvr_mesh_draw(bvr_mesh_t* mesh, int drawmode){
     for (size_t i = 0; i < mesh->attrib_count; i++){ 
         glEnableVertexAttribArray(i); 
     }
-    
+
     glDrawElements(drawmode, mesh->element_count, mesh->element_type, NULL);
 
     for (size_t i = 0; i < mesh->attrib_count; i++){ 
