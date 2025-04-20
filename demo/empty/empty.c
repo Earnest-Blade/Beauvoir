@@ -14,8 +14,6 @@ int main(){
     bvr_create_book(&book);
     bvr_create_page(&book.page);
 
-    BVR_PRINT("eeee");
-
     /* create the window */
     bvr_create_window(&book.window, 800, 800, "Window", 0);
     
@@ -32,6 +30,9 @@ int main(){
         if(!bvr_is_awake(&book)){
             break;
         }
+
+        /* update colliders and physics */
+        bvr_update(&book);
 
         /* push Beauvoir's graphics to the window */
         bvr_render(&book);

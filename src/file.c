@@ -35,23 +35,23 @@ int bvr_read_file(bvr_string_t* string, FILE* file){
     return BVR_OK;
 }
 
-short bvr_fread16(FILE* file){
+short bvr_fread16_le(FILE* file){
     uint8_t a, b;
-    a = bvr_freadu8(file);
-    b = bvr_freadu8(file);
+    a = bvr_freadu8_le(file);
+    b = bvr_freadu8_le(file);
     return (short)((b << 8) | a);
 }
 
-int bvr_fread32(FILE* file){
+int bvr_fread32_le(FILE* file){
     uint8_t a, b, c, d;
-    a = bvr_freadu8(file);
-    b = bvr_freadu8(file);
-    c = bvr_freadu8(file);
-    d = bvr_freadu8(file);
+    a = bvr_freadu8_le(file);
+    b = bvr_freadu8_le(file);
+    c = bvr_freadu8_le(file);
+    d = bvr_freadu8_le(file);
     return (int)((((d << 8) | c) << 8 | b) << 8 | a);
 }
 
-uint8_t bvr_freadu8(FILE* file){
+uint8_t bvr_freadu8_le(FILE* file){
     int v = getc(file);
     if(v == EOF){
         BVR_PRINTF("failed to read character %i", errno);
@@ -68,18 +68,18 @@ void bvr_freadstr(char* string, size_t size, FILE* file){
     }
 }
 
-uint16_t bvr_freadu16(FILE* file){
+uint16_t bvr_freadu16_le(FILE* file){
     uint8_t a, b;
-    a = bvr_freadu8(file);
-    b = bvr_freadu8(file);
+    a = bvr_freadu8_le(file);
+    b = bvr_freadu8_le(file);
     return (uint16_t)((b << 8) | a);
 }
 
-uint32_t bvr_freadu32(FILE* file){
+uint32_t bvr_freadu32_le(FILE* file){
     uint8_t a, b, c, d;
-    a = bvr_freadu8(file);
-    b = bvr_freadu8(file);
-    c = bvr_freadu8(file);
-    d = bvr_freadu8(file);
+    a = bvr_freadu8_le(file);
+    b = bvr_freadu8_le(file);
+    c = bvr_freadu8_le(file);
+    d = bvr_freadu8_le(file);
     return (uint32_t)((((d << 8) | c) << 8 | b) << 8 | a);
 }

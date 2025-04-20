@@ -81,26 +81,7 @@ static int bvri_aabb(struct bvr_bounds_s* a, struct bvr_bounds_s* b, vec3 a_iner
     );
 }
 
-void bvr_compare_colliders(bvr_collider_t* a, bvr_collider_t* b, struct bvr_collision_result_s* result){
-    BVR_ASSERT(a);
-    BVR_ASSERT(b);
-    BVR_ASSERT(result);
-
-    result->collide = 0;
-    result->distance = 0.0f;
-    result->other = NULL;
-    BVR_IDENTITY_VEC3(result->direction);
-
-    if(a == b){
-        result->collide = -1;
-        return;
-    }
-
-    if(!BVR_HAS_FLAG(a->body.mode, BVR_COLLISION_AABB) || !BVR_HAS_FLAG(b->body.mode, BVR_COLLISION_AABB)){
-        BVR_PRINT("collision type not supported :(");
-        return;
-    }
-
+static void bvri_compare_box_colliders(bvr_collider_t* a, bvr_collider_t* b, struct bvr_collision_result_s* result){
     struct bvr_bounds_s ba, bb;
 
     for (size_t ax = 0; ax < BVR_BUFFER_COUNT(a->geometry); ax++)
@@ -125,6 +106,32 @@ void bvr_compare_colliders(bvr_collider_t* a, bvr_collider_t* b, struct bvr_coll
             }
         }
     }
+}
+
+void bvr_compare_colliders(bvr_collider_t* a, bvr_collider_t* b, struct bvr_collision_result_s* result){
+    BVR_ASSERT(a);
+    BVR_ASSERT(b);
+    BVR_ASSERT(result);
+
+    result->collide = 0;
+    result->distance = 0.0f;
+    result->other = NULL;
+    BVR_IDENTITY_VEC3(result->direction);
+
+    if(a->shape == BVR_COLLIDER_EMPTY || b->shape == BVR_COLLIDER_EMPTY){
+        return;
+    }
+
+    if(a == b){
+        result->collide = -1;
+        return;
+    }
+
+    if(a->shape == b->shape && a->shape == BVR_COLLIDER_BOX){
+        bvri_compare_box_colliders(a, b, result);
+    }
+
+    
 }
 
 void bvr_destroy_collider(bvr_collider_t* collider){

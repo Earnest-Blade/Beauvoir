@@ -9,9 +9,8 @@
 
 #define BVR_COLLISION_DISABLE   0x00
 #define BVR_COLLISION_ENABLE    0x01
-#define BVR_COLLISION_AABB      0x02
-#define BVR_COLLISION_AGRESSIVE 0x04
-#define BVR_COLLISION_PASSIVE   0x08
+#define BVR_COLLISION_AGRESSIVE 0x02
+#define BVR_COLLISION_PASSIVE   0x04
 
 /*
     Contains an array of collider pointers.
@@ -21,7 +20,6 @@ typedef struct bvr_pool_s bvr_collider_collection_t;
 typedef enum bvr_collider_shape_e {
     BVR_COLLIDER_EMPTY,
     BVR_COLLIDER_BOX,
-    BVR_COLLIDER_BOXES
 } bvr_collider_shape_t;
 
 struct bvr_body_s {

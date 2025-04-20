@@ -23,7 +23,7 @@ set(BVR_DEMO_DIR ${BVR_CURRENT_DIR}/dev)
 # Development only
 if(NOT ${BVR_TARGET_SHARED})
     if (NOT DEFINED BVR_MAIN_FILE)
-        set(BVR_MAIN_FILE "${BVR_DEMO_DIR}/collider_test.c")
+        set(BVR_MAIN_FILE "${BVR_DEMO_DIR}/image_viewer.c")
     endif()
 endif()
 

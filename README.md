@@ -57,6 +57,9 @@ int main(){
             
         }
 
+        /* update colliders and physics */
+        bvr_update(&book);
+
         /* rendering */
 
         /* push Beauvoir's graphics to the window */

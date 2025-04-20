@@ -24,7 +24,9 @@ static void bvri_create_generic_dynactor(bvr_dynamic_actor_t* actor, int flags){
     bvr_create_collider(&actor->collider, NULL, 0);
     actor->collider.transform = &actor->object.transform;
 
-    actor->collider.body.mode = BVR_COLLISION_DISABLE | BVR_COLLISION_AABB;
+    actor->collider.body.mode = BVR_COLLISION_DISABLE;
+    actor->collider.shape = BVR_COLLIDER_BOX;
+    
     if(BVR_HAS_FLAG(flags, BVR_COLLISION_ENABLE)){
         actor->collider.body.mode |= BVR_COLLISION_ENABLE;
     }
