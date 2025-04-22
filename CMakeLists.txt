@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16.3)
 
-project(bvr)
+project(Beauvoir CXX)
 
 if(NOT DEFINED BVR_TARGET_SHARED)
     set(BVR_TARGET_SHARED OFF)
@@ -45,14 +45,18 @@ foreach(BVR_THIRD_PARTY_PACKAGES_ITEM ${BVR_THIRD_PARTY_PACKAGES})
     find_package(${BVR_THIRD_PARTY_PACKAGES_ITEM} REQUIRED)
 endforeach()
 
-## SETUP FOR DLLs
+## Define variables for libraries based on your compiler
 #
 if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
     set(BVR_SDL_LIB ${BVR_LIB_DIR}/SDL3.lib)
     set(BVR_PORT_AUDIO_LIB ${BVR_LIB_DIR}/portaudio.lib)
     set(BVR_Z_LIB ${BVR_LIB_DIR}/zsd.lib)
     set(BVR_PNG_LIB ${BVR_LIB_DIR}/libpng16d.lib)
-
+elseif(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")   
+    set(BVR_SDL_LIB ${BVR_LIB_DIR}/SDL3.lib)
+    set(BVR_PORT_AUDIO_LIB ${BVR_LIB_DIR}/portaudio.lib)
+    set(BVR_Z_LIB ${BVR_LIB_DIR}/zsd.lib)
+    set(BVR_PNG_LIB ${BVR_LIB_DIR}/libpng16d.lib)
 elseif(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
     set(BVR_SDL_LIB ${BVR_LIB_DIR}/libSDL3.dll.a)
     set(BVR_PORT_AUDIO_LIB ${BVR_LIB_DIR}/libportaudio.dll.a)
@@ -78,17 +82,16 @@ endif()
 
 include_directories(${BVR_INCLUDE_DIR})
 
-
 if(${BVR_TARGET_SHARED})
-    add_library(bvr SHARED)
+    add_library(Beauvoir SHARED)
     message("Successfully create a new library")
 else()
     add_compile_options(-g -w)
-    add_executable(bvr ${BVR_MAIN_FILE})
+    add_executable(Beauvoir ${BVR_MAIN_FILE})
     message("Successfully create a new executable")
 endif()
 
-target_link_libraries(bvr PUBLIC
+target_link_libraries(Beauvoir PUBLIC
     ${OPENGL_LIBRARIES}
     ${BVR_SDL_LIB}
     ${BVR_PORT_AUDIO_LIB}
@@ -96,13 +99,19 @@ target_link_libraries(bvr PUBLIC
     ${BVR_PNG_LIB}
 )
 
-target_include_directories(bvr PUBLIC ${BVR_SOURCE_DIR})
+target_include_directories(Beauvoir PUBLIC ${BVR_SOURCE_DIR})
 
 file(GLOB_RECURSE SOURCES "${BVR_SOURCE_DIR}/*.c")
-target_sources(bvr PRIVATE ${SOURCES})
+target_sources(Beauvoir PRIVATE ${SOURCES})
 
-set_target_properties(bvr PROPERTIES
+set_target_properties(Beauvoir PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY "${BVR_BIN_DIR}"
     ARCHIVE_OUTPUT_DIRECTORY "${BVR_BUILD_DIR}"
     LIBRARY_OUTPUT_DIRECTORY "${BVR_BUILD_DIR}"
 )
+
+if(MSVC)
+    set_target_properties(Beauvoir PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${BVR_BUILD_DIR} )
+    set_target_properties(Beauvoir PROPERTIES LIBRARY_OUTPUT_DIRECTORY_DEBUG ${BVR_BUILD_DIR} )
+    set_target_properties(Beauvoir PROPERTIES LIBRARY_OUTPUT_DIRECTORY_RELEASE ${BVR_BUILD_DIR} )
+endif(MSVC)

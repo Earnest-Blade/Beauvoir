@@ -5,6 +5,10 @@
 *.pdb
 *.c.txt
 *.cmake
+*.vcxproj
+*vcxproj.user
+*.filters
+*.sln
 Makefile
 CMakeCache.txt
 
@@ -13,12 +17,16 @@ bin/*.exe
 
 # folders
 .vscode/
+.vs/
 build/
 share/
 CMakeFiles/
 licenses/
 cmake/
 pkgconfig/
+x64/
+*.dir/
+
 
 # Beauvoir in-dev folders and files
 res/

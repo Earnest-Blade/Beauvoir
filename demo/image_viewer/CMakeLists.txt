@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16.3)
 
-project(bvr_empty)
+project(bvr_image_viewer)
 
 set(BVR_TARGET_SHARED ON)
 
@@ -16,12 +16,12 @@ add_subdirectory(${BVR_DEMO_DIRECTORY} ${BVR_DEMO_DIRECTORY_BIN} EXCLUDE_FROM_AL
 
 include_directories(${BVR_DEMO_DIRECTORY_INCLUDE})
 message("${BVR_DEMO_DIRECTORY_INCLUDE}")
-add_executable(bvr_empty ${BVR_MAIN_FILE})
+add_executable(bvr_image_viewer ${BVR_MAIN_FILE})
 
-target_link_libraries(bvr_empty bvr)
-target_include_directories(bvr_empty PRIVATE ${BVR_DEMO_DIRECTORY_INCLUDE})
+target_link_libraries(bvr_image_viewer Beauvoir)
+target_include_directories(bvr_image_viewer PRIVATE ${BVR_DEMO_DIRECTORY_INCLUDE})
 
-set_target_properties(bvr_empty PROPERTIES
+set_target_properties(bvr_image_viewer PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY "${BVR_DEMO_DIRECTORY_BIN}"
     ARCHIVE_OUTPUT_DIRECTORY "${BVR_DEMO_DIRECTORY_BUILD}"
     LIBRARY_OUTPUT_DIRECTORY "${BVR_DEMO_DIRECTORY_BUILD}"

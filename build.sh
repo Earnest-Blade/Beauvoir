@@ -1,7 +1,7 @@
 #! /bin/bash
 
-BVR_GENERATOR="MinGW Makefiles"
-BVR_CC="gcc"
+BVR_GENERATOR="Visual Studio 17 2022"
+BVR_CC="clang"
 BVR_CXX="g++"
 BVR_BULID_DIR="$PWD/build/"
 BVR_EXTERNAL_MODULES="SDL PortAudio Zlib Lpng"

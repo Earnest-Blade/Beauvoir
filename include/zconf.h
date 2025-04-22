@@ -10,7 +10,7 @@
 
 /* #undef Z_PREFIX */
 #define HAVE_STDARG_H 1
-#define HAVE_UNISTD_H 1
+/* #undef HAVE_UNISTD_H */
 ZCONF_H
 
 /*
