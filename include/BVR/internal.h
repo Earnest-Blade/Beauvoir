@@ -3,7 +3,7 @@
 #if defined(__clang__)
     #define typeof(x) __typeof__(x)
 #elif defined(_MSC_VER)
-    #define typeof(x) typeid(x)
+    #define typeof(x) __typeof__(x)
 #else
     #define typeof(x) __typeof(x)
 #endif
