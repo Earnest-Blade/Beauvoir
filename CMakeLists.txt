@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16.3)
 
-project(Beauvoir CXX)
+project(Beauvoir C)
 
 if(NOT DEFINED BVR_TARGET_SHARED)
     set(BVR_TARGET_SHARED OFF)
@@ -47,19 +47,24 @@ endforeach()
 
 ## Define variables for libraries based on your compiler
 #
-if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
     set(BVR_SDL_LIB ${BVR_LIB_DIR}/SDL3.lib)
     set(BVR_PORT_AUDIO_LIB ${BVR_LIB_DIR}/portaudio.lib)
     set(BVR_Z_LIB ${BVR_LIB_DIR}/zsd.lib)
     set(BVR_PNG_LIB ${BVR_LIB_DIR}/libpng16d.lib)
 
-elseif(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")   
+elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")   
     set(BVR_SDL_LIB ${BVR_LIB_DIR}/SDL3.lib)
     set(BVR_PORT_AUDIO_LIB ${BVR_LIB_DIR}/portaudio.lib)
     set(BVR_Z_LIB ${BVR_LIB_DIR}/zsd.lib)
     set(BVR_PNG_LIB ${BVR_LIB_DIR}/libpng16d.lib)
 
-elseif(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+    set(BVR_SDL_LIB ${BVR_LIB_DIR}/libSDL3.dll.a)
+    set(BVR_PORT_AUDIO_LIB ${BVR_LIB_DIR}/libportaudio.dll.a)
+    set(BVR_Z_LIB ${BVR_LIB_DIR}/libz.dll.a)
+    set(BVR_PNG_LIB ${BVR_LIB_DIR}/libpng16.dll.a)
+else()
     set(BVR_SDL_LIB ${BVR_LIB_DIR}/libSDL3.dll.a)
     set(BVR_PORT_AUDIO_LIB ${BVR_LIB_DIR}/libportaudio.dll.a)
     set(BVR_Z_LIB ${BVR_LIB_DIR}/libz.dll.a)

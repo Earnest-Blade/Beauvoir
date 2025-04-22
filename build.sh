@@ -1,7 +1,7 @@
 #! /bin/bash
 
-BVR_GENERATOR="Visual Studio 17 2022"
-BVR_CC="clang"
+BVR_GENERATOR="MinGW Makefiles"
+BVR_CC="gcc"
 BVR_CXX="g++"
 BVR_BULID_DIR="$PWD/build/"
 BVR_EXTERNAL_MODULES="SDL PortAudio Zlib Lpng"
@@ -33,6 +33,7 @@ for MOD in $BVR_EXTERNAL_MODULES; do
             BVR_MODULE_FLAGS=""
         fi
 
+        rm "$BVR_BULID_DIR/$MOD/CMakeCache.txt"
         cmake "$MODULE_PATH/CmakeLists.txt" -G="$BVR_GENERATOR" -B="$BVR_BULID_DIR/$MOD" -D CMAKE_INSTALL_PREFIX="$PWD" "$BVR_MODULE_FLAGS" -DCMAKE_C_COMPILER="$BVR_CC" -DCMAKE_CXX_COMPILER="$BVR_CXX"
         cmake --build "$BVR_BULID_DIR/$MOD" --target install
 

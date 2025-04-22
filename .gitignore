@@ -3,6 +3,7 @@
 *.a
 *.exe
 *.pdb
+*.lib
 *.c.txt
 *.cmake
 *.vcxproj

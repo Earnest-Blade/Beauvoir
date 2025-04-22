@@ -671,13 +671,13 @@ struct bvri_psdlayer_s {
     short channel_count;
     struct bvri_psdlayerchannel_s {
         short id;
-        uint32_t size;
+        uint32_t length;
         size_t position;
     }* channels;
     
     char sig[5];
     char blend_mode[5];
-    char opacity;
+    uint8_t opacity;
     char clipping;
     char flags;
 
@@ -831,8 +831,10 @@ static int bvri_load_psd(bvr_image_t* image, FILE* file){
         layer_section.layer_count = bvr_freadu16_be(file);
 
         if(layer_section.layer_count < 0){
-            layer_section.next_alpha_channel_is_global = 1;
             layer_section.layer_count = -layer_section.layer_count;
+        }
+        else {
+            layer_section.next_alpha_channel_is_global = 1;
         }
 
         layer_section.layers = NULL;
@@ -850,6 +852,7 @@ static int bvri_load_psd(bvr_image_t* image, FILE* file){
             layer->bounds[1] = bvr_freadu32_be(file);
             layer->bounds[2] = bvr_freadu32_be(file);
             layer->bounds[3] = bvr_freadu32_be(file);
+
             layer->channel_count = bvr_freadu16_be(file);
 
             BVR_PRINTF("bounds %i %i %i %i channels %i", layer->bounds[0], layer->bounds[1], layer->bounds[2], layer->bounds[3], layer->channel_count);
@@ -860,7 +863,7 @@ static int bvri_load_psd(bvr_image_t* image, FILE* file){
             {
                 layer->channels[channel].id = bvr_freadu16_be(file);
                 layer->channels[channel].position = 0;
-                layer->channels[channel].size = bvr_freadu32_be(file);
+                layer->channels[channel].length = bvr_freadu32_be(file);
             }
             
             BVR_PRINTF("before sig ftell %x", ftell(file));
@@ -875,7 +878,7 @@ static int bvri_load_psd(bvr_image_t* image, FILE* file){
             layer->flags = bvr_freadu8_be(file);
             bvr_freadu8_be(file); // filler bit
 
-            end_of_header = ftell(file) + bvr_freadu32_be(file) + 4U; 
+            end_of_header = ftell(file) + bvr_freadu32_be(file) + 4; 
 
             fseek(file, bvr_freadu32_be(file), SEEK_CUR); // skip Layer mask / adjustment layer data
             fseek(file, bvr_freadu32_be(file), SEEK_CUR); // skip Layer blending ranges data
@@ -886,6 +889,9 @@ static int bvri_load_psd(bvr_image_t* image, FILE* file){
 
             // pascal string padding.
             fseek(file, (layer->name.length - 1) - (((layer->name.length - 1) / 4) * 4) + 3, SEEK_CUR);
+
+            // global layer mask info
+            fseek(file, bvr_freadu32_be(file), SEEK_CUR);
 
             int has_next_additional_data = 1;
             while(has_next_additional_data) {
@@ -917,19 +923,19 @@ static int bvri_load_psd(bvr_image_t* image, FILE* file){
 
         // calculate layers offsets
         {
-            size_t prev_stream_position = ftell(file);
+            /*size_t prev_stream_position = ftell(file);
 
             for (size_t layer = 0; layer < layer_section.layer_count; layer++)
             {
                 for (size_t channel = 0; channel < header.channels; channel++)
                 {
                     layer_section.layers[layer].channels[channel].position = ftell(file);
-                    fseek(file, layer_section.layers[layer].channels[channel].size, SEEK_CUR);
+                    fseek(file, layer_section.layers[layer].channels[channel].length, SEEK_CUR);
                 }
                 
             }
             
-            fseek(file, prev_stream_position, SEEK_SET);
+            fseek(file, prev_stream_position, SEEK_SET);*/
         }
     }
 
@@ -952,7 +958,9 @@ static int bvri_load_psd(bvr_image_t* image, FILE* file){
 
     BVR_PRINTF("psd format %i", image->format);
 
-    image->pixels = malloc(image->width * image->height * image->channels * layer_section.layer_count);
+    const int channels = 4;
+
+    image->pixels = malloc(image->width * image->height * channels * layer_section.layer_count);
     BVR_ASSERT(image->pixels);
 
     memset(image->pixels, 0, image->width * image->height * image->channels * layer_section.layer_count);
@@ -994,11 +1002,12 @@ static int bvri_load_psd(bvr_image_t* image, FILE* file){
                 image_data_section.rle_pack_lengths = calloc(layer_height, sizeof(uint16_t));
                 BVR_ASSERT(image_data_section.rle_pack_lengths);
 
-                for (size_t channel = 0; channel < image->channels; channel++)
+                for (size_t channel = 0; channel < layer_section.layers[layer].channel_count; channel++)
                 {
                     size_t readed_size;
 
-                    fseek(file, layer_section.layers[layer].channels[channel].position, SEEK_SET);
+                    layer_section.layers[layer].channels[channel].position = ftell(file);
+                    BVR_PRINTF("layer ftell position %x", layer_section.layers[layer].channels[channel].position);
 
                     image_data_section.target_channel = layer_section.layers[layer].channels[channel].id; 
                     switch (image_data_section.target_channel)
@@ -1008,6 +1017,13 @@ static int bvri_load_psd(bvr_image_t* image, FILE* file){
                             image_data_section.columns = layer_width;
                             image_data_section.rows = layer_height;  
                             image_data_section.target_channel = 3;
+
+                            /*if(layer_section.next_alpha_channel_is_global){
+                                //layer_section.next_alpha_channel_is_global = 0;
+                                image_data_section.columns = image->width;
+                                image_data_section.rows = image->height;
+                            }  */                          
+
                         }
                         break;
                     case -2: // layer or vector
@@ -1038,6 +1054,7 @@ static int bvri_load_psd(bvr_image_t* image, FILE* file){
 
                     image_data_section.packed_length = 0;
                     image_data_section.unpacked_length = image_data_section.columns * image_data_section.rows;
+
                     for (size_t j = 0; j < image_data_section.rows; j++)
                     {
                         image_data_section.rle_pack_lengths[j] = bvr_freadu16_be(file);
@@ -1060,8 +1077,8 @@ static int bvri_load_psd(bvr_image_t* image, FILE* file){
                         continue;
                     }
 
-                    uint8_t count = 0;
                     uint8_t character = 0;
+                    uint8_t count = 0;
                     uint32_t count_as_int = 0;
                     size_t offset = 0;
                     size_t readed_bytes = 0;
@@ -1072,7 +1089,7 @@ static int bvri_load_psd(bvr_image_t* image, FILE* file){
                         BVR_ASSERT(offset < image_data_section.unpacked_length);
 
                         if(readed_bytes < image_data_section.packed_length){
-                            count = (uint8_t)image_data_section.packed_buffer[readed_bytes++];
+                            count = image_data_section.packed_buffer[readed_bytes++];
                             
                             if(count == 0x80){
                                 // byte == 128
@@ -1082,7 +1099,7 @@ static int bvri_load_psd(bvr_image_t* image, FILE* file){
                                 // 0x81 < byte < 0xFF
                                 count_as_int = (uint32_t)(0x101 - count);
 
-                                BVR_ASSERT(offset + count_as_int < image_data_section.unpacked_length);
+                                BVR_ASSERT(offset + count_as_int <= image_data_section.unpacked_length);
 
                                 memset(&image_data_section.unpacked_buffer[offset], 
                                     image_data_section.packed_buffer[readed_bytes++],
@@ -1093,9 +1110,9 @@ static int bvri_load_psd(bvr_image_t* image, FILE* file){
                             }
                             else {
                                 // 0x00 < byte < 0x7F
-                                count_as_int = (uint32_t)(count_as_int + 1);
+                                count_as_int = (uint32_t)(count + 1);
 
-                                BVR_ASSERT(offset + count_as_int < image_data_section.unpacked_length);
+                                BVR_ASSERT(offset + count_as_int <= image_data_section.unpacked_length);
 
                                 memcpy(&image_data_section.unpacked_buffer[offset],
                                     &image_data_section.packed_buffer[readed_bytes],
@@ -1130,6 +1147,13 @@ static int bvri_load_psd(bvr_image_t* image, FILE* file){
                         }
 
                     }
+
+                    // seek to the end of the channel data
+                    fseek(file, 
+                        layer_section.layers[layer].channels[channel].position 
+                        + layer_section.layers[layer].channels[channel].length, 
+                        SEEK_SET
+                    );
                     
                     free(image_data_section.packed_buffer);
                     free(image_data_section.unpacked_buffer);
