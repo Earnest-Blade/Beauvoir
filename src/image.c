@@ -676,7 +676,7 @@ struct bvri_psdlayer_s {
     }* channels;
     
     char sig[5];
-    char blend_mode[5];
+    int blend_mode;
     uint8_t opacity;
     char clipping;
     char flags;
@@ -864,7 +864,7 @@ static int bvri_load_psd(bvr_image_t* image, FILE* file){
             }
             
             bvr_freadstr(layer->sig, 5, file);
-            bvr_freadstr(layer->blend_mode, 5, file);
+            layer->blend_mode = bvr_freadu32_be(file);
 
             BVR_ASSERT(strcmp(layer->sig, "8BIM") == 0);
             // TODO: define blend mode
@@ -930,8 +930,6 @@ static int bvri_load_psd(bvr_image_t* image, FILE* file){
         break;
     }
 
-    BVR_PRINTF("psd format %i", image->format);
-
     image->pixels = malloc(image->width * image->height * image->channels * layer_section.layer_count);
     BVR_ASSERT(image->pixels);
 
@@ -945,7 +943,7 @@ static int bvri_load_psd(bvr_image_t* image, FILE* file){
     {
         bvr_string_create_and_copy(&((bvr_layer_t*)image->layers.data)[layer].name, &layer_section.layers[layer].name);
         ((bvr_layer_t*)image->layers.data)[layer].flags = 0;
-        ((bvr_layer_t*)image->layers.data)[layer].blend_mode = 0;
+        ((bvr_layer_t*)image->layers.data)[layer].blend_mode = (bvr_layer_blend_mode_t)layer_section.layers[layer].blend_mode;
         ((bvr_layer_t*)image->layers.data)[layer].width = layer_section.layers[layer].bounds[3] - layer_section.layers[layer].bounds[1];
         ((bvr_layer_t*)image->layers.data)[layer].height = layer_section.layers[layer].bounds[2] - layer_section.layers[layer].bounds[0];
         ((bvr_layer_t*)image->layers.data)[layer].anchor_x = layer_section.layers[layer].bounds[1];
@@ -1157,7 +1155,7 @@ static void bvri_create_empty_layer(bvr_image_t* image){
     image->layers.data = malloc(image->layers.elemsize);
     image->layers.size = image->layers.elemsize;
 
-    ((bvr_layer_t*)image->layers.data)[0].blend_mode = 0;
+    ((bvr_layer_t*)image->layers.data)[0].blend_mode = BVR_LAYER_BLEND_NORMAL;
     ((bvr_layer_t*)image->layers.data)[0].flags = 0;
     ((bvr_layer_t*)image->layers.data)[0].width = image->width;
     ((bvr_layer_t*)image->layers.data)[0].height = image->height;

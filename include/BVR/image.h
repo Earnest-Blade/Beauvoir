@@ -65,6 +65,37 @@
 #define BVR_TEXTURE_WRAP_REPEAT 0x2901
 #define BVR_TEXTURE_WRAP_CLAMP_TO_EDGE 0x812F
 
+typedef enum bvr_layer_blend_mode_e {
+    BVR_LAYER_BLEND_PASSTHROUGH     = 0x70617373,
+    BVR_LAYER_BLEND_NORMAL          = 0x6E6F726D,
+    BVR_LAYER_BLEND_DISSOLVE        = 0x64697373,
+    BVR_LAYER_BLEND_DARKEN          = 0x6461726B,
+    BVR_LAYER_BLEND_MULTIPLY        = 0x6D756C00,
+    BVR_LAYER_BLEND_COLORBURN       = 0x69646976,
+    BVR_LAYER_BLEND_LINEARBURN      = 0x6C62726E,
+    BVR_LAYER_BLEND_DARKERCOLOR     = 0x646B436C,
+    BVR_LAYER_BLEND_LIGHTEN         = 0x6C697465,
+    BVR_LAYER_BLEND_SCREEN          = 0x7363726E,
+    BVR_LAYER_BLEND_COLORDODGE      = 0x64697600,
+    BVR_LAYER_BLEND_LINEARDODGE     = 0x6C646467,
+    BVR_LAYER_BLEND_LIGHTERCOLOR    = 0x6C67436C,
+    BVR_LAYER_BLEND_OVERLAY         = 0x6F766572,
+    BVR_LAYER_BLEND_SOFTLIGHT       = 0x734C6974,
+    BVR_LAYER_BLEND_HARDLIGHT       = 0x684C6974,
+    BVR_LAYER_BLEND_VIVIDLIGHT      = 0x764C6974,
+    BVR_LAYER_BLEND_LINEARLIGHT     = 0x6C4C6974,
+    BVR_LAYER_BLEND_PINLIGHT        = 0x704C6974,
+    BVR_LAYER_BLEND_HARDMIX         = 0x684D6978,
+    BVR_LAYER_BLEND_DIFFERENCE      = 0x64696666,
+    BVR_LAYER_BLEND_EXCLUSION       = 0x736D7564,
+    BVR_LAYER_BLEND_SUBSTRACT       = 0x66737566,
+    BVR_LAYER_BLEND_DIVIDE          = 0x66646976,
+    BVR_LAYER_BLEND_HUE             = 0x68756500,
+    BVR_LAYER_BLEND_SATURATION      = 0x73617400,
+    BVR_LAYER_BLEND_COLOR           = 0x636F6C72,
+    BVR_LAYER_BLEND_LUMINOSITY      = 0x65756D00
+} bvr_layer_blend_mode_t;
+
 /*
     Contains image layer informations
 */
@@ -72,7 +103,7 @@ typedef struct bvr_layer_s {
     bvr_string_t name;
     uint16_t flags;
 
-    uint16_t blend_mode;
+    bvr_layer_blend_mode_t blend_mode;
     int width, height;
     int anchor_x, anchor_y;
 } bvr_layer_t;
