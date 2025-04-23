@@ -11,55 +11,73 @@
 void bvr_pipeline_state_enable(struct bvr_pipeline_state_s* state){
     BVR_ASSERT(state);
 
-    // blending
-    if(BVR_HAS_FLAG(state->blending, BVR_BLEND_ENABLE)){
+    if(state->blending){
         glEnable(GL_BLEND);
 
-        if(BVR_HAS_FLAG(state->blending, BVR_BLEND_FUNC_ALPHA_ONE_MINUS)){
+        switch(state->blending)
+        {
+        case BVR_BLEND_FUNC_ALPHA_ONE_MINUS:
             glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-        }
-        else if(BVR_HAS_FLAG(state->blending, BVR_BLEND_FUNC_ALPHA_ADD)){
+            break;
+        case BVR_BLEND_FUNC_ALPHA_ADD:
             glBlendFunc(GL_ONE, GL_ONE);
-        }
-        else if(BVR_HAS_FLAG(state->blending, BVR_BLEND_FUNC_ALPHA_MULT)){
-            glBlendFunc(GL_ONE, GL_SRC_COLOR); // ????
+            break;
+        case BVR_BLEND_FUNC_ALPHA_MULT:
+            glBlendFunc(GL_ONE, GL_SRC_COLOR);
+            break;
+        default:
+            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+            break;
         }
     }
     else {
         glDisable(GL_BLEND);
     }
 
-    // depth testing
-    if(BVR_HAS_FLAG(state->depth, BVR_DEPTH_TEST_ENABLE)){
-        glEnable(GL_DEPTH_TEST);
-        
-        if(BVR_HAS_FLAG(state->depth, BVR_DEPTH_FUNC_NEVER)){
+    if(state->depth){
+        glEnable(GL_BLEND);
+
+        switch (state->depth)
+        {
+        case BVR_DEPTH_FUNC_NEVER:
             glDepthFunc(GL_NEVER);
-        }
-        else if(BVR_HAS_FLAG(state->depth, BVR_DEPTH_FUNC_ALWAYS)){
+            break;
+        
+        case BVR_DEPTH_FUNC_ALWAYS:
             glDepthFunc(GL_ALWAYS);
-        }
-        else if(BVR_HAS_FLAG(state->depth, BVR_DEPTH_FUNC_LESS)){
+            break;
+        
+        case BVR_DEPTH_FUNC_LESS:
             glDepthFunc(GL_LESS);
-        }
-        else if(BVR_HAS_FLAG(state->depth, BVR_DEPTH_FUNC_GREATER)){
+            break;
+    
+        case BVR_DEPTH_FUNC_GREATER:
             glDepthFunc(GL_GREATER);
-        }
-        else if(BVR_HAS_FLAG(state->depth, BVR_DEPTH_FUNC_LEQUAL)){
+            break;
+
+        case BVR_DEPTH_FUNC_LEQUAL:
             glDepthFunc(GL_LEQUAL);
-        }
-        else if(BVR_HAS_FLAG(state->depth, BVR_DEPTH_FUNC_GEQUAL)){
+            break;
+        
+        case BVR_DEPTH_FUNC_GEQUAL:
             glDepthFunc(GL_GEQUAL);
-        }
-        else if(BVR_HAS_FLAG(state->depth, BVR_DEPTH_FUNC_NOTEQUAL)){
+            break;
+
+        case BVR_DEPTH_FUNC_NOTEQUAL:
             glDepthFunc(GL_NOTEQUAL);
-        }
-        else if(BVR_HAS_FLAG(state->depth, BVR_DEPTH_FUNC_EQUAL)){
+            break;
+        
+        case BVR_DEPTH_FUNC_EQUAL:
             glDepthFunc(GL_EQUAL);
+            break;
+
+        default:
+            glDepthFunc(GL_ALWAYS);
+            break;
         }
     }
     else {
-        glDisable(GL_DEPTH_TEST);
+        glDisable(GL_BLEND);
     }
 }
 
@@ -69,25 +87,20 @@ int bvr_create_framebuffer(bvr_framebuffer_t* framebuffer, int width, int height
 
     framebuffer->width = width;
     framebuffer->height = height;
-    framebuffer->prev_width = width;
-    framebuffer->prev_height = height;
+    framebuffer->target_width = width;
+    framebuffer->target_height = height;
 
     {
-        /*const float quad[24] = {
-            -1.0f,   1.0f, 0.0f, 1.0f,
-            -1.0f,  -1.0f, 0.0f, 0.0f,
-             1.0f,  -1.0f, 1.0f, 0.0f,
-            -1.0f,   1.0f, 0.0f, 1.0f,
-             1.0f,  -1.0f, 1.0f, 0.0f,
-             1.0f,   1.0f, 1.0f, 1.0f,
-        };*/
+        int half_width = width * 0.5f;
+        int half_height = height * 0.5f;
+
         const float quad[24] = {
-            0.0f,  height,      0.0f, 0.0f,
-            0.0f,  0.0f,        0.0f, 1.0f,
-            width,  0.0f,       1.0f, 1.0f,
-            0.0f,   height,     0.0f, 0.0f,
-            width,  0.0f,       1.0f, 1.0f,
-            width,  height,     1.0f, 0.0f,
+            -half_width,   half_height, 0.0f, 1.0f,
+            -half_width,  -half_height, 0.0f, 0.0f,
+             half_width,  -half_height, 1.0f, 0.0f,
+            -half_width,   half_height, 0.0f, 1.0f,
+             half_width,  -half_height, 1.0f, 0.0f,
+             half_width,   half_height, 1.0f, 1.0f,
         };
 
         glGenVertexArrays(1, &framebuffer->vertex_buffer);
@@ -112,14 +125,15 @@ int bvr_create_framebuffer(bvr_framebuffer_t* framebuffer, int width, int height
             "#version 400\n"
             "layout(location=0) in vec2 in_position;\n"
             "layout(location=1) in vec2 in_uvs;\n"
-            "uniform mat4 bvr_proj;\n"
+            "uniform mat4 bvr_projection;\n"
             "out V_DATA {\n"
             "	vec2 uvs;\n"
             "} vertex;\n"
             "void main() {\n"
-            "	gl_Position = bvr_proj * vec4(in_position, 0.0, 1.0);\n"
+            "	gl_Position = bvr_projection * vec4(in_position, 0.0, 1.0);\n"
             "	vertex.uvs = in_uvs;\n"
             "}";
+
         const char* fragment_shader = 
             "#version 400\n"
             "in V_DATA {\n"
@@ -132,7 +146,7 @@ int bvr_create_framebuffer(bvr_framebuffer_t* framebuffer, int width, int height
             "}";
         
         bvri_create_shader_vert_frag(&framebuffer->shader, vertex_shader, fragment_shader);
-        bvr_shader_register_uniform(&framebuffer->shader, BVR_MAT4, 1, "bvr_proj");
+        bvr_shader_register_uniform(&framebuffer->shader, BVR_MAT4, 1, "bvr_projection");
     }
 
     glGenFramebuffers(1, &framebuffer->buffer);
@@ -167,35 +181,35 @@ void bvr_framebuffer_enable(bvr_framebuffer_t* framebuffer){
 
     glBindFramebuffer(GL_FRAMEBUFFER, framebuffer->buffer);
     glGetIntegerv(GL_VIEWPORT, viewport);
-    framebuffer->prev_width = viewport[2];
-    framebuffer->prev_height = viewport[3];
+    framebuffer->target_width = viewport[2];
+    framebuffer->target_height = viewport[3];
 
     glViewport(0, 0, framebuffer->width, framebuffer->height);
-
-    mat4x4 ortho = {
-        {  2.0f,  0.0f,  0.0f, 0.0f },
-        {  0.0f, -2.0f,  0.0f, 0.0f },
-        {  0.0f,  0.0f, -1.0f, 0.0f },
-        { -1.0f,  1.0f,  0.0f, 1.0f },
-    };
-
-    ortho[0][0] /= (float)framebuffer->width;
-    ortho[1][1] /= (float)framebuffer->height;
-
-    bvr_shader_set_uniformi(&framebuffer->shader.uniforms[1], &ortho[0][0]);
 }
 
 void bvr_framebuffer_disable(bvr_framebuffer_t* framebuffer){
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    glViewport(0, 0, framebuffer->prev_width, framebuffer->prev_height);
+    glViewport(0, 0, framebuffer->target_width, framebuffer->target_height);
+    
+    mat4x4 ortho;
+    mat4x4_ortho(ortho, 
+        -framebuffer->width  / 2.0f,
+         framebuffer->width  / 2.0f,
+        -framebuffer->height / 2.0f,
+         framebuffer->height / 2.0f,
+        0.0f, 1.0f);
+
+    bvr_shader_set_uniformi(&framebuffer->shader.uniforms[1], &ortho[0][0]);
 }
 
 void bvr_framebuffer_clear(bvr_framebuffer_t* framebuffer, vec3 color){
-    glClearColor(0, 0, 0, 1.0f);
+    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
 void bvr_framebuffer_blit(bvr_framebuffer_t* framebuffer){
+    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT);
     bvr_shader_enable(&framebuffer->shader);
 
     glBindVertexArray(framebuffer->vertex_buffer);

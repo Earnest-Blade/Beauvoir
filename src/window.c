@@ -146,10 +146,8 @@ void bvr_window_poll_events(bvr_window_t* window){
         case SDL_EVENT_WINDOW_RESIZED:
             {
                 if(event.display.data1 & event.display.data2){
-                    //window->framebuffer.width = event.display.data1;
-                    //window->framebuffer.height = event.display.data2;
-
-                    glViewport(0, 0, window->framebuffer.width, window->framebuffer.height);
+                    window->framebuffer.width = event.display.data1;
+                    window->framebuffer.height = event.display.data2;
                 }
             }
             break;

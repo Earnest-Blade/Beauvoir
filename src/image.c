@@ -1317,7 +1317,7 @@ int bvr_create_bitmap(bvr_image_t* bitmap, const char* path, int channel){
 
     memset(bitmap->pixels, 0, bitmap->width * bitmap->height);
 
-    bvr_image_get_channel_pixels(&image, channel, bitmap->pixels);
+    bvr_image_copy_channel(&image, channel, bitmap->pixels);
 
     fclose(file);
     bvr_destroy_image(&image);
@@ -1336,7 +1336,7 @@ void bvr_flip_image_vertically(bvr_image_t* image){
     }
 }
 
-int bvr_image_get_channel_pixels(bvr_image_t* image, int channel, uint8_t* buffer){
+int bvr_image_copy_channel(bvr_image_t* image, int channel, uint8_t* buffer){
     BVR_ASSERT(image);
     BVR_ASSERT(image->pixels);
     BVR_ASSERT(buffer);
@@ -1347,15 +1347,27 @@ int bvr_image_get_channel_pixels(bvr_image_t* image, int channel, uint8_t* buffe
         BLUE=0x2
         ALPHA=0x3
     */
+    if(image->format == BVR_BGR || image->format == BVR_BGRA){
+        switch (channel)
+        {
+        case 0x0:
+            channel = 0x2;
+            break;
+        case 0x2:
+            channel = 0x0; 
+            break;
+        default:
+            break;
+        }
+    }
+
     for (size_t y = 0; y < image->height; y++)
     {
         for (size_t x = 0; x < image->width; x++)
         {
             buffer[y * image->width + x] = image->pixels[(y * image->width + x) * image->channels + channel];
         }
-        
     }
-    
 }
 
 void bvr_destroy_image(bvr_image_t* image){

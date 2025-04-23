@@ -141,7 +141,7 @@ void bvr_flip_image_vertically(bvr_image_t* image);
     Copy a specific image channel over another pixel buffer.
     The targeted pixel buffer must be allocated.
 */
-int bvr_image_get_channel_pixels(bvr_image_t* image, int channel, uint8_t* buffer);
+int bvr_image_copy_channel(bvr_image_t* image, int channel, uint8_t* buffer);
 
 void bvr_destroy_image(bvr_image_t* image);
 

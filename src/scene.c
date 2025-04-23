@@ -51,8 +51,8 @@ void bvr_new_frame(bvr_book_t* book){
     BVR_IDENTITY_MAT4(view);
 
     if(camera->mode == BVR_CAMERA_ORTHOGRAPHIC){
-        float width = 1.0f / camera->framebuffer->width * camera->field_of_view.scale;
-        float height = 1.0f / camera->framebuffer->height * camera->field_of_view.scale;
+        float width = 1.0f / camera->framebuffer->target_width * camera->field_of_view.scale;
+        float height = 1.0f / camera->framebuffer->target_height * camera->field_of_view.scale;
         float farnear = 1.0f / (camera->far - camera->near);
 
         projection[0][0] = width;
