@@ -18,6 +18,11 @@ static void bvri_update_transform(struct bvr_actor_s* actor){
     actor->transform.matrix[3][0] = actor->transform.position[0];
     actor->transform.matrix[3][1] = actor->transform.position[1];
     actor->transform.matrix[3][2] = actor->transform.position[2];
+
+    // scale matrix
+    actor->transform.matrix[0][0] = actor->transform.scale[0];
+    actor->transform.matrix[1][1] = actor->transform.scale[0];
+    actor->transform.matrix[2][2] = actor->transform.scale[0];
 }
 
 static void bvri_create_generic_dynactor(bvr_dynamic_actor_t* actor, int flags){

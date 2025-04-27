@@ -939,15 +939,23 @@ static int bvri_load_psd(bvr_image_t* image, FILE* file){
     image->layers.data = calloc(layer_section.layer_count, image->layers.elemsize);
     BVR_ASSERT(image->layers.data);
 
+    // initialize layers to make sure they're correct
     for (size_t layer = 0; layer < layer_section.layer_count; layer++)
     {
-        bvr_string_create_and_copy(&((bvr_layer_t*)image->layers.data)[layer].name, &layer_section.layers[layer].name);
-        ((bvr_layer_t*)image->layers.data)[layer].flags = 0;
-        ((bvr_layer_t*)image->layers.data)[layer].blend_mode = (bvr_layer_blend_mode_t)layer_section.layers[layer].blend_mode;
-        ((bvr_layer_t*)image->layers.data)[layer].width = layer_section.layers[layer].bounds[3] - layer_section.layers[layer].bounds[1];
-        ((bvr_layer_t*)image->layers.data)[layer].height = layer_section.layers[layer].bounds[2] - layer_section.layers[layer].bounds[0];
-        ((bvr_layer_t*)image->layers.data)[layer].anchor_x = layer_section.layers[layer].bounds[1];
-        ((bvr_layer_t*)image->layers.data)[layer].anchor_y = layer_section.layers[layer].bounds[0];
+        bvr_layer_t* layer_ptr = &((bvr_layer_t*)image->layers.data)[layer];
+
+        bvr_string_create_and_copy(&layer_ptr->name, &layer_section.layers[layer].name);
+        layer_ptr->flags = 0;
+        layer_ptr->blend_mode = (bvr_layer_blend_mode_t)layer_section.layers[layer].blend_mode;
+        layer_ptr->width = layer_section.layers[layer].bounds[3] - layer_section.layers[layer].bounds[1];
+        layer_ptr->height = layer_section.layers[layer].bounds[2] - layer_section.layers[layer].bounds[0];
+        layer_ptr->anchor_x = layer_section.layers[layer].bounds[1];
+        layer_ptr->anchor_y = layer_section.layers[layer].bounds[0];
+        layer_ptr->opacity = layer_section.layers[layer].opacity;
+
+        if(layer_section.layers[layer].clipping){
+            layer_ptr->flags |= BVR_LAYER_CLIPPED;
+        }
     }
 
     image_data_section.unpacked_buffer = NULL;

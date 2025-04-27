@@ -65,6 +65,8 @@
 #define BVR_TEXTURE_WRAP_REPEAT 0x2901
 #define BVR_TEXTURE_WRAP_CLAMP_TO_EDGE 0x812F
 
+#define BVR_LAYER_CLIPPED 0x01
+
 typedef enum bvr_layer_blend_mode_e {
     BVR_LAYER_BLEND_PASSTHROUGH     = 0x70617373,
     BVR_LAYER_BLEND_NORMAL          = 0x6E6F726D,
@@ -103,9 +105,11 @@ typedef struct bvr_layer_s {
     bvr_string_t name;
     uint16_t flags;
 
-    bvr_layer_blend_mode_t blend_mode;
     int width, height;
     int anchor_x, anchor_y;
+
+    short opacity;
+    bvr_layer_blend_mode_t blend_mode;
 } bvr_layer_t;
 
 /*

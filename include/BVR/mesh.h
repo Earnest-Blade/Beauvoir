@@ -10,13 +10,11 @@ typedef enum bvr_drawmode_e {
     BVR_DRAWMODE_TRIANGLES = 0x0004
 } bvr_drawmode_t;
 
-/*
-    !! MESH BUFFERS DONT WORK LIKE OTHERS BUFFERS !!
-    char* data; -> contains data 
-    unsigned long long size; -> count of vertices
-    unsigned int elemsize; -> type 
-*/
-typedef struct bvr_buffer_s bvr_mesh_buffer_t;
+typedef struct bvr_mesh_buffer_s {
+    char* data;
+    unsigned long long count;
+    unsigned int type;
+} bvr_mesh_buffer_t;
 
 typedef enum bvr_mesh_array_attrib_e {
     /*
@@ -39,7 +37,14 @@ typedef enum bvr_mesh_array_attrib_e {
         vertices    -> vec3
         uvs         -> vec2
     */
-    BVR_MESH_ATTRIB_V3UV2
+    BVR_MESH_ATTRIB_V3UV2,
+
+    /*
+        vertices    -> vec3
+        uvs         -> vec2
+        normals     -> vec3 
+    */
+    BVR_MESH_ATTRIB_V3UV2N3
 } bvr_mesh_array_attrib_t;
 
 typedef struct bvr_mesh_s {
@@ -53,8 +58,28 @@ typedef struct bvr_mesh_s {
     uint32_t attrib_count, stride;
 } bvr_mesh_t;
 
-int bvr_create_mesh(bvr_mesh_t* mesh, bvr_mesh_buffer_t* vertices, bvr_mesh_buffer_t* elements, bvr_mesh_array_attrib_t attrib);
+/*
+    Create a new mesh by using raw vertices and indices data
+*/
+int bvr_create_meshv(bvr_mesh_t* mesh, bvr_mesh_buffer_t* vertices, bvr_mesh_buffer_t* elements, bvr_mesh_array_attrib_t attrib);
+
+/*
+    Create a new mesh by using a FILE
+*/
+int bvr_create_meshf(bvr_mesh_t* mesh, FILE* file, bvr_mesh_array_attrib_t attrib);
+
+/*
+    Create a new mesh from path
+*/
+static inline int bvr_create_mesh(bvr_mesh_t* mesh, const char* path, bvr_mesh_array_attrib_t attrib){
+    FILE* file = fopen(path, "rb");
+    int status = bvr_create_meshf(mesh, file, attrib);
+    fclose(file);
+    return status;
+}
+
 void bvr_mesh_draw(bvr_mesh_t* mesh, int drawmode);
+
 void bvr_destroy_mesh(bvr_mesh_t* mesh);
 
 #ifdef BVR_GEOMETRY_IMPLEMENTATION
@@ -67,43 +92,43 @@ static inline void bvr_create_2d_square_mesh(bvr_mesh_t* mesh, float width, floa
          width,  height, 1, 1
     };
 
-    uint32_t indices[] = {0, 1, 2, 0, 2, 3};
+    uint32_t indices[6] = {0, 1, 2, 0, 2, 3};
 
     bvr_mesh_buffer_t vertices_buffer;
     vertices_buffer.data = (char*) vertices;
-    vertices_buffer.elemsize = BVR_FLOAT;
-    vertices_buffer.size = sizeof(vertices);
+    vertices_buffer.type = BVR_FLOAT;
+    vertices_buffer.count = 16;
 
     bvr_mesh_buffer_t element_buffer;
     element_buffer.data = (char*) indices;
-    element_buffer.elemsize = BVR_UNSIGNED_INT32;
-    element_buffer.size = sizeof(indices);
+    element_buffer.type = BVR_UNSIGNED_INT32;
+    element_buffer.count = 6;
 
-    bvr_create_mesh(mesh, &vertices_buffer, &element_buffer, BVR_MESH_ATTRIB_V2UV2);
+    bvr_create_meshv(mesh, &vertices_buffer, &element_buffer, BVR_MESH_ATTRIB_V2UV2);
 }
 
 
 static inline void bvr_create_3d_square_mesh(bvr_mesh_t* mesh, float width, float height){
-    float vertices[] = {
+    float vertices[20] = {
         -width, 0,  height, 0, 1,
         -width, 0, -height, 0, 0,
          width, 0, -height, 1, 0,
          width, 0,  height, 1, 1
     };
 
-    uint32_t indices[] = {0, 1, 2, 0, 2, 3};
+    uint32_t indices[6] = {0, 1, 2, 0, 2, 3};
 
     bvr_mesh_buffer_t vertices_buffer;
     vertices_buffer.data = (char*) vertices;
-    vertices_buffer.elemsize = BVR_FLOAT;
-    vertices_buffer.size = sizeof(vertices);
+    vertices_buffer.type = BVR_FLOAT;
+    vertices_buffer.count = 20;
 
     bvr_mesh_buffer_t element_buffer;
     element_buffer.data = (char*) indices;
-    element_buffer.elemsize = BVR_UNSIGNED_INT32;
-    element_buffer.size = sizeof(indices);
+    element_buffer.type = BVR_UNSIGNED_INT32;
+    element_buffer.count = 6;
 
-    bvr_create_mesh(mesh, &vertices_buffer, &element_buffer, BVR_MESH_ATTRIB_V3UV2);
+    bvr_create_meshv(mesh, &vertices_buffer, &element_buffer, BVR_MESH_ATTRIB_V3UV2);
 }
 
 #endif
