@@ -117,20 +117,17 @@ static int bvri_load_obj(bvr_mesh_t* mesh, FILE* file){
 
         struct
         {
-            int vertex[4];
-            int normal[4];
-            int uv[4];
+            uint32_t vertex[4];
+            uint32_t normal[4];
+            uint32_t uv[4];
 
             char length;
         } faces[BVR_BUFFER_SIZE];
 
-        int vertex_count;
-        int normal_count;
-        int uv_count;
-        int face_count;
-
-        int overtex_count;
-        int indices_count;
+        uint32_t vertex_count;
+        uint32_t normal_count;
+        uint32_t uv_count;
+        uint32_t face_count;
     } object;
 
     bvr_mesh_buffer_t vertices;
@@ -140,10 +137,11 @@ static int bvri_load_obj(bvr_mesh_t* mesh, FILE* file){
     object.normal_count = 0;
     object.uv_count = 0;
     object.face_count = 0;
-    object.vertex_count = 0;
-    object.indices_count = 0;
-    mesh->stride = 3;
 
+    vertices.count = 0;
+    indices.count = 0;
+
+    mesh->stride = 3;
     if(mesh->attrib >= BVR_MESH_ATTRIB_V2UV2){
         mesh->stride += 2;
     }
@@ -154,114 +152,102 @@ static int bvri_load_obj(bvr_mesh_t* mesh, FILE* file){
     bvr_create_string(&object.name, NULL);
     bvr_create_string(&object.material_path, NULL);
 
-    char buffer[128];
+    char* cursor;
+    char buffer[256];
     while (bvri_objreadline(buffer, file))
     {
-        if(buffer[0] == '#'){
-            // skip comments
-            continue;
-        }
-
-        if(!strncmp(buffer, "mtllib ", 7)){
+        switch (buffer[0])
+        {
+        case '#':
+            // skip
+            break;
+            
+        // mtlib
+        case 'm':
             bvr_create_string(&object.material_path, &buffer[7]);
-            continue;
-        }
+            break;
 
-        if(buffer[0] == 'o'){
-            // reset object state
+        // target object
+        case 'o':    
+            BVR_ASSERT(!object.name.data);
             bvr_create_string(&object.name, &buffer[2]);
-            continue;
-        }
+            break;
 
-        if(buffer[0] == 'v'){
-            if(buffer[1] == 'n' && mesh->attrib == BVR_MESH_ATTRIB_V3UV2N3){
-                BVR_ASSERT(object.normal_count < BVR_BUFFER_SIZE);
-
-                // parse normal
-                char* bufferp;
-                bufferp = bvri_objparsefloat(&buffer[3], &object.normals[object.normal_count][0]);
-                bufferp = bvri_objparsefloat(++bufferp, &object.normals[object.normal_count][1]);
-                bufferp = bvri_objparsefloat(++bufferp, &object.normals[object.normal_count][2]);
-                object.normal_count++;
-            }
-
-            if(buffer[1] == 't' && mesh->attrib >= BVR_MESH_ATTRIB_V2UV2){
-                BVR_ASSERT(object.uv_count < BVR_BUFFER_SIZE);
-                
-                // parse uvs
-                char* bufferp;
-                bufferp = bvri_objparsefloat(&buffer[3], &object.uvs[object.uv_count][0]);
-                bufferp = bvri_objparsefloat(++bufferp, &object.uvs[object.uv_count][1]);
-                object.uv_count++;
-            }
-
-            if(buffer[1] == ' ') {
-                BVR_ASSERT(object.vertex_count < BVR_BUFFER_SIZE);
-
-                // parse vertex
-                char* bufferp;
-                bufferp = bvri_objparsefloat(&buffer[2], &object.vertices[object.vertex_count][0]);
-                bufferp = bvri_objparsefloat(++bufferp, &object.vertices[object.vertex_count][1]);
-                bufferp = bvri_objparsefloat(++bufferp, &object.vertices[object.vertex_count][2]);
-                object.vertex_count++;
-
-            }
-
-            continue;
-        }
-
-        if(buffer[0] == 's'){
-            continue;
-        }
-
-        if(buffer[0] == 'f'){
-            // parse face
-            object.faces[object.face_count].length = 0;
-
-            char* bufferp = &buffer[1];
-            while (*bufferp != '\0')
+        // vertex informations
+        case 'v':
             {
-                bufferp++; // skip whitespace
-                bufferp = bvri_objparseint(
-                    bufferp, 
-                    &object.faces[object.face_count].vertex[object.faces[object.face_count].length]
-                );
+                cursor = NULL;
+                if(buffer[1] == 'n' && mesh->stride >= 8){
+                    BVR_ASSERT(object.normal_count < BVR_BUFFER_SIZE);
 
-                bufferp++;
-                bufferp = bvri_objparseint(
-                    bufferp, 
-                    &object.faces[object.face_count].uv[object.faces[object.face_count].length]
-                );
+                    cursor = bvri_objparsefloat(&buffer[3], &object.normals[object.normal_count][0]);
+                    cursor = bvri_objparsefloat(++cursor, &object.normals[object.normal_count][1]);
+                    cursor = bvri_objparsefloat(++cursor, &object.normals[object.normal_count][2]);
+                    object.normal_count++;
+                }
+                else if(buffer[1] == 't' && mesh->stride >= 5){
+                    BVR_ASSERT(object.uv_count < BVR_BUFFER_SIZE);
 
-                bufferp++;
-                bufferp = bvri_objparseint(
-                    bufferp,
-                    &object.faces[object.face_count].normal[object.faces[object.face_count].length]
-                );
+                    cursor = bvri_objparsefloat(&buffer[3], &object.uvs[object.uv_count][0]);
+                    cursor = bvri_objparsefloat(++cursor,     &object.uvs[object.uv_count][1]);
+                    object.uv_count++;
+                }
+                else if(buffer[1] == ' '){
+                    BVR_ASSERT(object.vertex_count < BVR_BUFFER_SIZE);
 
-                object.faces[object.face_count].length++;
+                    cursor = bvri_objparsefloat(&buffer[2], &object.vertices[object.vertex_count][0]);
+                    cursor = bvri_objparsefloat(++cursor,     &object.vertices[object.vertex_count][1]);
+                    cursor = bvri_objparsefloat(++cursor,     &object.vertices[object.vertex_count][2]);
+                    object.vertex_count++;
+                }
+            }
+            break;
+        case 'f':
+            {
+                BVR_ASSERT(object.face_count < BVR_BUFFER_SIZE);
 
-                object.overtex_count += mesh->stride;
+                cursor = &buffer[1];
+                object.faces[object.face_count].length = 0;
+                while (*cursor != '\0')
+                {
+                    cursor = bvri_objparseint(++cursor, &object.faces[object.face_count].vertex[object.faces[object.face_count].length]);
+                    cursor = bvri_objparseint(++cursor, &object.faces[object.face_count].uv[object.faces[object.face_count].length]);
+                    cursor = bvri_objparseint(++cursor, &object.faces[object.face_count].normal[object.faces[object.face_count].length]);
+
+                    object.faces[object.face_count].length++;
+                    vertices.count += mesh->stride;
+                }
 
                 if(object.faces[object.face_count].length == 4){
-                    object.indices_count += 6;
+                    indices.count += 6;
                 }
                 else {
-                    object.indices_count += 3;
+                    indices.count += 3;
                 }
+                
+                object.face_count++;
             }
-
-            object.face_count++;
+            break;
+        default:
+            break;
         }
     }
 
+    if(object.vertex_count == 0 || object.face_count == 0){
+        BVR_PRINT("failed to load mesh :(");
+        
+        bvr_destroy_string(&object.name);
+        bvr_destroy_string(&object.material_path);
+        return BVR_FAILED;
+    }
+
     vertices.type = BVR_FLOAT;
-    vertices.count = object.overtex_count;
     vertices.data = malloc(vertices.count * sizeof(float));
+    BVR_ASSERT(vertices.data);
     
     indices.type = BVR_UNSIGNED_INT32;
-    indices.count = object.indices_count;
     indices.data = malloc(indices.count * sizeof(uint32_t));
+    BVR_ASSERT(indices.data);
     
     for (
         size_t face = 0, indice = 0, vertex = 0; 
@@ -271,6 +257,8 @@ static int bvri_load_obj(bvr_mesh_t* mesh, FILE* file){
 
         // triangulate quads
         if(object.faces[face].length == 4){
+            BVR_ASSERT(indice + 6 <= indices.count);
+
             ((uint32_t*)indices.data)[indice + 0] = indice + 0;
             ((uint32_t*)indices.data)[indice + 1] = indice + 1;
             ((uint32_t*)indices.data)[indice + 2] = indice + 2;
@@ -280,6 +268,8 @@ static int bvri_load_obj(bvr_mesh_t* mesh, FILE* file){
             indice += 6;
         }
         else {
+            BVR_ASSERT(indice + 3 <= indices.count);
+
             ((uint32_t*)indices.data)[indice + 0] = indice + 0;
             ((uint32_t*)indices.data)[indice + 1] = indice + 1;
             ((uint32_t*)indices.data)[indice + 2] = indice + 2;
@@ -288,6 +278,8 @@ static int bvri_load_obj(bvr_mesh_t* mesh, FILE* file){
 
         for (size_t i = 0; i < object.faces[face].length; i++)
         {
+            BVR_ASSERT(vertex + mesh->stride <= vertices.count);
+
             ((float*)vertices.data)[vertex + 0] = object.vertices[object.faces[face].vertex[i] - 1][0];
             ((float*)vertices.data)[vertex + 1] = object.vertices[object.faces[face].vertex[i] - 1][1];
             ((float*)vertices.data)[vertex + 2] = object.vertices[object.faces[face].vertex[i] - 1][2];
@@ -341,6 +333,8 @@ int bvr_create_meshf(bvr_mesh_t* mesh, FILE* file, bvr_mesh_array_attrib_t attri
     if(!status){
         BVR_PRINT("failed to load model");
     }
+
+    return status;
 }
 
 int bvr_create_meshv(bvr_mesh_t* mesh, bvr_mesh_buffer_t* vertices, bvr_mesh_buffer_t* elements, bvr_mesh_array_attrib_t attrib){
@@ -447,7 +441,9 @@ int bvr_create_meshv(bvr_mesh_t* mesh, bvr_mesh_buffer_t* vertices, bvr_mesh_buf
         return BVR_FAILED;
     }
 
-    for (size_t i = 0; i < mesh->attrib_count; i++){ glDisableVertexAttribArray(i); }
+    for (size_t i = 0; i < mesh->attrib_count; i++){ 
+        glDisableVertexAttribArray(i); 
+    }
 
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
