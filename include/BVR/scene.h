@@ -102,6 +102,17 @@ int bvr_create_page(bvr_page_t* page);
 
 bvr_camera_t* bvr_add_orthographic_camera(bvr_page_t* page, bvr_framebuffer_t* framebuffer, float near, float far, float scale);
 
+void bvr_camera_lookat(bvr_page_t* page, vec3 target, vec3 up);
+
+/*
+    Set the view matrix of the camera.
+*/
+static inline void bvr_camera_set_view(bvr_page_t* page, mat4x4 matrix){
+    bvr_enable_uniform_buffer(page->camera.buffer);
+    bvr_uniform_buffer_set(page->camera.buffer, sizeof(mat4x4), sizeof(mat4x4), &matrix[0][0]);
+    bvr_enable_uniform_buffer(0);
+}
+
 void bvr_screen_to_world_coords(bvr_book_t* book, vec3 coords);
 
 /*

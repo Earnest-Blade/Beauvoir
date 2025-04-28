@@ -189,15 +189,15 @@ static int bvri_load_obj(bvr_mesh_t* mesh, FILE* file){
                     BVR_ASSERT(object.uv_count < BVR_BUFFER_SIZE);
 
                     cursor = bvri_objparsefloat(&buffer[3], &object.uvs[object.uv_count][0]);
-                    cursor = bvri_objparsefloat(++cursor,     &object.uvs[object.uv_count][1]);
+                    cursor = bvri_objparsefloat(++cursor, &object.uvs[object.uv_count][1]);
                     object.uv_count++;
                 }
                 else if(buffer[1] == ' '){
                     BVR_ASSERT(object.vertex_count < BVR_BUFFER_SIZE);
 
                     cursor = bvri_objparsefloat(&buffer[2], &object.vertices[object.vertex_count][0]);
-                    cursor = bvri_objparsefloat(++cursor,     &object.vertices[object.vertex_count][1]);
-                    cursor = bvri_objparsefloat(++cursor,     &object.vertices[object.vertex_count][2]);
+                    cursor = bvri_objparsefloat(++cursor, &object.vertices[object.vertex_count][1]);
+                    cursor = bvri_objparsefloat(++cursor, &object.vertices[object.vertex_count][2]);
                     object.vertex_count++;
                 }
             }

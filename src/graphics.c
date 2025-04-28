@@ -35,7 +35,7 @@ void bvr_pipeline_state_enable(struct bvr_pipeline_state_s* state){
     }
 
     if(state->depth){
-        glEnable(GL_BLEND);
+        glEnable(GL_DEPTH_TEST);
 
         switch (state->depth)
         {
@@ -77,7 +77,7 @@ void bvr_pipeline_state_enable(struct bvr_pipeline_state_s* state){
         }
     }
     else {
-        glDisable(GL_BLEND);
+        glDisable(GL_DEPTH_TEST);
     }
 }
 

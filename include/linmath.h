@@ -86,6 +86,10 @@ LINMATH_H_FUNC void vec3_reflect(vec3 r, vec3 const v, vec3 const n)
 		r[i] = v[i] - p*n[i];
 }
 
+LINMATH_H_FUNC float vec3_dot(vec3 const a, vec3 const b){
+	return a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+}
+
 LINMATH_H_FUNC void vec4_mul_cross(vec4 r, vec4 const a, vec4 const b)
 {
 	r[0] = a[1]*b[2] - a[2]*b[1];

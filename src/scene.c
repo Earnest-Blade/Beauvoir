@@ -17,8 +17,8 @@ int bvr_create_book(bvr_book_t* book){
     book->prev_time = 0.0f;
     book->current_time = 0.0f;
 
-    book->pipeline.rendering_pass.blending = BVR_BLEND_ENABLE | BVR_BLEND_FUNC_ALPHA_ONE_MINUS;
-    book->pipeline.rendering_pass.depth = BVR_DEPTH_TEST_ENABLE | BVR_DEPTH_FUNC_LESS;
+    book->pipeline.rendering_pass.blending = BVR_BLEND_FUNC_ALPHA_ONE_MINUS;
+    book->pipeline.rendering_pass.depth = BVR_DEPTH_FUNC_LESS;
     book->pipeline.rendering_pass.flags = 0;
 
     book->pipeline.swap_pass.blending = BVR_BLEND_DISABLE;
@@ -119,6 +119,8 @@ void bvr_render(bvr_book_t* book){
     bvr_framebuffer_disable(&book->window.framebuffer);
 
     bvr_pipeline_state_enable(&book->pipeline.swap_pass);
+    bvr_framebuffer_clear(NULL, NULL);
+
     bvr_framebuffer_blit(&book->window.framebuffer);
     
     bvr_window_push_buffers(&book->window);
@@ -165,6 +167,35 @@ bvr_camera_t* bvr_add_orthographic_camera(bvr_page_t* page, bvr_framebuffer_t* f
     bvr_create_uniform_buffer(&page->camera.buffer, 2 * sizeof(mat4x4));
 
     return &page->camera;
+}
+
+void bvr_camera_lookat(bvr_page_t* page, vec3 target, vec3 y){
+    mat4x4 view;
+    BVR_IDENTITY_MAT4(view);
+    
+    vec3 fwd, side, up;
+    vec3_sub(fwd, target, page->camera.transform.position);
+    vec3_norm(fwd, fwd);
+    
+    vec3_mul_cross(side, fwd, y);
+    
+    vec3_mul_cross(up, side, fwd);
+    vec3_norm(up, up);
+
+    view[0][0] = side[0];
+    view[1][0] = side[1];
+    view[2][0] = side[2];
+    view[3][0] = -vec3_dot(side, page->camera.transform.position);
+    view[0][1] = up[0];
+    view[1][1] = up[1];
+    view[2][1] = up[2];
+    view[3][1] = -vec3_dot(up, page->camera.transform.position);
+    view[0][2] = -fwd[0];
+    view[1][2] = -fwd[1];
+    view[2][2] = -fwd[2];
+    view[3][2] = -vec3_dot(fwd, page->camera.transform.position);
+    
+    bvr_camera_set_view(page, view);
 }
 
 void bvr_screen_to_world_coords(bvr_book_t* book, vec3 coords){
