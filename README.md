@@ -6,13 +6,14 @@ Beauvoir is an OpenGL-based game framework that aims to provide a simple, yet pe
 
 The goal of the framework is to create games around layered-based scenes. You can either import images from Photoshop using ```.PSD``` files or stack images manually. 
 
-Beauvoir can handle ```PNG```, ```PSD```, ```TIF``` and ```BMP``` through custom and fast read-only parser but more format still need to be added!
+Beauvoir can handle ```PNG```, ```PSD```, ```TIF``` and ```BMP``` through custom and fast read-only parser but more format still need to be added! It can also load simple ```OBJ``` 3d objects.
 
 The framework is still in early development, but I'm doing my best to improve it!
 
 ## Getting Started
 Beauvoir can be compiled through CMake into Makefiles and Visual Studio solutions. 
-Project main file can be set using Cmake's flag ```-D BVR_MAIN_FILE=``` (e.g. ```-BVR_MAIN_FILE='demo/image_viewer.c'```)
+
+You can compile Beauvoir as a shared library and use it with your own project (Cmake templates can be find inside the demo folder). However, you can build it as a single project by using Cmake's flag ```-D BVR_MAIN_FILE=``` (e.g. ```-BVR_MAIN_FILE='demo/image_viewer.c'```) to define your own main file.
 
 ### Building for Windows
 To generate Makefiles on Windows, you can run 

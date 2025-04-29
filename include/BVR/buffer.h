@@ -36,6 +36,9 @@
     #define BVR_POOL_FOR_EACH(a, pool) while(0)                                 
 #endif
 
+/*
+    Generic data pointer
+*/
 struct bvr_buffer_s {
     char* data;
     unsigned long long size;
