@@ -1,15 +1,19 @@
 #pragma once
 
-#include <BVR/internal.h>
+#include <BVR/config.h>
 
 #include <stdio.h>
-#include <string.h>
-
-#define BVR_SMALL_BUFFER_SIZE 256
-#define BVR_BUFFER_SIZE 1024
-#define BVR_POOL_SIZE 2048
 
 #define BVR_BUFFER_COUNT(buffer)((unsigned long long)(buffer.size / buffer.elemsize))
+
+#ifndef BVR_BUFFER_SIZE
+    #define BVR_BUFFER_SIZE 1024
+#endif
+
+#ifndef BVR_POOL_SIZE
+    #define BVR_POOL_SIZE 2048
+#endif
+
 
 // GCC specific macro
 #ifdef __GNUC__

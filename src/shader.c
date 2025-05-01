@@ -61,8 +61,8 @@ static int bvri_register_shader_state(bvr_shader_t* program, bvr_shader_stage_t*
     BVR_ASSERT(header);
     BVR_ASSERT(name);
 
-    char shader_header_str[BVR_SMALL_BUFFER_SIZE];
-    memset(shader_header_str, 0, BVR_SMALL_BUFFER_SIZE);
+    char shader_header_str[BVR_BUFFER_SIZE];
+    memset(shader_header_str, 0, BVR_BUFFER_SIZE);
 
     bvr_string_t shader_str;
 
