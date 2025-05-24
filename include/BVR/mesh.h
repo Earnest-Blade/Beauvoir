@@ -84,7 +84,7 @@ int bvr_create_meshf(bvr_mesh_t* mesh, FILE* file, bvr_mesh_array_attrib_t attri
 /*
     Create a new mesh from path
 */
-static inline int bvr_create_mesh(bvr_mesh_t* mesh, const char* path, bvr_mesh_array_attrib_t attrib){
+BVR_H_FUNC int bvr_create_mesh(bvr_mesh_t* mesh, const char* path, bvr_mesh_array_attrib_t attrib){
     FILE* file = fopen(path, "rb");
     int status = bvr_create_meshf(mesh, file, attrib);
     fclose(file);
@@ -97,7 +97,7 @@ void bvr_destroy_mesh(bvr_mesh_t* mesh);
 
 #ifdef BVR_GEOMETRY_IMPLEMENTATION
 
-static inline void bvr_create_2d_square_mesh(bvr_mesh_t* mesh, float width, float height){
+BVR_H_FUNC void bvr_create_2d_square_mesh(bvr_mesh_t* mesh, float width, float height){
     float vertices[16] = {
         -width,  height, 0, 1,
         -width, -height, 0, 0,
@@ -121,7 +121,7 @@ static inline void bvr_create_2d_square_mesh(bvr_mesh_t* mesh, float width, floa
 }
 
 
-static inline void bvr_create_3d_square_mesh(bvr_mesh_t* mesh, float width, float height){
+BVR_H_FUNC void bvr_create_3d_square_mesh(bvr_mesh_t* mesh, float width, float height){
     float vertices[20] = {
         -width, 0,  height, 0, 1,
         -width, 0, -height, 0, 0,

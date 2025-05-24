@@ -1,5 +1,11 @@
 #pragma once
 
+#ifdef BVR_NO_INLINE
+    #define BVR_H_FUNC static
+#else
+    #define BVR_H_FUNC static inline
+#endif
+
 #if defined(__clang__)
     #define typeof(x) __typeof__(x)
 #elif defined(_MSC_VER)

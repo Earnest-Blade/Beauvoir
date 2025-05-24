@@ -3,6 +3,7 @@
 #include <BVR/file.h>
 
 #include <stdlib.h>
+#include <memory.h>
 
 #include <GLAD/glad.h>
 

@@ -6,6 +6,7 @@
 
 #include <malloc.h>
 #include <memory.h>
+#include <string.h>
 #include <math.h>
 
 #include <glad/glad.h>

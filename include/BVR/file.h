@@ -1,6 +1,6 @@
 #pragma once
 
-#include <BVR/internal.h>
+#include <BVR/config.h>
 #include <BVR/buffer.h>
 
 #include <stdint.h>

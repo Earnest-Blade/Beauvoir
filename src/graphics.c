@@ -190,16 +190,6 @@ void bvr_framebuffer_enable(bvr_framebuffer_t* framebuffer){
 void bvr_framebuffer_disable(bvr_framebuffer_t* framebuffer){
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glViewport(0, 0, framebuffer->target_width, framebuffer->target_height);
-    
-    mat4x4 ortho;
-    mat4x4_ortho(ortho, 
-        -framebuffer->width  / 2.0f,
-         framebuffer->width  / 2.0f,
-        -framebuffer->height / 2.0f,
-         framebuffer->height / 2.0f,
-        0.0f, 1.0f);
-
-    bvr_shader_set_uniformi(&framebuffer->shader.uniforms[1], &ortho[0][0]);
 }
 
 void bvr_framebuffer_clear(bvr_framebuffer_t* framebuffer, vec3 color){
@@ -208,6 +198,17 @@ void bvr_framebuffer_clear(bvr_framebuffer_t* framebuffer, vec3 color){
 }
 
 void bvr_framebuffer_blit(bvr_framebuffer_t* framebuffer){
+    mat4x4 ortho;
+    mat4_ortho(ortho, 
+        -framebuffer->width  / 2.0f,
+         framebuffer->width  / 2.0f,
+        -framebuffer->height / 2.0f,
+         framebuffer->height / 2.0f,
+        0.0f, 0.1f
+    );
+
+    bvr_shader_set_uniformi(&framebuffer->shader.uniforms[1], &ortho[0][0]);
+
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
     bvr_shader_enable(&framebuffer->shader);

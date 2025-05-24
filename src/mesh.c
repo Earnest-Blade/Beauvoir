@@ -1,132 +1,17 @@
 #include <bvr/mesh.h>
 #include <bvr/math.h>
 
-#include <memory.h>
 #include <malloc.h>
-#include <ctype.h>
+#include <string.h>
+#include <memory.h>
 
 #include <GLAD/glad.h>
 
-/*
-    Generic buffer creation function
-*/
-static int bvri_create_mesh_buffers(bvr_mesh_t* mesh, size_t vertices_size, size_t element_size, 
-    int vertex_type, int element_type, bvr_mesh_array_attrib_t attrib){
-
-    BVR_ASSERT(mesh);
-    BVR_ASSERT(vertices_size && element_size);
-
-    // create vertex array 
-    glGenVertexArrays(1, &mesh->array_buffer);
-    glBindVertexArray(mesh->array_buffer);
-
-    // create vertex and element buffers
-    glGenBuffers(1, &mesh->vertex_buffer);
-    glGenBuffers(1, &mesh->element_buffer);
-
-    // allocate the whole buffers
-    glBindBuffer(GL_ARRAY_BUFFER, mesh->vertex_buffer);
-    glBufferData(GL_ARRAY_BUFFER, vertices_size, NULL, GL_STATIC_DRAW);
-
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh->element_buffer);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, element_size, NULL, GL_STATIC_DRAW);
-
-    mesh->attrib = attrib;
-    mesh->vertex_count = vertices_size / bvr_sizeof(vertex_type);
-    mesh->element_count = element_size / bvr_sizeof(element_type);
-    mesh->element_type = element_type;
-
-    // define each attributes pointers depending on attribute's type
-    switch (attrib)
-    {
-    case BVR_MESH_ATTRIB_V2:
-        {
-            mesh->attrib_count = 1;
-            mesh->stride = 2 * bvr_sizeof(vertex_type);
-
-            glEnableVertexAttribArray(0);
-            glVertexAttribPointer(0, 2, vertex_type, GL_FALSE, mesh->stride, (void*)0);
-        }
-        break;
-    
-    case BVR_MESH_ATTRIB_V3:
-        {
-            mesh->attrib_count = 1;
-            mesh->stride = 3 * bvr_sizeof(vertex_type);
-
-            glEnableVertexAttribArray(0);
-            glVertexAttribPointer(0, 3, vertex_type, GL_FALSE, mesh->stride, (void*)0);
-        }
-        break;
-
-    case BVR_MESH_ATTRIB_V2UV2:
-        {
-            mesh->attrib_count = 2;
-            mesh->stride = (2 + 2) * bvr_sizeof(vertex_type);
-
-            glEnableVertexAttribArray(0);
-            glVertexAttribPointer(0, 2, vertex_type, GL_FALSE, mesh->stride, (void*)0);
-            
-            glEnableVertexAttribArray(1);
-            glVertexAttribPointer(1, 2, vertex_type, GL_FALSE, mesh->stride, (void*)(2 * bvr_sizeof(vertex_type)));
-        }
-        break;
-    
-    case BVR_MESH_ATTRIB_V3UV2:
-        {
-            mesh->attrib_count = 2;
-            mesh->stride = (3 + 2) * bvr_sizeof(vertex_type);
-
-            glEnableVertexAttribArray(0);
-            glVertexAttribPointer(0, 3, vertex_type, GL_FALSE, mesh->stride, (void*)0);
-            
-            glEnableVertexAttribArray(1);
-            glVertexAttribPointer(1, 2, vertex_type, GL_FALSE, mesh->stride, (void*)(3 * bvr_sizeof(vertex_type)));
-        }
-        break;
-    
-    case BVR_MESH_ATTRIB_V3UV2N3:
-        {
-            mesh->attrib_count = 3;
-            mesh->stride = (3 + 2 + 3) * bvr_sizeof(vertex_type);
-
-            glEnableVertexAttribArray(0);
-            glVertexAttribPointer(0, 3, vertex_type, GL_FALSE, mesh->stride, (void*)0);
-            
-            glEnableVertexAttribArray(1);
-            glVertexAttribPointer(1, 2, vertex_type, GL_FALSE, mesh->stride, (void*)(3 * bvr_sizeof(vertex_type)));
-
-            glEnableVertexAttribArray(2);
-            glVertexAttribPointer(2, 3, vertex_type, GL_FALSE, mesh->stride, (void*)(5 * bvr_sizeof(vertex_type)));
-        }
-        break;
-
-    default:
-        {
-            BVR_PRINT("cannot recognize attribute type!");
-            bvr_destroy_mesh(mesh);
-        }
-        return BVR_FAILED;
-    }
-
-    if(!mesh->stride){
-        BVR_PRINT("cannot get vertex type size!");
-        bvr_destroy_mesh(mesh);
-        return BVR_FAILED;
-    }
-
-    for (size_t i = 0; i < mesh->attrib_count; i++){ 
-        glDisableVertexAttribArray(i); 
-    }
-
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-    glBindVertexArray(0);
-
-    return BVR_OK;
-}
+static int bvri_create_mesh_buffers(bvr_mesh_t* mesh, size_t vertices_size, size_t element_size, int vertex_type, int element_type, bvr_mesh_array_attrib_t attrib);
 
 #ifndef BVR_NO_OBJ
+
+#include <ctype.h>
 
 static int bvri_objreadline(char* buffer, FILE* file){
     int c;
@@ -553,6 +438,124 @@ int bvr_create_meshv(bvr_mesh_t* mesh, bvr_mesh_buffer_t* vertices, bvr_mesh_buf
     return BVR_OK;
 }
 
+/*
+    Generic buffer creation function
+*/
+static int bvri_create_mesh_buffers(bvr_mesh_t* mesh, size_t vertices_size, size_t element_size, 
+    int vertex_type, int element_type, bvr_mesh_array_attrib_t attrib){
+
+    BVR_ASSERT(mesh);
+    BVR_ASSERT(vertices_size && element_size);
+
+    // create vertex array 
+    glGenVertexArrays(1, &mesh->array_buffer);
+    glBindVertexArray(mesh->array_buffer);
+
+    // create vertex and element buffers
+    glGenBuffers(1, &mesh->vertex_buffer);
+    glGenBuffers(1, &mesh->element_buffer);
+
+    // allocate the whole buffers
+    glBindBuffer(GL_ARRAY_BUFFER, mesh->vertex_buffer);
+    glBufferData(GL_ARRAY_BUFFER, vertices_size, NULL, GL_STATIC_DRAW);
+
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh->element_buffer);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, element_size, NULL, GL_STATIC_DRAW);
+
+    mesh->attrib = attrib;
+    mesh->vertex_count = vertices_size / bvr_sizeof(vertex_type);
+    mesh->element_count = element_size / bvr_sizeof(element_type);
+    mesh->element_type = element_type;
+
+    // define each attributes pointers depending on attribute's type
+    switch (attrib)
+    {
+    case BVR_MESH_ATTRIB_V2:
+        {
+            mesh->attrib_count = 1;
+            mesh->stride = 2 * bvr_sizeof(vertex_type);
+
+            glEnableVertexAttribArray(0);
+            glVertexAttribPointer(0, 2, vertex_type, GL_FALSE, mesh->stride, (void*)0);
+        }
+        break;
+    
+    case BVR_MESH_ATTRIB_V3:
+        {
+            mesh->attrib_count = 1;
+            mesh->stride = 3 * bvr_sizeof(vertex_type);
+
+            glEnableVertexAttribArray(0);
+            glVertexAttribPointer(0, 3, vertex_type, GL_FALSE, mesh->stride, (void*)0);
+        }
+        break;
+
+    case BVR_MESH_ATTRIB_V2UV2:
+        {
+            mesh->attrib_count = 2;
+            mesh->stride = (2 + 2) * bvr_sizeof(vertex_type);
+
+            glEnableVertexAttribArray(0);
+            glVertexAttribPointer(0, 2, vertex_type, GL_FALSE, mesh->stride, (void*)0);
+            
+            glEnableVertexAttribArray(1);
+            glVertexAttribPointer(1, 2, vertex_type, GL_FALSE, mesh->stride, (void*)(2 * bvr_sizeof(vertex_type)));
+        }
+        break;
+    
+    case BVR_MESH_ATTRIB_V3UV2:
+        {
+            mesh->attrib_count = 2;
+            mesh->stride = (3 + 2) * bvr_sizeof(vertex_type);
+
+            glEnableVertexAttribArray(0);
+            glVertexAttribPointer(0, 3, vertex_type, GL_FALSE, mesh->stride, (void*)0);
+            
+            glEnableVertexAttribArray(1);
+            glVertexAttribPointer(1, 2, vertex_type, GL_FALSE, mesh->stride, (void*)(3 * bvr_sizeof(vertex_type)));
+        }
+        break;
+    
+    case BVR_MESH_ATTRIB_V3UV2N3:
+        {
+            mesh->attrib_count = 3;
+            mesh->stride = (3 + 2 + 3) * bvr_sizeof(vertex_type);
+
+            glEnableVertexAttribArray(0);
+            glVertexAttribPointer(0, 3, vertex_type, GL_FALSE, mesh->stride, (void*)0);
+            
+            glEnableVertexAttribArray(1);
+            glVertexAttribPointer(1, 2, vertex_type, GL_FALSE, mesh->stride, (void*)(3 * bvr_sizeof(vertex_type)));
+
+            glEnableVertexAttribArray(2);
+            glVertexAttribPointer(2, 3, vertex_type, GL_FALSE, mesh->stride, (void*)(5 * bvr_sizeof(vertex_type)));
+        }
+        break;
+
+    default:
+        {
+            BVR_PRINT("cannot recognize attribute type!");
+            bvr_destroy_mesh(mesh);
+        }
+        return BVR_FAILED;
+    }
+
+    if(!mesh->stride){
+        BVR_PRINT("cannot get vertex type size!");
+        bvr_destroy_mesh(mesh);
+        return BVR_FAILED;
+    }
+
+    for (size_t i = 0; i < mesh->attrib_count; i++){ 
+        glDisableVertexAttribArray(i); 
+    }
+
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+    glBindVertexArray(0);
+
+    return BVR_OK;
+}
 
 void bvr_mesh_draw(bvr_mesh_t* mesh, int drawmode){
     glBindVertexArray(mesh->array_buffer);
