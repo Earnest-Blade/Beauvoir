@@ -21,7 +21,7 @@ struct bvri_texture_uniform_s {
 static int bvri_compile_shader(uint32_t* shader, bvr_string_t* content, int type){
     *shader = glCreateShader(type);
 
-    glShaderSource(*shader, 1, (const char**)&content->data, NULL);
+    glShaderSource(*shader, 1, (const char**)&content->string, NULL);
     glCompileShader(*shader);
 
     int s;
@@ -72,7 +72,7 @@ static int bvri_register_shader_state(bvr_shader_t* program, bvr_shader_stage_t*
     strncat(shader_header_str, "\n", 1);
 
     bvr_create_string(&shader_str, shader_header_str);
-    bvr_string_concat(&shader_str, content->data);
+    bvr_string_concat(&shader_str, content->string);
 
     if (type && shader_str.length) {
         if (bvri_compile_shader(&shader->shader, &shader_str, type)) {
@@ -223,7 +223,7 @@ shader_cstor_bidings:
     shader->uniforms[0].memory.data = NULL;
     shader->uniforms[0].memory.size = sizeof(mat4x4);
     shader->uniforms[0].memory.elemsize = sizeof(mat4x4);
-    shader->uniforms[0].name.data = NULL;
+    shader->uniforms[0].name.string = NULL;
     shader->uniforms[0].name.length = 0;
     shader->uniforms[0].type = BVR_MAT4;
     if (shader->blocks[0].location == -1) {
@@ -369,7 +369,7 @@ void bvr_shader_set_uniform(bvr_shader_t* shader, const char* name, void* data){
             continue;
         }
 
-        if (strcmp(shader->uniforms[i].name.data, name) == 0) {
+        if (strcmp(shader->uniforms[i].name.string, name) == 0) {
             bvr_shader_set_uniformi(&shader->uniforms[i], data);
         }
     }
@@ -395,7 +395,7 @@ void bvr_shader_set_texture(bvr_shader_t* shader, const char* name, int* id, int
 
     for (size_t i = 1; i < shader->uniform_count; i++)
     {
-        if (strcmp(shader->uniforms[i].name.data, name) == 0) {
+        if (strcmp(shader->uniforms[i].name.string, name) == 0) {
             bvr_shader_set_texturei(&shader->uniforms[i], id, layer);
         }
     }

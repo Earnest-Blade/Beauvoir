@@ -54,7 +54,7 @@ struct bvr_buffer_s {
 */
 typedef struct bvr_string_s { 
     unsigned short length;
-    char* data;
+    char* string;
 } bvr_string_t;
 
 typedef struct bvr_pool_s {
@@ -75,6 +75,7 @@ typedef struct bvr_pool_s {
     }* next;
 
     unsigned int capacity;
+    unsigned int count;
     unsigned int elemsize;
 } bvr_pool_t;
 

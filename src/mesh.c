@@ -421,7 +421,7 @@ int bvr_create_meshv(bvr_mesh_t* mesh, bvr_mesh_buffer_t* vertices, bvr_mesh_buf
     BVR_ASSERT(mesh->vertex_groups.data);
 
     ((bvr_vertex_group_t*)mesh->vertex_groups.data)[0].name.length = 0;
-    ((bvr_vertex_group_t*)mesh->vertex_groups.data)[0].name.data = NULL;
+    ((bvr_vertex_group_t*)mesh->vertex_groups.data)[0].name.string = NULL;
     ((bvr_vertex_group_t*)mesh->vertex_groups.data)[0].element_offset = 0;
     ((bvr_vertex_group_t*)mesh->vertex_groups.data)[0].element_count = elements->count;
 

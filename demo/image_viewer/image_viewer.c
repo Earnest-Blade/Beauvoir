@@ -187,7 +187,7 @@ int main(){
                 for (size_t layer = 0; layer < BVR_BUFFER_COUNT(image_viewer.texture.image.layers); layer++)
                 {
                     image_viewer.enabled_layers[layer] = nk_check_label(gui.context, 
-                        ((bvr_layer_t*)image_viewer.texture.image.layers.data)[layer].name.data, 
+                        ((bvr_layer_t*)image_viewer.texture.image.layers.data)[layer].name.string, 
                         image_viewer.enabled_layers[layer]
                     );
                 }

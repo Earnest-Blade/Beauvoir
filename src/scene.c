@@ -149,6 +149,8 @@ void bvr_destroy_book(bvr_book_t* book){
 int bvr_create_page(bvr_page_t* page){
     BVR_ASSERT(page);
 
+    bvr_create_string(&page->name, NULL);
+
     bvr_create_pool(&page->actors, sizeof(struct bvr_actor_s*), BVR_MAX_SCENE_ACTOR_COUNT);
     bvr_create_pool(&page->colliders, sizeof(bvr_collider_t*), BVR_COLLIDER_COLLECTION_SIZE);
 
@@ -258,6 +260,7 @@ void bvr_destroy_page(bvr_page_t* page){
 
     bvr_destroy_uniform_buffer(&page->camera.buffer);
 
+    bvr_destroy_string(&page->name);
     bvr_destroy_pool(&page->actors);
     bvr_destroy_pool(&page->colliders);
 }

@@ -5,6 +5,7 @@
 /* include all Beauvoir's headers */
 #define BVR_GEOMETRY_IMPLEMENTATION
 #include <BVR/bvr.h>
+#include <BVR/editor/editor.h>
 
 /* game's context */
 static bvr_book_t book;
@@ -15,6 +16,9 @@ static bvr_book_t book;
 */
 static bvr_dynamic_actor_t player;
 
+/* editor's context */
+static bvr_editor_t editor;
+
 int main(){
     /* create initial game's context */
     bvr_create_book(&book);
@@ -22,6 +26,9 @@ int main(){
 
     /* create the window */
     bvr_create_window(&book.window, 800, 800, "Window", 0);
+    
+    /* link the editor to the game context */
+    bvr_create_editor(&editor, &book);
     
     /* create an audio stream */
     bvr_create_audio_stream(&book.audio, BVR_DEFAULT_SAMPLE_RATE, BVR_DEFAULT_AUDIO_BUFFER_SIZE);
@@ -37,7 +44,7 @@ int main(){
             create player's shader. 
             the shader has the BVR_VERTEX_SHADER and BVR_FRAGMENT_SHADER meaning that it has a vertex and a fragment stage 
         */
-        bvr_create_shader(&player.shader, "../monochrome.glsl", BVR_VERTEX_SHADER | BVR_FRAGMENT_SHADER);
+        bvr_create_shader(&player.shader, "monochrome.glsl", BVR_VERTEX_SHADER | BVR_FRAGMENT_SHADER);
 
         /*
             cecause we want to define player's color inside the shader, we need to define this parameter (=uniform in OpenGL)
@@ -106,6 +113,12 @@ int main(){
 
         /* draw player */
         bvr_draw_actor((bvr_static_actor_t*)&player.object, BVR_DRAWMODE_TRIANGLES);
+
+        /* draw editor */
+        bvr_editor_handle();
+        bvr_editor_draw_page_hierarchy();
+        bvr_editor_draw_inspector();
+        bvr_editor_render();
 
         /* push Beauvoir's graphics to the window */
         bvr_render(&book);

@@ -139,7 +139,7 @@ void bvr_destroy_nuklear(bvr_nuklear_t* nuklear){
 void bvr_nuklear_actor_label(bvr_nuklear_t* nuklear, struct bvr_actor_s* actor){
     BVR_ASSERT(nuklear);
     if(((struct nk_context*)nuklear->context)->begin){
-        bvr_nuklear_vec3_label(nuklear, actor->name.data, actor->transform.position);
+        bvr_nuklear_vec3_label(nuklear, actor->name.string, actor->transform.position);
     }
 }
 

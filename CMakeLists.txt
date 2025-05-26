@@ -23,7 +23,7 @@ set(BVR_DEMO_DIR ${BVR_CURRENT_DIR}/dev)
 # Development only
 if(NOT ${BVR_TARGET_SHARED})
     if (NOT DEFINED BVR_MAIN_FILE)
-        set(BVR_MAIN_FILE "${BVR_DEMO_DIR}/model_viewer.c")
+        set(BVR_MAIN_FILE "${BVR_DEMO_DIR}/scene.c")
     endif()
 endif()
 
@@ -89,6 +89,7 @@ endif()
 
 include_directories(${BVR_INCLUDE_DIR})
 
+## Create library or executable depends on the compilation mode
 if(${BVR_TARGET_SHARED})
     add_library(Beauvoir STATIC)
     message("Successfully create a new library")
@@ -98,6 +99,7 @@ else()
     message("Successfully create a new executable")
 endif()
 
+## Link libs
 target_link_libraries(Beauvoir PUBLIC
     ${OPENGL_LIBRARIES}
     ${BVR_SDL_LIB}
@@ -108,7 +110,12 @@ target_link_libraries(Beauvoir PUBLIC
 
 target_include_directories(Beauvoir PUBLIC ${BVR_SOURCE_DIR})
 
+## Include framework c files
 file(GLOB_RECURSE SOURCES "${BVR_SOURCE_DIR}/*.c")
+target_sources(Beauvoir PRIVATE ${SOURCES})
+
+## Include editor c files
+file(GLOB_RECURSE SOURCES "${BVR_SOURCE_DIR}/editor/*.c")
 target_sources(Beauvoir PRIVATE ${SOURCES})
 
 set_target_properties(Beauvoir PROPERTIES

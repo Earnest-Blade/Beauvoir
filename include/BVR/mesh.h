@@ -85,6 +85,7 @@ int bvr_create_meshf(bvr_mesh_t* mesh, FILE* file, bvr_mesh_array_attrib_t attri
     Create a new mesh from path
 */
 BVR_H_FUNC int bvr_create_mesh(bvr_mesh_t* mesh, const char* path, bvr_mesh_array_attrib_t attrib){
+    BVR_FILE_EXISTS(path);
     FILE* file = fopen(path, "rb");
     int status = bvr_create_meshf(mesh, file, attrib);
     fclose(file);

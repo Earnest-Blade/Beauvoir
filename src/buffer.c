@@ -8,14 +8,14 @@ void bvr_create_string(bvr_string_t* string, const char* value){
     BVR_ASSERT(string);
 
     string->length = 0;
-    string->data = NULL;
+    string->string = NULL;
     if(value){
         string->length = strlen(value) + 1;
-        string->data = malloc(string->length);
-        BVR_ASSERT(string->data);
+        string->string = malloc(string->length);
+        BVR_ASSERT(string->string);
 
-        memcpy(string->data, value, string->length - 1);
-        string->data[string->length - 1] = '\0';
+        memcpy(string->string, value, string->length - 1);
+        string->string[string->length - 1] = '\0';
     }
 }
 
@@ -25,23 +25,23 @@ void bvr_string_concat(bvr_string_t* string, const char* other){
     if(other) {
         
         // string is already allocated
-        if(string->data){
+        if(string->string){
             unsigned int size = string->length;
 
             // new size = size - 1 (EOF) + strlen(other) + 1 (new EOF) 
             string->length = string->length + strlen(other);
-            string->data = realloc(string->data, string->length);
-            BVR_ASSERT(string->data);
+            string->string = realloc(string->string, string->length);
+            BVR_ASSERT(string->string);
 
-            strcat(string->data, other);
-            string->data[string->length - 1] = '\0';
+            strcat(string->string, other);
+            string->string[string->length - 1] = '\0';
         }
         else {
             string->length = strlen(other) + 1;
-            string->data = malloc(string->length);
+            string->string = malloc(string->length);
             
-            memcpy(string->data, other, string->length - 1);
-            string->data[string->length - 1] = '\0';
+            memcpy(string->string, other, string->length - 1);
+            string->string[string->length - 1] = '\0';
         }
     }
 }
@@ -51,17 +51,17 @@ void bvr_string_create_and_copy(bvr_string_t* dest, bvr_string_t* source){
 
     if(source) {
         dest->length = source->length;
-        dest->data = malloc(dest->length);
-        BVR_ASSERT(dest->data);
+        dest->string = malloc(dest->length);
+        BVR_ASSERT(dest->string);
 
-        memcpy(dest->data, source->data, dest->length);
-        dest->data[dest->length - 1] = '\0';
+        memcpy(dest->string, source->string, dest->length);
+        dest->string[dest->length - 1] = '\0';
     }
 }
 
 void bvr_string_insert(bvr_string_t* string, const size_t offset, const char* value){
     BVR_ASSERT(string);
-    BVR_ASSERT(string->data);
+    BVR_ASSERT(string->string);
     BVR_ASSERT(value);
     
     bvr_string_t prev;
@@ -72,15 +72,15 @@ void bvr_string_insert(bvr_string_t* string, const size_t offset, const char* va
         //BVR_PRINTF("string %x ; string size %i", string->data, string->length);
 
         string->length += vlen;
-        string->data = realloc(string->data, string->length);
-        BVR_ASSERT(string->data);
+        string->string = realloc(string->string, string->length);
+        BVR_ASSERT(string->string);
 
-        memset(string->data, 0, string->length);
+        memset(string->string, 0, string->length);
 
-        strncpy(string->data, prev.data, offset);
-        string->data[offset] = '\0';
-        strncat(string->data, value, vlen);
-        strncat(string->data, &prev.data[offset], prev.length - offset);
+        strncpy(string->string, prev.string, offset);
+        string->string[offset] = '\0';
+        strncat(string->string, value, vlen);
+        strncat(string->string, &prev.string[offset], prev.length - offset);
     }
 
     bvr_destroy_string(&prev);
@@ -88,13 +88,13 @@ void bvr_string_insert(bvr_string_t* string, const size_t offset, const char* va
 
 const char* bvr_string_get(bvr_string_t* string){
     BVR_ASSERT(string);
-    return (const char*)string->data;
+    return (const char*)string->string;
 }
 
 void bvr_destroy_string(bvr_string_t* string){
     BVR_ASSERT(string);
-    free(string->data);
-    string->data = NULL;
+    free(string->string);
+    string->string = NULL;
 }
 
 void bvr_create_pool(bvr_pool_t* pool, size_t size, size_t count){
@@ -103,6 +103,7 @@ void bvr_create_pool(bvr_pool_t* pool, size_t size, size_t count){
 
     pool->data = NULL;
     pool->next = NULL;
+    pool->count = 0;
     pool->elemsize = size;
     pool->capacity = count;
 
@@ -135,6 +136,7 @@ void* bvr_pool_alloc(bvr_pool_t* pool){
             return NULL;
         }
 
+        pool->count++;
         pool->next = (struct bvr_pool_block_s*)(
             pool->data + block->next * (pool->elemsize + sizeof(struct bvr_pool_block_s))
         );
@@ -167,6 +169,8 @@ void bvr_pool_free(bvr_pool_t* pool, void* ptr){
     BVR_ASSERT(pool);
 
     if(ptr){
+        pool->count--;
+
         struct bvr_pool_block_s* prev = pool->next;
         pool->next = (struct bvr_pool_block_s*)((char*)ptr - sizeof(struct bvr_pool_block_s));
         pool->next->next = ((size_t)prev / (pool->elemsize + sizeof(struct bvr_pool_block_s))) - (size_t)pool->data;

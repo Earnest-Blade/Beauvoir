@@ -1,6 +1,7 @@
 #pragma once
 
 #include <BVR/buffer.h>
+#include <BVR/utils.h>
 
 #include <stdint.h>
 #include <stdio.h>
@@ -159,6 +160,7 @@ typedef struct bvr_layered_texture_s {
 
 int bvr_create_imagef(bvr_image_t* image, FILE* file);
 BVR_H_FUNC int bvr_create_image(bvr_image_t* image, const char* path){
+    BVR_FILE_EXISTS(path);
     FILE* file = fopen(path, "rb");
     int success = bvr_create_imagef(image, file);
     fclose(file);
@@ -184,6 +186,7 @@ void bvr_destroy_image(bvr_image_t* image);
 int bvr_create_texture_from_image(bvr_texture_t* texture, bvr_image_t* image, int filter, int wrap);
 int bvr_create_texturef(bvr_texture_t* texture, FILE* file, int filter, int wrap);
 BVR_H_FUNC int bvr_create_texture(bvr_texture_t* texture, const char* path, int filter, int wrap){
+    BVR_FILE_EXISTS(path);
     FILE* file = fopen(path, "rb");
     int success = bvr_create_texturef(texture, file, filter, wrap);
     fclose(file);
@@ -204,6 +207,7 @@ void bvr_destroy_texture(bvr_texture_t* texture);
 /* ATLAS TEXTURE */
 int bvr_create_texture_atlasf(bvr_texture_atlas_t* atlas, FILE* file, uint32_t tile_width, uint32_t tile_height, int filter, int wrap);
 BVR_H_FUNC int bvr_create_texture_atlas(bvr_texture_atlas_t* atlas, const char* path, uint32_t tile_width, uint32_t tile_height, int filter, int wrap){
+    BVR_FILE_EXISTS(path);
     FILE* file = fopen(path, "rb");
     int success = bvr_create_texture_atlasf(atlas, file, tile_width, tile_height, filter, wrap);
     fclose(file);
@@ -217,6 +221,7 @@ void bvr_destroy_texture_atlas(bvr_texture_atlas_t* atlas);
 /* LAYERED TEXTURE */
 int bvr_create_layered_texturef(bvr_layered_texture_t* texture, FILE* file, int filter, int wrap);
 BVR_H_FUNC int bvr_create_layered_texture(bvr_layered_texture_t* texture, const char* path, int filter, int wrap){
+    BVR_FILE_EXISTS(path);
     FILE* file = fopen(path, "rb");
     int success = bvr_create_layered_texturef(texture, file, filter, wrap);
     fclose(file);

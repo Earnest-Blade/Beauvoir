@@ -239,7 +239,7 @@ void bvr_create_actor(struct bvr_actor_s* actor, const char* name, bvr_actor_typ
 void bvr_destroy_actor(struct bvr_actor_s* actor){
     BVR_ASSERT(actor);
 
-    if(actor->name.data){
+    if(actor->name.string){
         bvr_destroy_string(&actor->name);
     }
 

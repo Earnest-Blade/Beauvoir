@@ -47,6 +47,8 @@ typedef struct bvr_camera_s {
     Contains all world's informations and data
 */
 typedef struct bvr_page_s {
+    bvr_string_t name;
+    
     bvr_camera_t camera;
 
     // all world's actors

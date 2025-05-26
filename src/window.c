@@ -69,10 +69,6 @@ int bvr_create_window(bvr_window_t* window, int width, int height, const char* t
 void bvr_window_poll_events(bvr_window_t* window){
     SDL_Event event;
 
-    // memset(window->inputs.keys, 0, BVR_KEYBOARD_SIZE * sizeof(char));
-    // memset(window->inputs.buttons, 0, BVR_MOUSE_SIZE * sizeof(char));
-    // memset(window->inputs.relative_motion, 0, sizeof(window->inputs.relative_motion));
-
     SDL_StartTextInput(window->handle);
 
     window->events = 0;
@@ -88,7 +84,12 @@ void bvr_window_poll_events(bvr_window_t* window){
         case SDL_EVENT_KEY_UP:
         case SDL_EVENT_KEY_DOWN:
             {
-                int down = (event.type == SDL_EVENT_KEY_DOWN) + BVR_KEY_DOWN - 1;
+                int down = (event.type == SDL_EVENT_KEY_DOWN) + BVR_KEY_UP;
+                int kevent = down;
+                if(!event.key.repeat && down - BVR_KEY_UP){
+                    kevent = BVR_KEY_PRESSED;
+                }
+                
                 if(event.key.mod){
                     switch (event.key.mod)
                     {
@@ -114,7 +115,7 @@ void bvr_window_poll_events(bvr_window_t* window){
                     }
                 }
                 
-                window->inputs.keys[event.key.scancode] = down;
+                window->inputs.keys[event.key.scancode] = kevent;
             }
             break;
         case SDL_EVENT_MOUSE_BUTTON_UP:
@@ -185,8 +186,12 @@ void bvr_destroy_window(bvr_window_t* window){
     window->handle = NULL;
 }
 
+int bvr_key_presssed(bvr_window_t* window, uint16_t key){
+    return window->inputs.keys[key] == BVR_KEY_PRESSED;
+}
+
 int bvr_key_down(bvr_window_t* window, uint16_t key){
-    return window->inputs.keys[key] == BVR_KEY_DOWN;
+    return window->inputs.keys[key] == BVR_KEY_DOWN || window->inputs.keys[key] == BVR_KEY_PRESSED;
 }
 
 int bvr_button_down(bvr_window_t* window, uint16_t button){

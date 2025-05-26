@@ -56,6 +56,8 @@ void bvr_destroy_uniform_buffer(uint32_t* buffer);
 
 int bvr_create_shaderf(bvr_shader_t* shader, FILE* file, int flags);
 static inline int bvr_create_shader(bvr_shader_t* shader, const char* path, int flags){
+    BVR_FILE_EXISTS(path);
+
     FILE* file = fopen(path, "rb");
     int a = bvr_create_shaderf(shader, file, flags);
     fclose(file);

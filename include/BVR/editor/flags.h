@@ -1,0 +1,5 @@
+#pragma once
+
+#define BVR_EDITOR_CAMERA   0x050
+#define BVR_EDITOR_ACTOR    0x100
+#define BVR_EDITOR_COLLIDER 0x200

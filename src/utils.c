@@ -43,6 +43,10 @@ char* bvri_string_format(const char* __string, ...){
 	return &bvri_debug_buffer[0];
 }
 
+char* bvri_get_buffer(){
+    return &bvri_debug_buffer[0];
+}
+
 void bvri_wmessage(FILE* __stream, const int __line, const char* __file, const char* __message, ...){
     va_list arg_list;
     int f;

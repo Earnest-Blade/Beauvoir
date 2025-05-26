@@ -709,15 +709,15 @@ static int bvri_is_psd(FILE* file){
     Create a new string from PSD's pascal-typed string
 */
 static void bvri_psd_read_pascal_string(bvr_string_t* string, FILE* file){
-    string->data = NULL;
+    string->string = NULL;
     string->length = (size_t)bvr_freadu8_le(file) + 1;
 
     if(string->length - 1){
-        string->data = malloc(string->length);
-        BVR_ASSERT(string->data);
+        string->string = malloc(string->length);
+        BVR_ASSERT(string->string);
 
-        fread(string->data, sizeof(char), string->length - 1, file);
-        string->data[string->length - 1] = '\0';
+        fread(string->string, sizeof(char), string->length - 1, file);
+        string->string[string->length - 1] = '\0';
     }
 }
 
