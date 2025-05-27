@@ -22,9 +22,11 @@ typedef enum bvr_editor_state_e {
 
 typedef struct bvr_editor_s {
     bvr_nuklear_t gui;
-
     bvr_book_t* book;
+
     enum bvr_editor_state_e state;
+
+    float scale;
 
     struct {
         bvr_string_t name;

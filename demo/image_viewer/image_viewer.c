@@ -91,7 +91,7 @@ int main(){
     bvr_create_nuklear(&gui, &game.window);
 
     /* Create the camera */
-    bvr_add_orthographic_camera(&game.page, &game.window.framebuffer, 0.1f, 100.0f, 1.0f);
+    bvr_create_orthographic_camera(&game.page, &game.window.framebuffer, 0.1f, 100.0f, 1.0f);
 
     /* Create image's plane mesh */
     bvr_create_2d_square_mesh(&image_viewer.model.mesh, 480.0f, 480.0f);

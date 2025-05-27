@@ -127,7 +127,11 @@ void bvr_nuklear_render(bvr_nuklear_t* nuklear){
      * Make sure to either a.) save and restore or b.) reset your own state after
      * rendering the UI. */
 
-    nk_sdl_render(nuklear->antialiasing, nuklear->vertex_buffer_length, nuklear->element_buffer_length);
+    nk_sdl_render(nuklear->antialiasing, 
+        nuklear->vertex_buffer_length, 
+        nuklear->element_buffer_length, 
+        nuklear->scale
+    );
 }
 
 void bvr_destroy_nuklear(bvr_nuklear_t* nuklear){

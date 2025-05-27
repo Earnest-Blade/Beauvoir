@@ -70,6 +70,7 @@ void bvr_create_editor(bvr_editor_t* editor, bvr_book_t* book){
     __editor = editor;
 
     editor->book = book;
+    editor->scale = 1.0f;
     editor->state = BVR_EDITOR_STATE_HANDLE;
     editor->inspector_command.pointer = NULL;
     editor->inspector_command.type = 0;
@@ -81,6 +82,7 @@ void bvr_create_editor(bvr_editor_t* editor, bvr_book_t* book){
 void bvr_editor_handle(){
     BVR_ASSERT(__editor);
 
+    __editor->gui.scale = __editor->scale;
     bvr_nuklear_handle(&__editor->gui);
     
     if(bvr_key_down(&__editor->book->window, BVR_EDITOR_HIDDEN_INPUT)){

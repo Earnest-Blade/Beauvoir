@@ -157,7 +157,7 @@ int bvr_create_page(bvr_page_t* page){
     return BVR_OK;
 }
 
-bvr_camera_t* bvr_add_orthographic_camera(bvr_page_t* page, bvr_framebuffer_t* framebuffer, float near, float far, float scale){
+bvr_camera_t* bvr_create_orthographic_camera(bvr_page_t* page, bvr_framebuffer_t* framebuffer, float near, float far, float scale){
     BVR_ASSERT(page);
 
     page->camera.mode = BVR_CAMERA_ORTHOGRAPHIC;

@@ -34,7 +34,7 @@ int main(){
     bvr_create_audio_stream(&book.audio, BVR_DEFAULT_SAMPLE_RATE, BVR_DEFAULT_AUDIO_BUFFER_SIZE);
 
     /* create an ortho camera */
-    bvr_add_orthographic_camera(&book.page, &book.window.framebuffer, 0.1f, 100.0f, 1.0f);
+    bvr_create_orthographic_camera(&book.page, &book.window.framebuffer, 0.1f, 100.0f, 1.0f);
 
     {
         /* create player's mesh (here a square) */

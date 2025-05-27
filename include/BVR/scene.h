@@ -102,7 +102,7 @@ void bvr_destroy_book(bvr_book_t* book);
 */
 int bvr_create_page(bvr_page_t* page);
 
-bvr_camera_t* bvr_add_orthographic_camera(bvr_page_t* page, bvr_framebuffer_t* framebuffer, float near, float far, float scale);
+bvr_camera_t* bvr_create_orthographic_camera(bvr_page_t* page, bvr_framebuffer_t* framebuffer, float near, float far, float scale);
 
 void bvr_camera_lookat(bvr_page_t* page, vec3 target, vec3 up);
 
