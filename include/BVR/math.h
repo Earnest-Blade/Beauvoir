@@ -3,6 +3,7 @@
 #include <BVR/config.h>
 
 #include <math.h>
+#include <string.h>
 
 typedef float vec2[2];
 typedef float vec3[3];
@@ -190,4 +191,76 @@ BVR_H_FUNC void mat4_ortho(mat4x4 result, float left, float right, float bottom,
     result[3][1] = -(top + bottom) * tb;
     result[3][2] = -(far + near) * fn;
     result[3][3] = 1.0f;
+}
+
+BVR_H_FUNC void mat4_mul_vec4(vec4 result, mat4x4 const mat, vec4 const vec){
+    result[0] = (mat[0][0] + mat[0][1] + mat[0][2] + mat[0][3]) * vec[0];
+    result[1] = (mat[1][0] + mat[1][1] + mat[1][2] + mat[1][3]) * vec[1];
+    result[2] = (mat[2][0] + mat[2][1] + mat[2][2] + mat[2][3]) * vec[2];
+    result[3] = (mat[3][0] + mat[3][1] + mat[3][2] + mat[3][3]) * vec[3];
+}
+
+BVR_H_FUNC void mat4_mul(mat4x4 result, mat4x4 const a, mat4x4 const b){
+    mat4x4 temp;
+    temp[0][0] = a[0][0]*b[0][0] + a[1][0]*b[0][1] + a[2][0]*b[0][2] + a[3][0]*b[0][3];
+    temp[0][1] = a[0][1]*b[0][0] + a[1][1]*b[0][1] + a[2][1]*b[0][2] + a[3][1]*b[0][3];
+    temp[0][2] = a[0][2]*b[0][0] + a[1][2]*b[0][1] + a[2][2]*b[0][2] + a[3][2]*b[0][3];
+    temp[0][3] = a[0][3]*b[0][0] + a[1][3]*b[0][1] + a[2][3]*b[0][2] + a[3][3]*b[0][3];
+    
+    temp[1][0] = a[0][0]*b[1][0] + a[1][0]*b[1][1] + a[2][0]*b[1][2] + a[3][0]*b[1][3];
+    temp[1][1] = a[0][1]*b[1][0] + a[1][1]*b[1][1] + a[2][1]*b[1][2] + a[3][1]*b[1][3];
+    temp[1][2] = a[0][2]*b[1][0] + a[1][2]*b[1][1] + a[2][2]*b[1][2] + a[3][2]*b[1][3];
+    temp[1][3] = a[0][3]*b[1][0] + a[1][3]*b[1][1] + a[2][3]*b[1][2] + a[3][3]*b[1][3];
+
+    temp[2][0] = a[0][0]*b[2][0] + a[1][0]*b[2][1] + a[2][0]*b[2][2] + a[3][0]*b[2][3];
+    temp[2][1] = a[0][1]*b[2][0] + a[1][1]*b[2][1] + a[2][1]*b[2][2] + a[3][1]*b[2][3];
+    temp[2][2] = a[0][2]*b[2][0] + a[1][2]*b[2][1] + a[2][2]*b[2][2] + a[3][2]*b[2][3];
+    temp[2][3] = a[0][3]*b[2][0] + a[1][3]*b[2][1] + a[2][3]*b[2][2] + a[3][3]*b[2][3];
+
+    temp[3][0] = a[0][0]*b[3][0] + a[1][0]*b[3][1] + a[2][0]*b[3][2] + a[3][0]*b[3][3];
+    temp[3][1] = a[0][1]*b[3][0] + a[1][1]*b[3][1] + a[2][1]*b[3][2] + a[3][1]*b[3][3];
+    temp[3][2] = a[0][2]*b[3][0] + a[1][2]*b[3][1] + a[2][2]*b[3][2] + a[3][2]*b[3][3];
+    temp[3][3] = a[0][3]*b[3][0] + a[1][3]*b[3][1] + a[2][3]*b[3][2] + a[3][3]*b[3][3];
+
+    memcpy(result, temp, sizeof(mat4x4));
+}
+
+BVR_H_FUNC void mat4_inv(mat4x4 result, mat4x4 const mat){
+    float s[6];
+	float c[6];
+	s[0] = mat[0][0]*mat[1][1] - mat[1][0]*mat[0][1];
+	s[1] = mat[0][0]*mat[1][2] - mat[1][0]*mat[0][2];
+	s[2] = mat[0][0]*mat[1][3] - mat[1][0]*mat[0][3];
+	s[3] = mat[0][1]*mat[1][2] - mat[1][1]*mat[0][2];
+	s[4] = mat[0][1]*mat[1][3] - mat[1][1]*mat[0][3];
+	s[5] = mat[0][2]*mat[1][3] - mat[1][2]*mat[0][3];
+
+	c[0] = mat[2][0]*mat[3][1] - mat[3][0]*mat[2][1];
+	c[1] = mat[2][0]*mat[3][2] - mat[3][0]*mat[2][2];
+	c[2] = mat[2][0]*mat[3][3] - mat[3][0]*mat[2][3];
+	c[3] = mat[2][1]*mat[3][2] - mat[3][1]*mat[2][2];
+	c[4] = mat[2][1]*mat[3][3] - mat[3][1]*mat[2][3];
+	c[5] = mat[2][2]*mat[3][3] - mat[3][2]*mat[2][3];
+	
+	float idet = 1.0f/( s[0]*c[5]-s[1]*c[4]+s[2]*c[3]+s[3]*c[2]-s[4]*c[1]+s[5]*c[0] );
+	
+	result[0][0] = ( mat[1][1] * c[5] - mat[1][2] * c[4] + mat[1][3] * c[3]) * idet;
+	result[0][1] = (-mat[0][1] * c[5] + mat[0][2] * c[4] - mat[0][3] * c[3]) * idet;
+	result[0][2] = ( mat[3][1] * s[5] - mat[3][2] * s[4] + mat[3][3] * s[3]) * idet;
+	result[0][3] = (-mat[2][1] * s[5] + mat[2][2] * s[4] - mat[2][3] * s[3]) * idet;
+
+	result[1][0] = (-mat[1][0] * c[5] + mat[1][2] * c[2] - mat[1][3] * c[1]) * idet;
+	result[1][1] = ( mat[0][0] * c[5] - mat[0][2] * c[2] + mat[0][3] * c[1]) * idet;
+	result[1][2] = (-mat[3][0] * s[5] + mat[3][2] * s[2] - mat[3][3] * s[1]) * idet;
+	result[1][3] = ( mat[2][0] * s[5] - mat[2][2] * s[2] + mat[2][3] * s[1]) * idet;
+
+	result[2][0] = ( mat[1][0] * c[4] - mat[1][1] * c[2] + mat[1][3] * c[0]) * idet;
+	result[2][1] = (-mat[0][0] * c[4] + mat[0][1] * c[2] - mat[0][3] * c[0]) * idet;
+	result[2][2] = ( mat[3][0] * s[4] - mat[3][1] * s[2] + mat[3][3] * s[0]) * idet;
+	result[2][3] = (-mat[2][0] * s[4] + mat[2][1] * s[2] - mat[2][3] * s[0]) * idet;
+
+	result[3][0] = (-mat[1][0] * c[3] + mat[1][1] * c[1] - mat[1][2] * c[0]) * idet;
+	result[3][1] = ( mat[0][0] * c[3] - mat[0][1] * c[1] + mat[0][2] * c[0]) * idet;
+	result[3][2] = (-mat[3][0] * s[3] + mat[3][1] * s[1] - mat[3][2] * s[0]) * idet;
+	result[3][3] = ( mat[2][0] * s[3] - mat[2][1] * s[1] + mat[2][2] * s[0]) * idet;
 }

@@ -100,8 +100,16 @@ void bvr_enable_uniform_buffer(uint32_t buffer){
     glBindBuffer(GL_UNIFORM_BUFFER, buffer);
 }
 
-void bvr_uniform_buffer_set(uint32_t buffer, uint32_t offset, size_t size, void* data){
+void bvr_uniform_buffer_set(uint32_t offset, size_t size, void* data){
     glBufferSubData(GL_UNIFORM_BUFFER, offset, size, data);
+}
+
+void* bvr_uniform_buffer_map(uint32_t offset, size_t size){
+    return glMapBufferRange(GL_UNIFORM_BUFFER, offset, size, GL_MAP_READ_BIT);
+}
+
+void bvr_uniform_buffer_close(){
+    glUnmapBuffer(GL_UNIFORM_BUFFER);
 }
 
 void bvr_destroy_uniform_buffer(uint32_t* buffer){

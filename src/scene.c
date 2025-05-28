@@ -69,8 +69,8 @@ void bvr_new_frame(bvr_book_t* book){
     view[3][2] = camera->transform.position[2];
 
     bvr_enable_uniform_buffer(book->page.camera.buffer);
-    bvr_uniform_buffer_set(book->page.camera.buffer, 0, sizeof(mat4x4), &projection[0][0]);
-    bvr_uniform_buffer_set(book->page.camera.buffer, sizeof(mat4x4), sizeof(mat4x4), &view[0][0]);
+    bvr_uniform_buffer_set(0, sizeof(mat4x4), &projection[0][0]);
+    bvr_uniform_buffer_set(sizeof(mat4x4), sizeof(mat4x4), &view[0][0]);
     bvr_enable_uniform_buffer(0);
 }
 
@@ -133,6 +133,8 @@ void bvr_render(bvr_book_t* book){
 #endif
 
     book->prev_time = book->current_time;
+
+    bvr_error();
 }
 
 void bvr_destroy_book(bvr_book_t* book){
@@ -200,8 +202,46 @@ void bvr_camera_lookat(bvr_page_t* page, vec3 target, vec3 y){
     bvr_camera_set_view(page, view);
 }
 
-void bvr_screen_to_world_coords(bvr_book_t* book, vec3 coords){
-    BVR_ASSERT(0);
+void bvr_screen_to_world_coords(bvr_book_t* book, vec2 screen_coords, vec3 world_coords){
+    BVR_ASSERT(book);
+
+    if(!vec2_dot(screen_coords, screen_coords)){
+        return;
+    }
+
+    vec4 world, screen;
+    mat4x4 projection, view, inv;
+    
+    bvr_enable_uniform_buffer(book->page.camera.buffer);
+
+    mat4x4* buffer_ptr = bvr_uniform_buffer_map(0, 2 * sizeof(mat4x4));
+    if(buffer_ptr){
+        memcpy(projection, &buffer_ptr[0], sizeof(mat4x4));
+        memcpy(view, &buffer_ptr[1], sizeof(mat4x4));
+
+        bvr_uniform_buffer_close();
+        bvr_enable_uniform_buffer(0);
+
+        screen[0] = (screen_coords[0] / book->window.framebuffer.width - 0.5f) * 6.0f;
+        screen[1] = -(screen_coords[1] / book->window.framebuffer.height - 0.5f) * 6.0f;
+        screen[2] = 0.0f;
+        screen[3] = 1.0f;
+        
+        mat4_mul(projection, projection, view);
+        mat4_inv(inv, projection);
+        mat4_mul_vec4(world, inv, screen);
+
+        world[3] = 1.0f / world[3];
+        world_coords[0] = world[0] * world[3];
+        world_coords[1] = world[1] * world[3];
+        world_coords[2] = world[2] * world[3];
+
+        return;
+    }
+
+    world_coords[0] = 0.0f;
+    world_coords[1] = 0.0f;
+    world_coords[2] = 0.0f;
 }
 
 struct bvr_actor_s* bvr_link_actor_to_page(bvr_page_t* page, struct bvr_actor_s* actor){

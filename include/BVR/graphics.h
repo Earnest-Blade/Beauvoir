@@ -62,6 +62,7 @@ typedef struct bvr_framebuffer_s {
 } bvr_framebuffer_t;
 
 void bvr_pipeline_state_enable(struct bvr_pipeline_state_s* state);
+void bvr_error();
 
 int bvr_create_framebuffer(bvr_framebuffer_t* framebuffer, int width, int height, const char* shader);
 void bvr_framebuffer_enable(bvr_framebuffer_t* framebuffer);

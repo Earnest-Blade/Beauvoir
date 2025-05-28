@@ -91,6 +91,7 @@ include_directories(${BVR_INCLUDE_DIR})
 
 ## Create library or executable depends on the compilation mode
 if(${BVR_TARGET_SHARED})
+    add_compile_options(-g -w)
     add_library(Beauvoir STATIC)
     message("Successfully create a new library")
 else()

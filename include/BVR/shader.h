@@ -51,7 +51,9 @@ typedef struct bvr_shader_s {
 
 void bvr_create_uniform_buffer(uint32_t* buffer, size_t size);
 void bvr_enable_uniform_buffer(uint32_t buffer);
-void bvr_uniform_buffer_set(uint32_t buffer, uint32_t offset, size_t size, void* data);
+void bvr_uniform_buffer_set(uint32_t offset, size_t size, void* data);
+void* bvr_uniform_buffer_map(uint32_t offset, size_t size);
+void bvr_uniform_buffer_close();
 void bvr_destroy_uniform_buffer(uint32_t* buffer);
 
 int bvr_create_shaderf(bvr_shader_t* shader, FILE* file, int flags);

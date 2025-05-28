@@ -80,7 +80,7 @@ int bvr_create_book(bvr_book_t* book);
 /*
     Return BVR_OK if the game is still running.
 */
-static inline int bvr_is_awake(bvr_book_t* book){
+BVR_H_FUNC int bvr_is_awake(bvr_book_t* book){
     return book->window.awake;
 }
 
@@ -109,13 +109,13 @@ void bvr_camera_lookat(bvr_page_t* page, vec3 target, vec3 up);
 /*
     Set the view matrix of the camera.
 */
-static inline void bvr_camera_set_view(bvr_page_t* page, mat4x4 matrix){
+BVR_H_FUNC void bvr_camera_set_view(bvr_page_t* page, mat4x4 matrix){
     bvr_enable_uniform_buffer(page->camera.buffer);
-    bvr_uniform_buffer_set(page->camera.buffer, sizeof(mat4x4), sizeof(mat4x4), &matrix[0][0]);
+    bvr_uniform_buffer_set(sizeof(mat4x4), sizeof(mat4x4), &matrix[0][0]);
     bvr_enable_uniform_buffer(0);
 }
 
-void bvr_screen_to_world_coords(bvr_book_t* book, vec3 coords);
+void bvr_screen_to_world_coords(bvr_book_t* book, vec2 screen, vec3 world);
 
 /*
     Register a new actor inside page's pool. 

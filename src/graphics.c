@@ -81,6 +81,15 @@ void bvr_pipeline_state_enable(struct bvr_pipeline_state_s* state){
     }
 }
 
+void bvr_error(){
+    uint32_t err;
+    
+    while ((err = glGetError()) != GL_NO_ERROR)
+    {
+        BVR_PRINTF("%i", err);
+    }
+}
+
 int bvr_create_framebuffer(bvr_framebuffer_t* framebuffer, int width, int height, const char* shader){
     BVR_ASSERT(framebuffer);
     BVR_ASSERT(width > 0 && height > 0);
