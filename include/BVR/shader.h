@@ -76,6 +76,7 @@ int bvri_create_shader_vert_frag(bvr_shader_t* shader, const char* vert, const c
 
 bvr_shader_uniform_t* bvr_shader_register_uniform(bvr_shader_t* shader, int type, int count, const char* name);
 bvr_shader_uniform_t* bvr_shader_register_texture(bvr_shader_t* shader, int type, int* id, int* layer, const char* name, const char* layer_name);
+bvr_shader_block_t* bvr_shader_register_block(bvr_shader_t* shader, const char* name, int type, int count, int index);
 
 void bvr_shader_set_uniformi(bvr_shader_uniform_t* uniform, void* data);
 void bvr_shader_set_texturei(bvr_shader_uniform_t* uniform, int* id, int* layer);

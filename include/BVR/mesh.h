@@ -7,7 +7,8 @@
 
 typedef enum bvr_drawmode_e {
     BVR_DRAWMODE_LINES = 0x0001,
-    BVR_DRAWMODE_TRIANGLES = 0x0004
+    BVR_DRAWMODE_TRIANGLES = 0x0004,
+    BVR_DRAWMODE_QUADS = 0x0007
 } bvr_drawmode_t;
 
 typedef struct bvr_mesh_buffer_s {

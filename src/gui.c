@@ -17,6 +17,7 @@ int bvr_create_nuklear(bvr_nuklear_t* nuklear, bvr_window_t* window){
     nuklear->element_buffer_length = 128 * 1024;
 
     nuklear->window = window;
+    nuklear->scale = 1.0f;
     nuklear->context = nk_sdl_init(window->handle, window->framebuffer.width, window->framebuffer.height);
 
     nk_sdl_font_stash_begin(&nuklear->atlas);

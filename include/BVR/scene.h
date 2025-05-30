@@ -115,6 +115,9 @@ BVR_H_FUNC void bvr_camera_set_view(bvr_page_t* page, mat4x4 matrix){
     bvr_enable_uniform_buffer(0);
 }
 
+/*
+    Transpose a screen-space coords into a world-space coord.
+*/
 void bvr_screen_to_world_coords(bvr_book_t* book, vec2 screen, vec3 world);
 
 /*

@@ -70,8 +70,7 @@ static void bvri_create_dynamic_actor(bvr_dynamic_actor_t* actor, int flags){
                 vertices_ptr = glMapBufferRange(GL_ARRAY_BUFFER, 0, actor->mesh.vertex_count, GL_MAP_READ_BIT);
                 BVR_ASSERT(vertices_ptr);
     
-                bounds.coords[0] = 0.0f;
-                bounds.coords[1] = 0.0f;
+                vec2_copy(bounds.coords, actor->object.transform.position);
                 bounds.width = 0;
                 bounds.height = 0;
     

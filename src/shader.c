@@ -291,14 +291,15 @@ bvr_shader_uniform_t* bvr_shader_register_uniform(bvr_shader_t* shader, int type
         else{
             shader->uniforms[shader->uniform_count].memory.elemsize = bvr_sizeof(type);
             shader->uniforms[shader->uniform_count].memory.size = count * shader->uniforms[shader->uniform_count].memory.elemsize;
+            
             shader->uniforms[shader->uniform_count].memory.data = calloc(shader->uniforms[shader->uniform_count].memory.size, 1);
             BVR_ASSERT(shader->uniforms[shader->uniform_count].memory.data);
         }
         
         bvr_create_string(&shader->uniforms[shader->uniform_count].name, name);
 
-        shader->uniform_count++;
-        return &shader->uniforms[shader->uniform_count - 1];
+
+        return &shader->uniforms[shader->uniform_count++];
     }
 
     BVR_PRINTF("cannot find uniform '%s'!", name);
@@ -356,9 +357,37 @@ bvr_shader_uniform_t* bvr_shader_register_texture(bvr_shader_t* shader, int type
     return NULL;
 }
 
-void bvr_shader_set_uniformi(bvr_shader_uniform_t* uniform, void* data){
+bvr_shader_block_t* bvr_shader_register_block(bvr_shader_t* shader, const char* name, int type, int count, int index){
+    BVR_ASSERT(shader);
+    BVR_ASSERT(count > 0);
 
+    if(shader->block_count + 1 >= BVR_MAX_SHADER_BLOCK_COUNT){
+        BVR_PRINTF("block maximum capacity reached for shader '%i'!", shader->program);
+        return NULL;
+    }
+
+    if(name && index >= 0){
+        shader->blocks[shader->block_count].type = type;
+        shader->blocks[shader->block_count].count = count;
+        shader->blocks[shader->block_count].location = glGetUniformBlockIndex(shader->program, name);
+        if(shader->blocks[shader->block_count].location == -1){
+            BVR_PRINT("cannot find unfirm block!");
+            return NULL;
+        }
+
+        glUniformBlockBinding(shader->program, shader->blocks[shader->block_count].location, index);
+        return &shader->blocks[shader->block_count++];
+    }
+    else {
+        BVR_PRINT("cannot find uniform block!");
+        return NULL;
+    }
+}
+
+void bvr_shader_set_uniformi(bvr_shader_uniform_t* uniform, void* data){
     if(data && uniform){
+        BVR_ASSERT(uniform->memory.data);
+
         memcpy(uniform->memory.data, data, uniform->memory.size);
     }
     else {

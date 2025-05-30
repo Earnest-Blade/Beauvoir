@@ -84,6 +84,11 @@ void bvr_update(bvr_book_t* book){
             break;
         }
 
+        // update collider infos
+        if(collider->shape == BVR_COLLIDER_BOX){
+            vec2_copy(((struct bvr_bounds_s*)collider->geometry.data)->coords, collider->transform->position);
+        }
+
         // collision are disabled
         if(!BVR_HAS_FLAG(collider->body.mode, BVR_COLLISION_ENABLE)){
             bvr_body_apply_motion(&collider->body, collider->transform);
@@ -223,7 +228,7 @@ void bvr_screen_to_world_coords(bvr_book_t* book, vec2 screen_coords, vec3 world
         bvr_enable_uniform_buffer(0);
 
         screen[0] = (screen_coords[0] / book->window.framebuffer.width - 0.5f) * 6.0f;
-        screen[1] = -(screen_coords[1] / book->window.framebuffer.height - 0.5f) * 6.0f;
+        screen[1] = (screen_coords[1] / book->window.framebuffer.height - 0.5f) * -6.0f;
         screen[2] = 0.0f;
         screen[3] = 1.0f;
         

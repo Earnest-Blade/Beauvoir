@@ -26,7 +26,12 @@ typedef struct bvr_editor_s {
 
     enum bvr_editor_state_e state;
 
-    float scale;
+    struct {
+        bvr_shader_t shader;
+
+        uint32_t array_buffer; 
+        uint32_t vertex_buffer;
+    } device;
 
     struct {
         bvr_string_t name;
@@ -34,6 +39,13 @@ typedef struct bvr_editor_s {
         size_t type;
         void* pointer;
     } inspector_command;
+
+    struct {
+        int drawmode;
+
+        uint32_t element_offset;
+        uint32_t element_count;
+    } draw_command;
 } bvr_editor_t;
 
 void bvr_create_editor(bvr_editor_t* editor, bvr_book_t* book);
