@@ -61,6 +61,12 @@ uint8_t bvr_freadu8_le(FILE* file){
     return (uint8_t)v;
 }
 
+float bvr_freadf(FILE* file){
+    float f;
+    fread(&f, sizeof(float), 1, file);
+    return f;
+}
+
 void bvr_freadstr(char* string, size_t size, FILE* file){
     if(string){
         fread(string, sizeof(uint8_t), size - 1, file);

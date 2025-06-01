@@ -7,6 +7,7 @@
 #include <BVR/actors.h>
 
 #include <BVR/editor/flags.h>
+#include <BVR/editor/io.h>
 
 #define NK_INCLUDE_FIXED_TYPES 
 #include <nuklear.h>
@@ -152,6 +153,31 @@ void bvr_editor_draw_page_hierarchy(){
     if(nk_begin(__editor->gui.context, BVR_FORMAT("scene '%s'", __editor->book->page.name.string), BVR_HIERARCHY_RECT(200, 450), 
         NK_WINDOW_BORDER | NK_WINDOW_MOVABLE | NK_WINDOW_SCALABLE | NK_WINDOW_TITLE)){
 
+        nk_menubar_begin(__editor->gui.context);
+        {
+            nk_layout_row_begin(__editor->gui.context, NK_STATIC, 25, 1); 
+            nk_layout_row_push(__editor->gui.context, 45);
+
+            if(nk_menu_begin_label(__editor->gui.context, "file", NK_TEXT_ALIGN_LEFT, nk_vec2(100, 100))){
+                nk_layout_row_dynamic(__editor->gui.context, 15, 1);
+
+                if(nk_menu_item_label(__editor->gui.context, "save", NK_TEXT_ALIGN_LEFT)){
+                    bvr_write_book("book.bin", __editor->book);
+                }
+
+                if(nk_menu_item_label(__editor->gui.context, "open", NK_TEXT_ALIGN_LEFT)){
+                    bvr_open_book("book.bin", __editor->book);
+                }
+
+                if(nk_menu_item_label(__editor->gui.context, "exit", NK_TEXT_ALIGN_LEFT)){
+                    __editor->book->window.awake = 0;
+                }
+
+                nk_menu_end(__editor->gui.context);
+            }
+        }
+        nk_menubar_end(__editor->gui.context);
+
         // scene components
         nk_layout_row_dynamic(__editor->gui.context, 150, 1);
         nk_group_begin_titled(__editor->gui.context, BVR_MACRO_STR(__LINE__), "scene infos", NK_WINDOW_BORDER | NK_WINDOW_TITLE);
@@ -199,9 +225,11 @@ void bvr_editor_draw_page_hierarchy(){
 
             }
         }
+        
         nk_group_end(__editor->gui.context);
+
+        nk_end(__editor->gui.context);
     }
-    nk_end(__editor->gui.context);
 }
 
 void bvr_editor_draw_inspector(){
@@ -231,13 +259,16 @@ void bvr_editor_draw_inspector(){
             {
                 bvr_camera_t* camera = (bvr_camera_t*)__editor->inspector_command.pointer;
                 
-                nk_layout_row_dynamic(__editor->gui.context, 20, 1);
+                nk_layout_row_dynamic(__editor->gui.context, 40, 1);
                 nk_group_begin(__editor->gui.context, BVR_FORMAT("framebuffer%x", &camera->framebuffer), NK_WINDOW_BORDER|NK_WINDOW_NO_SCROLLBAR);
                 {
                     nk_layout_row_dynamic(__editor->gui.context, 15, 2);
                     
                     nk_label(__editor->gui.context, BVR_FORMAT("width %i", camera->framebuffer->width), NK_TEXT_ALIGN_LEFT);
                     nk_label(__editor->gui.context, BVR_FORMAT("height %i", camera->framebuffer->height), NK_TEXT_ALIGN_LEFT);
+                    
+                    nk_label(__editor->gui.context, BVR_FORMAT("far %f", camera->far), NK_TEXT_ALIGN_LEFT);
+                    nk_label(__editor->gui.context, BVR_FORMAT("near %f", camera->near), NK_TEXT_ALIGN_LEFT);
                 }
                 nk_group_end(__editor->gui.context);
 
@@ -342,8 +373,9 @@ void bvr_editor_draw_inspector(){
         default:
             break;
         }
+
+        nk_end(__editor->gui.context);
     }
-    nk_end(__editor->gui.context);
 }
 
 void bvr_editor_render(){

@@ -47,6 +47,11 @@ uint16_t bvr_freadu16_le(FILE* file);
 uint32_t bvr_freadu32_le(FILE* file);
 
 /*
+    Read a single float from a stream.
+*/
+float bvr_freadf(FILE* file);
+
+/*
     Read a null terminate string from a stream.
 */
 void bvr_freadstr(char* string, size_t size, FILE* file);

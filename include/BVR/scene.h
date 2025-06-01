@@ -51,10 +51,10 @@ typedef struct bvr_page_s {
     
     bvr_camera_t camera;
 
-    // all world's actors
+    // all world's actors (pointers)
     bvr_pool_t actors;
 
-    // all world's colliders
+    // all world's colliders (pointers)
     bvr_collider_collection_t colliders;
 } bvr_page_t;
 
