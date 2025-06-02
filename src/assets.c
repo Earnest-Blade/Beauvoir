@@ -1,4 +1,5 @@
-#include <BVR/editor/io.h>
+#include <BVR/assets.h>
+
 #include <BVR/editor/flags.h>
 
 #include <BVR/file.h>
@@ -56,7 +57,7 @@ void bvr_write_book_dataf(FILE* file, bvr_book_t* book){
     BVR_ASSERT(book);
 
     struct bvri_header_data_s header;
-    header.sig[0] = 'B';  // 0x42565242
+    header.sig[0] = 'B';  // 0x005FFD44
     header.sig[1] = 'V';  
     header.sig[2] = 'R';  
     header.sig[3] = 'B';

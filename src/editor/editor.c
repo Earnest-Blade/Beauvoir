@@ -5,9 +5,9 @@
 #include <BVR/utils.h>
 #include <BVR/window.h>
 #include <BVR/actors.h>
+#include <BVR/assets.h>
 
 #include <BVR/editor/flags.h>
-#include <BVR/editor/io.h>
 
 #define NK_INCLUDE_FIXED_TYPES 
 #include <nuklear.h>

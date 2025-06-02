@@ -4,6 +4,108 @@
 #include <malloc.h>
 #include <string.h>
 
+#define BVR_GROWTH_FACTOR 2
+
+static int bvri_grow_buffer(void* ptr, size_t* size){
+    if(ptr && size){
+        ptr = realloc(ptr, (*size *= BVR_GROWTH_FACTOR));
+        return ptr != NULL;
+    }
+
+    return 0;
+}
+
+void bvr_create_memstream(bvr_memstream_t* stream, unsigned long long const size){
+    BVR_ASSERT(stream);
+
+    stream->data = NULL;
+    stream->size = size;
+    stream->cursor = NULL;
+
+    if(size){
+        stream->data = malloc(size);
+        stream->cursor = stream->data;
+    }
+}
+
+void bvr_memstream_write(bvr_memstream_t* stream, const void* data, const size_t size){
+    BVR_ASSERT(stream && stream->data);
+    BVR_ASSERT(data);
+
+    if(stream->cursor - (char*)stream->data + size < stream->size){
+        memcpy(stream->cursor, data, size);
+        stream->cursor += size;
+    }
+    else {
+        BVR_PRINT("out of bounds!");
+    }
+}
+
+void bvr_memstream_read(bvr_memstream_t* stream, void* dest, const size_t size){
+    BVR_ASSERT(stream && stream->data);
+    BVR_ASSERT(dest);
+
+    if(stream->cursor - (char*)stream->data + size < stream->size){
+        memcpy(dest, stream->cursor, size);
+        stream->cursor += size;
+    }
+    else {
+        BVR_PRINT("out of bounds!");
+    }
+}
+
+void bvr_memstream_seek(bvr_memstream_t* stream, size_t position, int mode){
+    BVR_ASSERT(stream);
+
+    switch (mode)
+    {
+    case SEEK_CUR:
+        {
+            if(stream->cursor - (char*)stream->data + position < stream->size){
+                stream->cursor += position;
+            } 
+            else {
+                BVR_PRINT("out of bounds!");
+            }
+        }
+        break;
+
+    case SEEK_SET:
+        {
+            if(position <= stream->size){
+                stream->cursor = stream->data + position;
+            }
+            else {
+                BVR_PRINT("out of bounds!");
+            }
+        }
+        break;
+
+    case SEEK_END:
+        {
+            if(position <= stream->size){
+                stream->cursor = stream->data + (stream->size - position);
+            }
+            else {
+                BVR_PRINT("out of bounds!");
+            }
+        }
+        break;
+    default:
+        break;
+    }
+}
+
+void bvr_destroy_memstream(bvr_memstream_t* stream){
+    BVR_ASSERT(stream);
+
+    free(stream->data);
+
+    stream->size = 0;
+    stream->cursor = NULL;
+    stream->data = NULL;
+}
+
 void bvr_create_string(bvr_string_t* string, const char* value){
     BVR_ASSERT(string);
 
@@ -86,15 +188,11 @@ void bvr_string_insert(bvr_string_t* string, const size_t offset, const char* va
     bvr_destroy_string(&prev);
 }
 
-const char* bvr_string_get(bvr_string_t* string){
-    BVR_ASSERT(string);
-    return (const char*)string->string;
-}
-
 void bvr_destroy_string(bvr_string_t* string){
     BVR_ASSERT(string);
     free(string->string);
     string->string = NULL;
+    string->length = 0;
 }
 
 void bvr_create_pool(bvr_pool_t* pool, size_t size, size_t count){
