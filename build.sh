@@ -6,7 +6,7 @@ BVR_CXX="g++"
 BVR_BULID_DIR="$PWD/build/"
 BVR_EXTERNAL_MODULES="SDL PortAudio Zlib Lpng"
 
-#! clear command
+#! Clear command
 if [ $1 = "-clear" ]; then 
     echo "cleaning..."
 
@@ -20,6 +20,7 @@ if [ $1 = "-clear" ]; then
     mkdir "$PWD/lib/"
 fi
 
+#! Loop over external modules
 for MOD in $BVR_EXTERNAL_MODULES; do 
     MODULE_PATH="$PWD/extern/$MOD"
 

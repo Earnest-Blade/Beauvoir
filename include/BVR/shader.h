@@ -84,6 +84,21 @@ void bvr_shader_set_uniform(bvr_shader_t* shader, const char* name, void* data);
 void bvr_shader_set_texture(bvr_shader_t* shader, const char* name, int* id, int* layer);
 void bvr_shader_use_uniform(bvr_shader_uniform_t* uniform, void* data);
 
+BVR_H_FUNC bvr_shader_uniform_t* bvr_find_uniform(bvr_shader_t* shader, const char* name){
+    for (size_t i = 1; i < shader->uniform_count; i++)
+    {
+        if(!shader->uniforms[i].name.length){
+            continue;
+        }
+        
+        if (strcmp(shader->uniforms[i].name.string, name) == 0) {
+            return &shader->uniforms[i];
+        }
+    }
+
+    return NULL;
+}
+
 void bvr_shader_enable(bvr_shader_t* shader);
 void bvr_shader_disable(void);
 void bvr_destroy_shader(bvr_shader_t* shader);

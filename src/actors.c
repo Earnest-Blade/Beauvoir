@@ -273,15 +273,45 @@ void bvr_destroy_actor(struct bvr_actor_s* actor){
     }
 }
 
+void bvr_draw_layer_actor(bvr_layer_actor_t* actor){
+    if(!actor->object.transform.active){
+        return;
+    }
+
+    bvri_update_transform(&actor->object);
+
+    bvr_shader_enable(&actor->shader);
+    for (int layer = 0; layer < BVR_BUFFER_COUNT(actor->texture.image.layers); layer++)
+    {
+        if(!(((bvr_layer_t*)actor->texture.image.layers.data)[layer]).opacity){
+            continue;
+        }
+
+        bvr_layered_texture_enable(&actor->texture, BVR_TEXTURE_UNIT0);
+
+        bvr_shader_use_uniform(bvr_find_uniform(&actor->shader, "bvr_layer"), &layer);
+        bvr_shader_use_uniform(&actor->shader.uniforms[0], &actor->object.transform.matrix[0][0]);
+
+        bvr_mesh_draw(&actor->mesh, BVR_DRAWMODE_TRIANGLES);
+
+        bvr_layered_texture_disable();
+    }
+
+    bvr_shader_disable();
+    
+}
+
 void bvr_draw_actor(bvr_static_actor_t* actor, int drawmode){
     if(!actor->object.transform.active){
         return;
     }
 
-    bvri_update_transform((struct bvr_actor_s*)actor);
+    bvri_update_transform(&actor->object);
 
     bvr_shader_enable(&actor->shader);
     bvr_shader_use_uniform(&actor->shader.uniforms[0], &actor->object.transform.matrix[0][0]);
 
     bvr_mesh_draw(&actor->mesh, drawmode);
+
+    bvr_shader_disable();
 }

@@ -40,6 +40,14 @@ struct bvr_actor_s {
 
 typedef struct bvr_actor_s bvr_emty_actor_t;
 
+typedef struct bvr_layer_actor_s {
+    struct bvr_actor_s object;
+
+    bvr_mesh_t mesh;
+    bvr_shader_t shader;
+    bvr_layered_texture_t texture;
+} bvr_layer_actor_t;
+
 typedef struct bvr_static_actor_s {
     struct bvr_actor_s object;
 
@@ -72,4 +80,5 @@ typedef struct bvr_bitmap_layer_s {
 void bvr_create_actor(struct bvr_actor_s* actor, const char* name, bvr_actor_type_t type, int flags);
 void bvr_destroy_actor(struct bvr_actor_s* actor);
 
+void bvr_draw_layer_actor(bvr_layer_actor_t* actor);
 void bvr_draw_actor(bvr_static_actor_t* actor, int drawmode);

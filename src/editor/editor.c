@@ -157,30 +157,43 @@ void bvr_editor_draw_page_hierarchy(){
     if(nk_begin(__editor->gui.context, BVR_FORMAT("scene '%s'", __editor->book->page.name.string), BVR_HIERARCHY_RECT(200, 450), 
         NK_WINDOW_BORDER | NK_WINDOW_MOVABLE | NK_WINDOW_SCALABLE | NK_WINDOW_TITLE)){
 
-        nk_menubar_begin(__editor->gui.context);
         {
-            nk_layout_row_begin(__editor->gui.context, NK_STATIC, 25, 1); 
-            nk_layout_row_push(__editor->gui.context, 45);
+            nk_menubar_begin(__editor->gui.context);
+            {
+                nk_layout_row_begin(__editor->gui.context, NK_STATIC, 25, 2); 
+                nk_layout_row_push(__editor->gui.context, 45);
 
-            if(nk_menu_begin_label(__editor->gui.context, "file", NK_TEXT_ALIGN_LEFT, nk_vec2(100, 100))){
-                nk_layout_row_dynamic(__editor->gui.context, 15, 1);
+                if(nk_menu_begin_label(__editor->gui.context, "file", NK_TEXT_ALIGN_LEFT, nk_vec2(100, 100))){
+                    nk_layout_row_dynamic(__editor->gui.context, 15, 1);
 
-                if(nk_menu_item_label(__editor->gui.context, "save", NK_TEXT_ALIGN_LEFT)){
-                    bvr_write_book("book.bin", __editor->book);
+                    if(nk_menu_item_label(__editor->gui.context, "save", NK_TEXT_ALIGN_LEFT)){
+                        bvr_write_book("book.bin", __editor->book);
+                    }
+
+                    if(nk_menu_item_label(__editor->gui.context, "open", NK_TEXT_ALIGN_LEFT)){
+                        bvr_open_book("book.bin", __editor->book);
+                    }
+
+                    if(nk_menu_item_label(__editor->gui.context, "exit", NK_TEXT_ALIGN_LEFT)){
+                        __editor->book->window.awake = 0;
+                    }
+
+                    nk_menu_end(__editor->gui.context);
                 }
 
-                if(nk_menu_item_label(__editor->gui.context, "open", NK_TEXT_ALIGN_LEFT)){
-                    bvr_open_book("book.bin", __editor->book);
-                }
+                if(nk_menu_begin_label(__editor->gui.context, "tools", NK_TEXT_ALIGN_LEFT, nk_vec2(100, 100))){
+                    nk_layout_row_dynamic(__editor->gui.context, 15, 1);
 
-                if(nk_menu_item_label(__editor->gui.context, "exit", NK_TEXT_ALIGN_LEFT)){
-                    __editor->book->window.awake = 0;
-                }
+                    if(nk_menu_item_label(__editor->gui.context, "placeholder", NK_TEXT_ALIGN_LEFT)){
 
-                nk_menu_end(__editor->gui.context);
+                    }
+
+                    nk_menu_end(__editor->gui.context);
+                }
             }
+            nk_menubar_end(__editor->gui.context);
         }
-        nk_menubar_end(__editor->gui.context);
+        
 
         // scene components
         nk_layout_row_dynamic(__editor->gui.context, 150, 1);
@@ -268,7 +281,6 @@ void bvr_editor_draw_inspector(){
             return;
         }
 
-        
         __editor->draw_command.drawmode = 0;
         __editor->draw_command.element_offset = 0;
         __editor->draw_command.element_count = 0;
@@ -290,8 +302,9 @@ void bvr_editor_draw_inspector(){
                     
                     nk_label(__editor->gui.context, BVR_FORMAT("far %f", camera->far), NK_TEXT_ALIGN_LEFT);
                     nk_label(__editor->gui.context, BVR_FORMAT("near %f", camera->near), NK_TEXT_ALIGN_LEFT);
+
+                    nk_group_end(__editor->gui.context);
                 }
-                nk_group_end(__editor->gui.context);
 
                 nk_property_float(__editor->gui.context, "scale", 0.01f, &camera->field_of_view.scale, 20.0f, 0.1f, 0.1f);
                 
@@ -358,7 +371,7 @@ void bvr_editor_draw_inspector(){
 
                 bvri_draw_editor_transform(&actor->transform);
 
-                nk_layout_row_dynamic(__editor->gui.context, 100, 1);
+                nk_layout_row_dynamic(__editor->gui.context, 150, 1);
                 if(nk_group_begin(__editor->gui.context, BVR_MACRO_STR(__LINE__), NK_WINDOW_BORDER|NK_WINDOW_NO_SCROLLBAR)){
                     nk_layout_row_dynamic(__editor->gui.context, 15, 1);
 
@@ -366,6 +379,20 @@ void bvr_editor_draw_inspector(){
                     {
                     case BVR_EMPTY_ACTOR:
                         nk_label(__editor->gui.context, "EMPTY ACTOR", NK_TEXT_ALIGN_CENTERED);
+                        break;
+                    case BVR_LAYER_ACTOR:
+                        {
+                            nk_label(__editor->gui.context, "LAYER ACTOR", NK_TEXT_ALIGN_CENTERED);
+                            bvr_layer_t* layers = (bvr_layer_t*)(((bvr_layer_actor_t*)actor)->texture.image.layers.data);
+
+                            for (size_t layer = 0; layer < BVR_BUFFER_COUNT(((bvr_layer_actor_t*)actor)->texture.image.layers); layer++)
+                            {
+                                nk_layout_row_dynamic(__editor->gui.context, 15, 1);
+                                
+                                nk_property_int(__editor->gui.context, BVR_FORMAT("%s opacity", layers[layer].name.string), 0, (int*)&layers[layer].opacity, 255, 1, 1.0f);
+                            }
+                            
+                        }
                         break;
                     case BVR_BITMAP_ACTOR:
                         {
@@ -402,44 +429,44 @@ void bvr_editor_draw_inspector(){
                 bvr_collider_t* collider = (bvr_collider_t*)__editor->inspector_command.pointer;
 
                 nk_layout_row_dynamic(__editor->gui.context, 100, 1);
-                nk_group_begin_titled(__editor->gui.context, BVR_FORMAT("collider%i", collider), "bounds", NK_WINDOW_BORDER | NK_WINDOW_TITLE);
-
-                if(collider->shape = BVR_COLLIDER_BOX){
-                    struct bvr_bounds_s* bounds = (struct bvr_bounds_s*)collider->geometry.data;
-
-                    {
-                        float vertices[24] = {
-                            bounds->coords[0] + bounds->width * -0.5f, bounds->coords[1] + bounds->height * +0.5f, 0.1f,
-                            bounds->coords[0] + bounds->width * +0.5f, bounds->coords[1] + bounds->height * +0.5f, 0.1f,
-                            bounds->coords[0] + bounds->width * +0.5f, bounds->coords[1] + bounds->height * +0.5f, 0.1f,
-                            bounds->coords[0] + bounds->width * +0.5f, bounds->coords[1] + bounds->height * -0.5f, 0.1f,
-                            bounds->coords[0] + bounds->width * +0.5f, bounds->coords[1] + bounds->height * -0.5f, 0.1f,
-                            bounds->coords[0] + bounds->width * -0.5f, bounds->coords[1] + bounds->height * -0.5f, 0.1f,
-                            bounds->coords[0] + bounds->width * -0.5f, bounds->coords[1] + bounds->height * +0.5f, 0.1f,
-                            bounds->coords[0] + bounds->width * -0.5f, bounds->coords[1] + bounds->height * -0.5f, 0.1f,
-                        };
-
-                        bvri_bind_editor_buffers(__editor->device.array_buffer, __editor->device.vertex_buffer);
-                        bvri_set_editor_buffers(vertices, 8);
-                        bvri_bind_editor_buffers(0, 0);
-
-                        __editor->draw_command.drawmode = BVR_DRAWMODE_LINES;
-                        __editor->draw_command.element_offset = 0;
-                        __editor->draw_command.element_count = 8;
+                if(nk_group_begin_titled(__editor->gui.context, BVR_FORMAT("collider%i", collider), "bounds", NK_WINDOW_BORDER | NK_WINDOW_TITLE)){
+                    if(collider->shape = BVR_COLLIDER_BOX){
+                        struct bvr_bounds_s* bounds = (struct bvr_bounds_s*)collider->geometry.data;
+                    
+                        {
+                            float vertices[24] = {
+                                bounds->coords[0] + bounds->width * -0.5f, bounds->coords[1] + bounds->height * +0.5f, 0.1f,
+                                bounds->coords[0] + bounds->width * +0.5f, bounds->coords[1] + bounds->height * +0.5f, 0.1f,
+                                bounds->coords[0] + bounds->width * +0.5f, bounds->coords[1] + bounds->height * +0.5f, 0.1f,
+                                bounds->coords[0] + bounds->width * +0.5f, bounds->coords[1] + bounds->height * -0.5f, 0.1f,
+                                bounds->coords[0] + bounds->width * +0.5f, bounds->coords[1] + bounds->height * -0.5f, 0.1f,
+                                bounds->coords[0] + bounds->width * -0.5f, bounds->coords[1] + bounds->height * -0.5f, 0.1f,
+                                bounds->coords[0] + bounds->width * -0.5f, bounds->coords[1] + bounds->height * +0.5f, 0.1f,
+                                bounds->coords[0] + bounds->width * -0.5f, bounds->coords[1] + bounds->height * -0.5f, 0.1f,
+                            };
+                        
+                            bvri_bind_editor_buffers(__editor->device.array_buffer, __editor->device.vertex_buffer);
+                            bvri_set_editor_buffers(vertices, 8);
+                            bvri_bind_editor_buffers(0, 0);
+                        
+                            __editor->draw_command.drawmode = BVR_DRAWMODE_LINES;
+                            __editor->draw_command.element_offset = 0;
+                            __editor->draw_command.element_count = 8;
+                        }
+                        
+                        nk_layout_row_dynamic(__editor->gui.context, 15, 3);
+                        
+                        nk_label_wrap(__editor->gui.context, "coords");
+                        nk_label_wrap(__editor->gui.context, BVR_FORMAT("x %f ", bounds->coords[0]));
+                        nk_label_wrap(__editor->gui.context, BVR_FORMAT("y %f ", bounds->coords[1]));
+                    
+                        nk_label_wrap(__editor->gui.context, "size");
+                        nk_label_wrap(__editor->gui.context, BVR_FORMAT("width %i ", bounds->width));
+                        nk_label_wrap(__editor->gui.context, BVR_FORMAT("height %i ", bounds->height));
                     }
-                    
-                    nk_layout_row_dynamic(__editor->gui.context, 15, 3);
-                    
-                    nk_label_wrap(__editor->gui.context, "coords");
-                    nk_label_wrap(__editor->gui.context, BVR_FORMAT("x %f ", bounds->coords[0]));
-                    nk_label_wrap(__editor->gui.context, BVR_FORMAT("y %f ", bounds->coords[1]));
-
-                    nk_label_wrap(__editor->gui.context, "size");
-                    nk_label_wrap(__editor->gui.context, BVR_FORMAT("width %i ", bounds->width));
-                    nk_label_wrap(__editor->gui.context, BVR_FORMAT("height %i ", bounds->height));
-                }
-
-                nk_group_end(__editor->gui.context);
+                
+                    nk_group_end(__editor->gui.context);
+                } 
             }
             break;
         default:

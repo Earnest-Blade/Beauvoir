@@ -399,17 +399,7 @@ void bvr_shader_set_uniform(bvr_shader_t* shader, const char* name, void* data){
     BVR_ASSERT(shader);
     BVR_ASSERT(name);
 
-    for (size_t i = 0; i < shader->uniform_count; i++)
-    {
-        // case where name isn't initialize
-        if(!shader->uniforms[i].name.length){
-            continue;
-        }
-
-        if (strcmp(shader->uniforms[i].name.string, name) == 0) {
-            bvr_shader_set_uniformi(&shader->uniforms[i], data);
-        }
-    }
+    bvr_shader_set_uniformi(bvr_find_uniform(shader, name), data);
 }
 void bvr_shader_set_texturei(bvr_shader_uniform_t* uniform, int* id, int* layer){
     if(uniform){
@@ -430,18 +420,11 @@ void bvr_shader_set_texture(bvr_shader_t* shader, const char* name, int* id, int
     BVR_ASSERT(shader);
     BVR_ASSERT(name);
 
-    for (size_t i = 1; i < shader->uniform_count; i++)
-    {
-        if (strcmp(shader->uniforms[i].name.string, name) == 0) {
-            bvr_shader_set_texturei(&shader->uniforms[i], id, layer);
-        }
-    }
+    bvr_shader_set_texturei(bvr_find_uniform(shader, name), id, layer);
 }
 
 void bvr_shader_use_uniform(bvr_shader_uniform_t* uniform, void* data){
-    BVR_ASSERT(uniform);
-
-    if(uniform->location == -1) {
+    if(!uniform || uniform->location == -1) {
         return;
     }
 

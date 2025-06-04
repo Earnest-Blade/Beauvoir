@@ -133,12 +133,15 @@ void bvr_write_book_dataf(FILE* file, bvr_book_t* book){
     fseek(file, 0, SEEK_SET);
     fwrite(&header, sizeof(struct bvri_header_data_s), 1, file);
 
+    uint32_t bin_offset = 0;
     // write asset informaions
     {
-        uint32_t asset_stream_size = book->asset_stream.next - (char*)book->asset_stream.data;
+        uint32_t stream_size = book->asset_stream.next - (char*)book->asset_stream.data;
+        bin_offset = 0;
 
-        fwrite(&asset_stream_size, sizeof(uint32_t), 1, file);
-        fwrite(book->asset_stream.data, asset_stream_size, 1, file);
+        fwrite(&stream_size, sizeof(uint32_t), 1, file);
+        fwrite(&bin_offset, sizeof(uint32_t), 1, file);
+        fwrite(book->asset_stream.data, stream_size, 1, file);
     }
 
     // write page informations
@@ -150,6 +153,18 @@ void bvr_write_book_dataf(FILE* file, bvr_book_t* book){
             bvr_transform_t transform;
         } camera;
 
+        struct {
+            uint32_t size;
+            uint32_t offset;
+
+            bvr_string_t name;
+            uint16_t type;
+            bvr_uuid_t id;
+            int flags;
+
+            bvr_transform_t transform;
+        } actor;
+
         camera.near = page->camera.near;
         camera.far = page->camera.far;
         camera.scale = page->camera.field_of_view.scale;
@@ -157,6 +172,11 @@ void bvr_write_book_dataf(FILE* file, bvr_book_t* book){
 
         bvri_write_string(file, &page->name);
         bvri_write_chunk_data(file, sizeof(camera), BVR_EDITOR_CAMERA, &camera);
+    }
+
+    // binary chunk
+    {
+ 
     }
 
     fflush(file);
@@ -196,20 +216,34 @@ void bvr_open_book_dataf(FILE* file, bvr_book_t* book){
 
     fseek(file, 0, SEEK_SET);
 
+    // read the header
     struct bvri_header_data_s header;
     fread(&header.sig, sizeof(char), 4, file);
     header.size = bvr_fread32_le(file);
 
-    BVR_ASSERT(((int)header.sig) == 0x5ffd4c);
+    // check for BRVB signature
+    BVR_ASSERT(
+        header.sig[0] == 'B' && 
+        header.sig[1] == 'V' && 
+        header.sig[2] == 'R' && 
+        header.sig[3] == 'B'
+    );
 
     // read asset informations
     {
         uint32_t section_size = bvr_fread32_le(file);
+        uint32_t asset_offset = bvr_fread32_le(file);
 
-        if(!book->asset_stream.data){
-            bvr_create_book_memories(book, section_size + 1, 0);
+        // detroy current asset stream
+        if(!book->asset_stream.data || book->asset_stream.size < section_size){
+            bvr_destroy_memstream(&book->asset_stream);
+            bvr_create_memstream(&book->asset_stream, section_size);
+        }
+        else {
+            bvr_memstream_clear(&book->asset_stream);
         }
 
+        // copy previously saved asset data stream into the asset stream
         fread(book->asset_stream.data, sizeof(char), section_size, file);
     }
 
@@ -218,8 +252,10 @@ void bvr_open_book_dataf(FILE* file, bvr_book_t* book){
         bvr_page_t* page = &book->page;
         struct bvri_chunk_data_s camera;
 
+        // get scene name
         bvri_read_string(file, &page->name);
 
+        // get camera component
         if(bvr_fread32_le(file)){
             BVR_ASSERT(bvr_freadu16_le(file) == BVR_EDITOR_CAMERA);
 
@@ -234,6 +270,11 @@ void bvr_open_book_dataf(FILE* file, bvr_book_t* book){
             // copy transform
             fread(&page->camera.transform, sizeof(bvr_transform_t), 1, file);            
         }
+    }
+
+    // binary chunk
+    {
+
     }
 }
 
