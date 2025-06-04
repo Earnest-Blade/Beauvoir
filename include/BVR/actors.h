@@ -26,13 +26,13 @@ typedef enum bvr_actor_type_e {
 
 /*
     Each actor based struct must start by 
-    the actor struct.
+    an actor struct.
 */
 
 struct bvr_actor_s {
     bvr_string_t name;
     bvr_actor_type_t type;
-    size_t id;
+    bvr_uuid_t id;
     int flags;
 
     struct bvr_transform_s transform;

@@ -6,6 +6,8 @@
 #include <memory.h>
 
 #include <SDL3/SDL.h>
+#include <SDL3/SDL_dialog.h>
+
 #include <glad/glad.h>
 
 int bvr_create_window(bvr_window_t* window, int width, int height, const char* title, int flags){
@@ -205,6 +207,26 @@ void bvr_mouse_position(bvr_window_t* window, float* x, float* y){
 void bvr_mouse_relative_position(bvr_window_t* window, float* x, float *y){
     *x = window->inputs.relative_motion[0];
     *y = window->inputs.relative_motion[1];
+}
+
+void bvri_file_dialog_callback(void (*userdata) (bvr_string_t* path), const char * const *filelist, int filter){
+    bvr_string_t string;
+    string.length = 0;
+    string.string = NULL;
+
+    if(filelist && userdata){
+        bvr_create_string(&string, filelist[0]);
+        userdata(&string);
+    }
+
+    bvr_destroy_string(&string);
+}
+
+void bvr_open_file_dialog(void (*callback) (bvr_string_t* path)){
+    SDL_ShowOpenFileDialog(
+        (SDL_DialogFileCallback)bvri_file_dialog_callback, callback, NULL,
+        NULL, 0, NULL, 0
+    );
 }
 
 uint64_t bvr_frames(){

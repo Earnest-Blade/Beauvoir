@@ -18,6 +18,8 @@ typedef struct bvr_transform_s {
     quat rotation;
 
     mat4x4 matrix;
+
+    char active;
 } bvr_transform_t;
 
 struct bvr_bounds_s {
@@ -27,8 +29,10 @@ struct bvr_bounds_s {
 };
 
 #define BVR_SCALE_VEC3(vec, a) vec[0] = a; vec[1] = a; vec[2] = a;
+#define BVR_SCALE_VEC4(vec, a) vec[0] = a; vec[1] = a; vec[2] = a; vec[3] = a;
 
 #define BVR_IDENTITY_VEC3(vec) BVR_SCALE_VEC3(vec, 0.0f);
+#define BVR_IDENTITY_VEC4(vec) BVR_SCALE_VEC4(vec, 0.0f);
 #define BVR_IDENTITY_MAT4(mat)  mat[0][0] = 1.0f;\
                                 mat[0][1] = 0.0f;\
                                 mat[0][2] = 0.0f;\

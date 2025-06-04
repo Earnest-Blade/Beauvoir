@@ -198,15 +198,16 @@ void bvr_create_actor(struct bvr_actor_s* actor, const char* name, bvr_actor_typ
     BVR_ASSERT(actor);
 
     actor->type = type;
-    actor->id = (uint32_t)actor;
     actor->flags = flags;
     
+    actor->transform.active = 1;
     BVR_IDENTITY_VEC3(actor->transform.position);
     BVR_IDENTITY_VEC3(actor->transform.rotation);
     BVR_SCALE_VEC3(actor->transform.scale, 1.0f);
 
     BVR_IDENTITY_MAT4(actor->transform.matrix);
     bvr_create_string(&actor->name, name);
+    bvr_create_uuid(actor->id);
 
     BVR_PRINTF("created a new actor %x", actor);
 
@@ -273,6 +274,10 @@ void bvr_destroy_actor(struct bvr_actor_s* actor){
 }
 
 void bvr_draw_actor(bvr_static_actor_t* actor, int drawmode){
+    if(!actor->object.transform.active){
+        return;
+    }
+
     bvri_update_transform((struct bvr_actor_s*)actor);
 
     bvr_shader_enable(&actor->shader);

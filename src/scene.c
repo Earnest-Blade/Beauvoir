@@ -29,6 +29,9 @@ int bvr_create_book(bvr_book_t* book){
     book->pipeline.clear_color[1] = 0.0f;
     book->pipeline.clear_color[2] = 0.0f;
 
+    bvr_create_memstream(&book->asset_stream, 0);
+    bvr_create_memstream(&book->garbage_stream, 0);
+
     return BVR_OK;
 }
 
@@ -80,7 +83,7 @@ void bvr_update(bvr_book_t* book){
 
     BVR_POOL_FOR_EACH(collider, book->page.colliders){        
 
-        if(!collider){
+        if(!collider || !collider->transform->active){
             break;
         }
 
@@ -150,6 +153,9 @@ void bvr_destroy_book(bvr_book_t* book){
         bvr_destroy_audio_stream(&book->audio);
     }
 
+    bvr_destroy_memstream(&book->asset_stream);
+    bvr_destroy_memstream(&book->garbage_stream);
+    
     bvr_destroy_page(&book->page);
 }
 
@@ -172,6 +178,12 @@ bvr_camera_t* bvr_create_orthographic_camera(bvr_page_t* page, bvr_framebuffer_t
     page->camera.near = near;
     page->camera.far = far;
     page->camera.field_of_view.scale = scale;
+    
+    page->camera.transform.active = 1;
+    BVR_IDENTITY_VEC3(page->camera.transform.position);
+    BVR_IDENTITY_VEC4(page->camera.transform.rotation);
+    BVR_IDENTITY_VEC3(page->camera.transform.scale);
+    BVR_IDENTITY_MAT4(page->camera.transform.matrix);
 
     bvr_create_uniform_buffer(&page->camera.buffer, 2 * sizeof(mat4x4));
 

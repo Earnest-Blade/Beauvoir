@@ -14,6 +14,8 @@
     #define BVR_POOL_SIZE 2048
 #endif
 
+#define SEEK_NEXT 3
+
 // GCC specific macro
 #ifdef __GNUC__
     #define BVR_POOL_FOR_EACH(a, pool)    \
@@ -53,6 +55,7 @@ typedef struct bvr_memstream_s {
     unsigned long long size;
 
     char* cursor;
+    char* next;
 } bvr_memstream_t;
 
 /*
@@ -90,6 +93,11 @@ void bvr_create_memstream(bvr_memstream_t* stream, const size_t size);
 void bvr_memstream_write(bvr_memstream_t* stream, const void* data, const size_t size);
 void bvr_memstream_read(bvr_memstream_t* stream, void* dest, const size_t size);
 void bvr_memstream_seek(bvr_memstream_t* stream, size_t position, int mode);
+void bvr_memstream_clear(bvr_memstream_t* stream);
+
+BVR_H_FUNC int bvr_memstream_eof(bvr_memstream_t* stream){
+    return stream->cursor - (char*)stream->data >= stream->size;
+}
 
 void bvr_destroy_memstream(bvr_memstream_t* stream);
 

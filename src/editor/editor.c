@@ -9,6 +9,8 @@
 
 #include <BVR/editor/flags.h>
 
+#include <SDL3/SDL_dialog.h>
+
 #define NK_INCLUDE_FIXED_TYPES 
 #include <nuklear.h>
 
@@ -30,17 +32,19 @@ static void bvri_draw_editor_vec3(const char* text, vec3 value){
 }
 
 static void bvri_draw_editor_transform(bvr_transform_t* transform){
-    nk_layout_row_dynamic(__editor->gui.context, 90, 1);
+    nk_layout_row_dynamic(__editor->gui.context, 115, 1);
 
     nk_group_begin_titled(__editor->gui.context, BVR_MACRO_STR(__LINE__), "transform", 
         NK_WINDOW_BORDER | NK_WINDOW_NO_SCROLLBAR | NK_WINDOW_TITLE);
     {
         nk_layout_row_dynamic(__editor->gui.context, 15, 1);
+        nk_checkbox_label(__editor->gui.context, "is active", (nk_bool*)&transform->active);
         nk_property_float(__editor->gui.context, "x", -BVR_TRANSFORM_MAX, &transform->position[0], BVR_TRANSFORM_MAX, 0.1f, 0.1f);
         nk_property_float(__editor->gui.context, "y", -BVR_TRANSFORM_MAX, &transform->position[1], BVR_TRANSFORM_MAX, 0.1f, 0.1f);
         nk_property_float(__editor->gui.context, "z", -BVR_TRANSFORM_MAX, &transform->position[2], BVR_TRANSFORM_MAX, 0.1f, 0.1f);
+        
+        nk_group_end(__editor->gui.context);
     }
-    nk_group_end(__editor->gui.context);
 }
 
 static void bvri_draw_editor_body(struct bvr_body_s* body){
@@ -180,10 +184,16 @@ void bvr_editor_draw_page_hierarchy(){
 
         // scene components
         nk_layout_row_dynamic(__editor->gui.context, 150, 1);
-        nk_group_begin_titled(__editor->gui.context, BVR_MACRO_STR(__LINE__), "scene infos", NK_WINDOW_BORDER | NK_WINDOW_TITLE);
+        nk_group_begin_titled(__editor->gui.context, BVR_MACRO_STR(__LINE__), "global infos", NK_WINDOW_BORDER | NK_WINDOW_TITLE);
         {
             nk_layout_row_dynamic(__editor->gui.context, 15, 1);
+
+            if(__editor->book->asset_stream.data){
+                bvri_draw_hierarchy_button("assets", BVR_EDITOR_ASSETS, &__editor->book->asset_stream);
+            }
+
             bvri_draw_hierarchy_button("camera", BVR_EDITOR_CAMERA, &__editor->book->page.camera);
+
         }
         nk_group_end(__editor->gui.context);
 
@@ -232,6 +242,17 @@ void bvr_editor_draw_page_hierarchy(){
     }
 }
 
+static void bvri_editor_import_asset(bvr_string_t* string){
+    if(string && string->string){
+        if(bvr_register_asset(__editor->book, string->string, BVR_OPEN_READ)){
+            BVR_PRINTF("sucessfully imported %s", string->string);
+        }
+        else {
+            BVR_PRINTF("failed to import %s", string->string);
+        }
+    }
+}
+
 void bvr_editor_draw_inspector(){
     if(__editor->state == BVR_EDITOR_STATE_HIDDEN) {
         return;
@@ -277,51 +298,102 @@ void bvr_editor_draw_inspector(){
                 bvri_draw_editor_transform(&camera->transform);
             }
             break;
+
+        case BVR_EDITOR_ASSETS:
+            {
+                bvr_memstream_t* stream = (bvr_memstream_t*)__editor->inspector_command.pointer;
+                bvr_asset_t asset;
+
+                bvr_memstream_seek(stream, 0, SEEK_SET);
+                while (!bvr_memstream_eof(stream))
+                {
+                    bvr_memstream_read(stream, &asset.id, sizeof(bvr_uuid_t));
+                    if(asset.id[0] + asset.id[1] + asset.id[2] == 0){
+                        break;
+                    }
+
+                    bvr_memstream_read(stream, &asset.path.length, sizeof(uint16_t));
+
+                    asset.path.string = stream->cursor;
+                    bvr_memstream_seek(stream, asset.path.length, SEEK_CUR);
+                    bvr_memstream_read(stream, &asset.open_mode, sizeof(uint8_t));
+
+                    nk_layout_row_dynamic(__editor->gui.context, 45, 1);
+                    if(nk_group_begin(__editor->gui.context, BVR_MACRO_STR(__LINE__), NK_WINDOW_BORDER | NK_WINDOW_NO_SCROLLBAR)){
+                        nk_layout_row_dynamic(__editor->gui.context, 15, 1);
+                        nk_label(__editor->gui.context, asset.id, NK_TEXT_ALIGN_LEFT);
+
+                        nk_layout_row_dynamic(__editor->gui.context, 15, 2);
+                        nk_label(__editor->gui.context, asset.path.string, NK_TEXT_ALIGN_CENTERED);
+                        
+                        if(asset.open_mode == BVR_OPEN_READ){
+                            nk_label(__editor->gui.context, "READ ONLY", NK_TEXT_ALIGN_RIGHT);
+                        }
+                        else{
+                            nk_label(__editor->gui.context, "WRITE ONLY", NK_TEXT_ALIGN_RIGHT);
+                        }
+
+                        nk_group_end(__editor->gui.context);
+                    }
+                }
+
+                nk_layout_row_dynamic(__editor->gui.context, 25, 2);
+                if(nk_button_label(__editor->gui.context, "Import New")){
+                    bvr_open_file_dialog(bvri_editor_import_asset);
+                }
+
+                if(nk_button_label(__editor->gui.context, "Clear")){
+                    bvr_memstream_clear(&__editor->book->asset_stream);
+                }
+            }
+            break;
         
         case BVR_EDITOR_ACTOR: 
             {
                 struct bvr_actor_s* actor = (struct bvr_actor_s*)__editor->inspector_command.pointer;
                 
                 nk_layout_row_dynamic(__editor->gui.context, 15, 1);
-                nk_label(__editor->gui.context, BVR_FORMAT("id %i", actor->id), NK_TEXT_ALIGN_LEFT);
+                nk_label(__editor->gui.context, BVR_FORMAT("id %s", actor->id), NK_TEXT_ALIGN_LEFT);
                 nk_label(__editor->gui.context, BVR_FORMAT("flags %x", actor->flags), NK_TEXT_ALIGN_LEFT);
 
                 bvri_draw_editor_transform(&actor->transform);
 
                 nk_layout_row_dynamic(__editor->gui.context, 100, 1);
-                nk_group_begin(__editor->gui.context, BVR_MACRO_STR(__LINE__), NK_WINDOW_BORDER|NK_WINDOW_NO_SCROLLBAR);
-                nk_layout_row_dynamic(__editor->gui.context, 15, 1);
+                if(nk_group_begin(__editor->gui.context, BVR_MACRO_STR(__LINE__), NK_WINDOW_BORDER|NK_WINDOW_NO_SCROLLBAR)){
+                    nk_layout_row_dynamic(__editor->gui.context, 15, 1);
 
-                switch (actor->type)
-                {
-                case BVR_EMPTY_ACTOR:
-                    nk_label(__editor->gui.context, "EMPTY ACTOR", NK_TEXT_ALIGN_CENTERED);
-                    break;
-                case BVR_BITMAP_ACTOR:
+                    switch (actor->type)
                     {
-                        nk_label(__editor->gui.context, "BITMAP ACTOR", NK_TEXT_ALIGN_CENTERED);
-                    }
-                    break;
-                case BVR_STATIC_ACTOR:
-                    {
-                        nk_label(__editor->gui.context, "STATIC ACTOR", NK_TEXT_ALIGN_CENTERED);
+                    case BVR_EMPTY_ACTOR:
+                        nk_label(__editor->gui.context, "EMPTY ACTOR", NK_TEXT_ALIGN_CENTERED);
+                        break;
+                    case BVR_BITMAP_ACTOR:
+                        {
+                            nk_label(__editor->gui.context, "BITMAP ACTOR", NK_TEXT_ALIGN_CENTERED);
+                        }
+                        break;
+                    case BVR_STATIC_ACTOR:
+                        {
+                            nk_label(__editor->gui.context, "STATIC ACTOR", NK_TEXT_ALIGN_CENTERED);
+                        }
+                        break;
+                    case BVR_DYNAMIC_ACTOR:
+                        {
+                            nk_label(__editor->gui.context, "DYNAMIC ACTOR", NK_TEXT_ALIGN_CENTERED);
+                            bvri_draw_editor_mesh(&((bvr_dynamic_actor_t*)actor)->mesh);
+                            bvri_draw_editor_body(&((bvr_dynamic_actor_t*)actor)->collider.body);
 
+                            nk_layout_row_dynamic(__editor->gui.context, 15, 1);
+                            bvri_draw_hierarchy_button("go to collider", BVR_EDITOR_COLLIDER, &((bvr_dynamic_actor_t*)actor)->collider);
+                        }
+                        break;
+                    default:
+                        break;
                     }
-                case BVR_DYNAMIC_ACTOR:
-                    {
-                        nk_label(__editor->gui.context, "DYNAMIC ACTOR", NK_TEXT_ALIGN_CENTERED);
-                        bvri_draw_editor_mesh(&((bvr_dynamic_actor_t*)actor)->mesh);
-                        bvri_draw_editor_body(&((bvr_dynamic_actor_t*)actor)->collider.body);
 
-                        nk_layout_row_dynamic(__editor->gui.context, 15, 1);
-                        bvri_draw_hierarchy_button("go to collider", BVR_EDITOR_COLLIDER, &((bvr_dynamic_actor_t*)actor)->collider);
-                    }
-                    break;
-                default:
-                    break;
+                    nk_group_end(__editor->gui.context);
                 }
-
-                nk_group_end(__editor->gui.context);
+                
             }
             break;
 

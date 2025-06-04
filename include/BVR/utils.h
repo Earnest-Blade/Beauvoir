@@ -39,7 +39,12 @@
 /*          UTILS               */
 /*                              */
 
+typedef char bvr_uuid_t[37];
+
 int bvr_sizeof(int type);
+
+void bvr_create_uuid(bvr_uuid_t uuid);
+int bvr_compare_uuid(bvr_uuid_t a, bvr_uuid_t b);
 
 #define BVR_HAS_FLAG(x, f) ((int)((x & f) == f))
 

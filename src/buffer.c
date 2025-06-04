@@ -4,6 +4,8 @@
 #include <malloc.h>
 #include <string.h>
 
+#ifndef BVR_NO_GROWTH
+
 #define BVR_GROWTH_FACTOR 2
 
 static int bvri_grow_buffer(void* ptr, size_t* size){
@@ -15,8 +17,14 @@ static int bvri_grow_buffer(void* ptr, size_t* size){
     return 0;
 }
 
+#endif
+
 void bvr_create_memstream(bvr_memstream_t* stream, unsigned long long const size){
     BVR_ASSERT(stream);
+
+    if(stream->data){
+        return;
+    }
 
     stream->data = NULL;
     stream->size = size;
@@ -25,6 +33,10 @@ void bvr_create_memstream(bvr_memstream_t* stream, unsigned long long const size
     if(size){
         stream->data = malloc(size);
         stream->cursor = stream->data;
+        stream->next = stream->data;
+        BVR_ASSERT(stream->data);
+
+        memset(stream->data, 0, stream->size);
     }
 }
 
@@ -35,9 +47,26 @@ void bvr_memstream_write(bvr_memstream_t* stream, const void* data, const size_t
     if(stream->cursor - (char*)stream->data + size < stream->size){
         memcpy(stream->cursor, data, size);
         stream->cursor += size;
+        stream->next += size;
     }
     else {
-        BVR_PRINT("out of bounds!");
+
+#ifndef BVR_NO_GROWTH
+        if(stream->cursor - (char*)stream->data + size < stream->size * BVR_GROWTH_FACTOR){
+            bvri_grow_buffer(stream->data, &stream->size);
+            
+            memcpy(stream->cursor, data, size);
+            stream->cursor += size;
+            stream->next += size;
+        }
+        else {
+            BVR_ASSERT(0 || "out of bounds!");
+
+        }
+#else
+        BVR_ASSERT(0 || "out of bounds!");
+#endif
+
     }
 }
 
@@ -50,7 +79,7 @@ void bvr_memstream_read(bvr_memstream_t* stream, void* dest, const size_t size){
         stream->cursor += size;
     }
     else {
-        BVR_PRINT("out of bounds!");
+        BVR_ASSERT(0 || "out of bounds!");
     }
 }
 
@@ -65,7 +94,7 @@ void bvr_memstream_seek(bvr_memstream_t* stream, size_t position, int mode){
                 stream->cursor += position;
             } 
             else {
-                BVR_PRINT("out of bounds!");
+                BVR_ASSERT(0 || "out of bounds!");
             }
         }
         break;
@@ -76,7 +105,7 @@ void bvr_memstream_seek(bvr_memstream_t* stream, size_t position, int mode){
                 stream->cursor = stream->data + position;
             }
             else {
-                BVR_PRINT("out of bounds!");
+                BVR_ASSERT(0 || "out of bounds!");
             }
         }
         break;
@@ -87,13 +116,28 @@ void bvr_memstream_seek(bvr_memstream_t* stream, size_t position, int mode){
                 stream->cursor = stream->data + (stream->size - position);
             }
             else {
-                BVR_PRINT("out of bounds!");
+                BVR_ASSERT(0 || "out of bounds!");
             }
         }
         break;
+
+    case SEEK_NEXT:
+        {
+            stream->cursor = stream->next;
+        }
+        break;
+
     default:
+        BVR_ASSERT(0 || "invalid seeking mode!");
         break;
     }
+}
+
+void bvr_memstream_clear(bvr_memstream_t* stream){
+    BVR_ASSERT(stream);
+
+    stream->cursor = stream->data;
+    memset(stream->data, 0, stream->size);
 }
 
 void bvr_destroy_memstream(bvr_memstream_t* stream){

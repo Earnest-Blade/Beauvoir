@@ -66,6 +66,9 @@ typedef struct bvr_book_s {
     bvr_pipeline_t pipeline;
     bvr_audio_stream_t audio;
 
+    bvr_memstream_t asset_stream;
+    bvr_memstream_t garbage_stream;
+
     bvr_page_t page;
 
     float delta_time;
@@ -76,6 +79,11 @@ typedef struct bvr_book_s {
     Create a new game context
 */
 int bvr_create_book(bvr_book_t* book);
+
+BVR_H_FUNC void bvr_create_book_memories(bvr_book_t* book, const size_t asset_size, const size_t garbage_size){
+    bvr_create_memstream(&book->asset_stream, asset_size);
+    bvr_create_memstream(&book->garbage_stream, garbage_size);
+}
 
 /*
     Return BVR_OK if the game is still running.

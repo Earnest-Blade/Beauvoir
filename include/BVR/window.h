@@ -180,6 +180,8 @@ int bvr_button_down(bvr_window_t* window, uint16_t button);
 void bvr_mouse_position(bvr_window_t* window, float* x, float* y);
 void bvr_mouse_relative_position(bvr_window_t* window, float* x, float *y);
 
+void bvr_open_file_dialog(void (*callback) (bvr_string_t* path));
+
 /*
     Returns the number of milliseconds since SDL has started.
 */
