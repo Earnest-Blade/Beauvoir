@@ -47,12 +47,14 @@ typedef struct bvr_camera_s {
     Contains all world's informations and data
 */
 typedef struct bvr_page_s {
+    bvr_string_t name;
+    
     bvr_camera_t camera;
 
-    // all world's actors
+    // all world's actors (pointers)
     bvr_pool_t actors;
 
-    // all world's colliders
+    // all world's colliders (pointers)
     bvr_collider_collection_t colliders;
 } bvr_page_t;
 
@@ -63,6 +65,9 @@ typedef struct bvr_book_s {
     bvr_window_t window;
     bvr_pipeline_t pipeline;
     bvr_audio_stream_t audio;
+
+    bvr_memstream_t asset_stream;
+    bvr_memstream_t garbage_stream;
 
     bvr_page_t page;
 
@@ -75,10 +80,15 @@ typedef struct bvr_book_s {
 */
 int bvr_create_book(bvr_book_t* book);
 
+BVR_H_FUNC void bvr_create_book_memories(bvr_book_t* book, const size_t asset_size, const size_t garbage_size){
+    bvr_create_memstream(&book->asset_stream, asset_size);
+    bvr_create_memstream(&book->garbage_stream, garbage_size);
+}
+
 /*
     Return BVR_OK if the game is still running.
 */
-static inline int bvr_is_awake(bvr_book_t* book){
+BVR_H_FUNC int bvr_is_awake(bvr_book_t* book){
     return book->window.awake;
 }
 
@@ -100,9 +110,23 @@ void bvr_destroy_book(bvr_book_t* book);
 */
 int bvr_create_page(bvr_page_t* page);
 
-bvr_camera_t* bvr_add_orthographic_camera(bvr_page_t* page, bvr_framebuffer_t* framebuffer, float near, float far, float scale);
+bvr_camera_t* bvr_create_orthographic_camera(bvr_page_t* page, bvr_framebuffer_t* framebuffer, float near, float far, float scale);
 
-void bvr_screen_to_world_coords(bvr_book_t* book, vec3 coords);
+void bvr_camera_lookat(bvr_page_t* page, vec3 target, vec3 up);
+
+/*
+    Set the view matrix of the camera.
+*/
+BVR_H_FUNC void bvr_camera_set_view(bvr_page_t* page, mat4x4 matrix){
+    bvr_enable_uniform_buffer(page->camera.buffer);
+    bvr_uniform_buffer_set(sizeof(mat4x4), sizeof(mat4x4), &matrix[0][0]);
+    bvr_enable_uniform_buffer(0);
+}
+
+/*
+    Transpose a screen-space coords into a world-space coord.
+*/
+void bvr_screen_to_world_coords(bvr_book_t* book, vec2 screen, vec3 world);
 
 /*
     Register a new actor inside page's pool. 

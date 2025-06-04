@@ -51,19 +51,32 @@ typedef struct bvr_shader_s {
 
 void bvr_create_uniform_buffer(uint32_t* buffer, size_t size);
 void bvr_enable_uniform_buffer(uint32_t buffer);
-void bvr_uniform_buffer_set(uint32_t buffer, uint32_t offset, size_t size, void* data);
+void bvr_uniform_buffer_set(uint32_t offset, size_t size, void* data);
+void* bvr_uniform_buffer_map(uint32_t offset, size_t size);
+void bvr_uniform_buffer_close();
 void bvr_destroy_uniform_buffer(uint32_t* buffer);
 
 int bvr_create_shaderf(bvr_shader_t* shader, FILE* file, int flags);
 static inline int bvr_create_shader(bvr_shader_t* shader, const char* path, int flags){
+    BVR_FILE_EXISTS(path);
+
     FILE* file = fopen(path, "rb");
     int a = bvr_create_shaderf(shader, file, flags);
     fclose(file);
     return a;
 } 
 
+/*
+    Create an empty shader only with vertex and fragment shaders.
+    Internal usages only.
+
+    TODO: try to find another way to define this function
+*/
+int bvri_create_shader_vert_frag(bvr_shader_t* shader, const char* vert, const char* frag);
+
 bvr_shader_uniform_t* bvr_shader_register_uniform(bvr_shader_t* shader, int type, int count, const char* name);
 bvr_shader_uniform_t* bvr_shader_register_texture(bvr_shader_t* shader, int type, int* id, int* layer, const char* name, const char* layer_name);
+bvr_shader_block_t* bvr_shader_register_block(bvr_shader_t* shader, const char* name, int type, int count, int index);
 
 void bvr_shader_set_uniformi(bvr_shader_uniform_t* uniform, void* data);
 void bvr_shader_set_texturei(bvr_shader_uniform_t* uniform, int* id, int* layer);

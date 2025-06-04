@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2024 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2025 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -1021,12 +1021,14 @@ extern SDL_DECLSPEC bool SDLCALL SDL_FillSurfaceRect(SDL_Surface *dst, const SDL
 extern SDL_DECLSPEC bool SDLCALL SDL_FillSurfaceRects(SDL_Surface *dst, const SDL_Rect *rects, int count, Uint32 color);
 
 /**
- * Performs a fast blit from the source surface to the destination surface.
+ * Performs a fast blit from the source surface to the destination surface
+ * with clipping.
  *
- * This assumes that the source and destination rectangles are the same size.
  * If either `srcrect` or `dstrect` are NULL, the entire surface (`src` or
- * `dst`) is copied. The final blit rectangles are saved in `srcrect` and
- * `dstrect` after all clipping is performed.
+ * `dst`) is copied while ensuring clipping to `dst->clip_rect`.
+ *
+ * The final blit rectangles are saved in `srcrect` and `dstrect` after all
+ * clipping is performed.
  *
  * The blit function should not be called on a locked surface.
  *

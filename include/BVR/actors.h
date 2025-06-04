@@ -26,33 +26,35 @@ typedef enum bvr_actor_type_e {
 
 /*
     Each actor based struct must start by 
-    the actor struct.
+    an actor struct.
 */
 
 struct bvr_actor_s {
     bvr_string_t name;
     bvr_actor_type_t type;
-    size_t id;
+    bvr_uuid_t id;
     int flags;
 
     struct bvr_transform_s transform;
 };
 
-typedef struct bvr_static_model_s {
+typedef struct bvr_actor_s bvr_emty_actor_t;
+
+typedef struct bvr_static_actor_s {
     struct bvr_actor_s object;
 
     bvr_mesh_t mesh;
     bvr_shader_t shader;
-} bvr_static_model_t;
+} bvr_static_actor_t;
 
-typedef struct bvr_dynamic_model_s {
+typedef struct bvr_dynamic_actor_s {
     struct bvr_actor_s object;
 
     bvr_mesh_t mesh;
     bvr_shader_t shader;
     bvr_collider_t collider;
 
-} bvr_dynamic_model_t;
+} bvr_dynamic_actor_t;
 
 typedef struct bvr_bitmap_layer_s {
     struct bvr_actor_s object;
@@ -70,4 +72,4 @@ typedef struct bvr_bitmap_layer_s {
 void bvr_create_actor(struct bvr_actor_s* actor, const char* name, bvr_actor_type_t type, int flags);
 void bvr_destroy_actor(struct bvr_actor_s* actor);
 
-void bvr_draw_static_model(bvr_static_model_t* actor, int drawmode);
+void bvr_draw_actor(bvr_static_actor_t* actor, int drawmode);

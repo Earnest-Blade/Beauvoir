@@ -1,9 +1,8 @@
-
 /* pngconf.h - machine-configurable file for libpng
  *
- * libpng version 1.6.39
+ * libpng version 1.6.48.git
  *
- * Copyright (c) 2018-2022 Cosmin Truta
+ * Copyright (c) 2018-2025 Cosmin Truta
  * Copyright (c) 1998-2002,2004,2006-2016,2018 Glenn Randers-Pehrson
  * Copyright (c) 1996-1997 Andreas Dilger
  * Copyright (c) 1995-1996 Guy Eric Schalnat, Group 42, Inc.
@@ -88,7 +87,7 @@
 
 /* The PNGARG macro was used in versions of libpng prior to 1.6.0 to protect
  * against legacy (pre ISOC90) compilers that did not understand function
- * prototypes.  It is not required for modern C compilers.
+ * prototypes.  [Deprecated.]
  */
 #ifndef PNGARG
 #  define PNGARG(arglist) arglist
@@ -223,22 +222,10 @@
 #     error "PNG_USER_PRIVATEBUILD must be defined if PNGAPI is changed"
 #  endif
 
-#  if (defined(_MSC_VER) && _MSC_VER < 800) ||\
-      (defined(__BORLANDC__) && __BORLANDC__ < 0x500)
-   /* older Borland and MSC
-    * compilers used '__export' and required this to be after
-    * the type.
-    */
-#    ifndef PNG_EXPORT_TYPE
-#      define PNG_EXPORT_TYPE(type) type PNG_IMPEXP
-#    endif
-#    define PNG_DLL_EXPORT __export
-#  else /* newer compiler */
-#    define PNG_DLL_EXPORT __declspec(dllexport)
-#    ifndef PNG_DLL_IMPORT
-#      define PNG_DLL_IMPORT __declspec(dllimport)
-#    endif
-#  endif /* compiler */
+#  define PNG_DLL_EXPORT __declspec(dllexport)
+#  ifndef PNG_DLL_IMPORT
+#    define PNG_DLL_IMPORT __declspec(dllimport)
+#  endif
 
 #else /* !Windows */
 #  if (defined(__IBMC__) || defined(__IBMCPP__)) && defined(__OS2__)
@@ -298,7 +285,7 @@
 
 #ifndef PNG_EXPORTA
 #  define PNG_EXPORTA(ordinal, type, name, args, attributes) \
-      PNG_FUNCTION(PNG_EXPORT_TYPE(type), (PNGAPI name), PNGARG(args), \
+      PNG_FUNCTION(PNG_EXPORT_TYPE(type), (PNGAPI name), args, \
       PNG_LINKAGE_API attributes)
 #endif
 
@@ -316,7 +303,7 @@
 #endif
 
 #ifndef PNG_CALLBACK
-#  define PNG_CALLBACK(type, name, args) type (PNGCBAPI name) PNGARG(args)
+#  define PNG_CALLBACK(type, name, args) type (PNGCBAPI name) args
 #endif
 
 /* Support for compiler specific function attributes.  These are used
@@ -593,10 +580,6 @@ typedef const png_fixed_point * png_const_fixed_point_p;
 typedef size_t                * png_size_tp;
 typedef const size_t          * png_const_size_tp;
 
-#ifdef PNG_STDIO_SUPPORTED
-typedef FILE            * png_FILE_p;
-#endif
-
 #ifdef PNG_FLOATING_POINT_SUPPORTED
 typedef double       * png_doublep;
 typedef const double * png_const_doublep;
@@ -617,6 +600,15 @@ typedef double          * * png_doublepp;
 
 /* Pointers to pointers to pointers; i.e., pointer to array */
 typedef char            * * * png_charppp;
+
+#ifdef PNG_STDIO_SUPPORTED
+/* With PNG_STDIO_SUPPORTED it was possible to use I/O streams that were
+ * not necessarily stdio FILE streams, to allow building Windows applications
+ * before Win32 and Windows CE applications before WinCE 3.0, but that kind
+ * of support has long been discontinued.
+ */
+typedef FILE            * png_FILE_p; /* [Deprecated] */
+#endif
 
 #endif /* PNG_BUILDING_SYMBOL_TABLE */
 

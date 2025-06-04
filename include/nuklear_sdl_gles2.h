@@ -31,11 +31,11 @@
 #define NK_IMPLEMENTATION
 #include <nuklear.h>
 
-NK_API struct nk_context*   nk_sdl_init(SDL_Window *win);
+NK_API struct nk_context*   nk_sdl_init(SDL_Window *win, int framebuffer_w, int framebuffer_h);
 NK_API void                 nk_sdl_font_stash_begin(struct nk_font_atlas **atlas);
 NK_API void                 nk_sdl_font_stash_end(void);
 NK_API int                  nk_sdl_handle_event(SDL_Event *evt);
-NK_API void                 nk_sdl_render(enum nk_anti_aliasing , int max_vertex_buffer, int max_element_buffer);
+NK_API void                 nk_sdl_render(enum nk_anti_aliasing , int max_vertex_buffer, int max_element_buffer, float uniform_scale);
 NK_API void                 nk_sdl_shutdown(void);
 NK_API void                 nk_sdl_device_destroy(void);
 NK_API void                 nk_sdl_device_create(void);
@@ -80,6 +80,7 @@ struct nk_sdl_vertex {
 
 static struct nk_sdl {
     SDL_Window *win;
+    int framebuffer_size[2];
     struct nk_sdl_device ogl;
     struct nk_context ctx;
     struct nk_font_atlas atlas;
@@ -186,7 +187,7 @@ nk_sdl_device_destroy(void)
 }
 
 NK_API void
-nk_sdl_render(enum nk_anti_aliasing AA, int max_vertex_buffer, int max_element_buffer)
+nk_sdl_render(enum nk_anti_aliasing AA, int max_vertex_buffer, int max_element_buffer, float uniform_scale)
 {
     struct nk_sdl_device *dev = &sdl.ogl;
     int width, height;
@@ -203,13 +204,18 @@ nk_sdl_render(enum nk_anti_aliasing AA, int max_vertex_buffer, int max_element_b
     sdl.ctx.delta_time_seconds = (float)(now - sdl.time_of_last_frame) / 1000;
     sdl.time_of_last_frame = now;
 
-    SDL_GetWindowSize(sdl.win, &width, &height);
-    SDL_GetWindowSize(sdl.win, &display_width, &display_height);
+    //SDL_GetWindowSize(sdl.win, &width, &height);
+    //SDL_GetWindowSize(sdl.win, &display_width, &display_height);
+    width = sdl.framebuffer_size[0];
+    height = sdl.framebuffer_size[1];
+    display_width = sdl.framebuffer_size[0];
+    display_height = sdl.framebuffer_size[1];
+    
     ortho[0][0] /= (GLfloat)width;
     ortho[1][1] /= (GLfloat)height;
 
-    scale.x = (float)display_width/(float)width;
-    scale.y = (float)display_height/(float)height;
+    scale.x = uniform_scale;
+    scale.y = uniform_scale;
 
     /* setup global state */
     glViewport(0,0,display_width,display_height);
@@ -232,6 +238,7 @@ nk_sdl_render(enum nk_anti_aliasing AA, int max_vertex_buffer, int max_element_b
         const nk_draw_index *offset = NULL;
 
         /* Bind buffers */
+        glBindVertexArray(0);
         glBindBuffer(GL_ARRAY_BUFFER, dev->vbo);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, dev->ebo);
 
@@ -331,7 +338,7 @@ nk_sdl_clipboard_copy(nk_handle usr, const char *text, int len)
 }
 
 NK_API struct nk_context*
-nk_sdl_init(SDL_Window *win)
+nk_sdl_init(SDL_Window *win, int framebuffer_w, int framebuffer_h)
 {
     sdl.win = win;
     nk_init_default(&sdl.ctx, 0);
@@ -340,6 +347,9 @@ nk_sdl_init(SDL_Window *win)
     sdl.ctx.clip.userdata = nk_handle_ptr(0);
     nk_sdl_device_create();
     sdl.time_of_last_frame = SDL_GetTicks();
+    sdl.framebuffer_size[0] = framebuffer_w;
+    sdl.framebuffer_size[1] = framebuffer_h;
+
     return &sdl.ctx;
 }
 

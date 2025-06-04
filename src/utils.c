@@ -26,6 +26,27 @@ int bvr_sizeof(int type){
     }
 }
 
+void bvr_create_uuid(bvr_uuid_t uuid){
+    const char hex_digits[] = { 
+        "0123456789abcdefABCDEF" 
+    };
+
+    for (size_t i = 0; i < 36; i++)
+    {
+        (uuid)[i] = hex_digits[rand() % 22];
+    }
+    
+    (uuid)[8] = '-';
+    (uuid)[13] = '-';
+    (uuid)[18] = '-';
+    (uuid)[23] = '-';
+    (uuid)[36] = '\0';
+}
+
+int bvr_compare_uuid(bvr_uuid_t a, bvr_uuid_t b){
+    return strcmp(a, b) == 0;
+}
+
 #ifdef BVR_INCLUDE_DEBUG
 
 #define BVR_UTILS_BUFFER_SIZE 100
@@ -41,6 +62,10 @@ char* bvri_string_format(const char* __string, ...){
 	va_end(arg_list);
 	
 	return &bvri_debug_buffer[0];
+}
+
+char* bvri_get_buffer(){
+    return &bvri_debug_buffer[0];
 }
 
 void bvri_wmessage(FILE* __stream, const int __line, const char* __file, const char* __message, ...){

@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2024 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2025 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -22,7 +22,13 @@
 /**
  * # CategorySystem
  *
- * Platform-specific SDL API functions.
+ * Platform-specific SDL API functions. These are functions that deal with
+ * needs of specific operating systems, that didn't make sense to offer as
+ * platform-independent, generic APIs.
+ *
+ * Most apps can make do without these functions, but they can be useful for
+ * integrating with other parts of a specific system, adding platform-specific
+ * polish to an app, or solving problems that only affect one target.
  */
 
 #ifndef SDL_system_h_

@@ -2,7 +2,7 @@
 
 #include <stdint.h>
 
-#include <PA/portaudio.h>
+#include <portaudio.h>
 
 static int bvri_audio_callback(const void* input, void* output,
         unsigned long framesPerBuffer, const PaStreamCallbackTimeInfo* time, 

@@ -2,6 +2,15 @@
 
 #include <stdio.h>
 
+#ifdef _WIN32
+    #include <io.h>
+    
+    #define F_OK 0
+    #define access _access
+#else
+    #include <unistd.h>
+#endif
+
 #define BVR_FAILED  0x0
 #define BVR_OK      0x1
 
@@ -30,7 +39,12 @@
 /*          UTILS               */
 /*                              */
 
+typedef char bvr_uuid_t[37];
+
 int bvr_sizeof(int type);
+
+void bvr_create_uuid(bvr_uuid_t uuid);
+int bvr_compare_uuid(bvr_uuid_t a, bvr_uuid_t b);
 
 #define BVR_HAS_FLAG(x, f) ((int)((x & f) == f))
 
@@ -39,6 +53,7 @@ int bvr_sizeof(int type);
 #ifdef BVR_INCLUDE_DEBUG
 
 char* bvri_string_format(const char* __string, ...);
+char* bvri_get_buffer();
 
 void bvri_wmessage(FILE* __stream, const int __line, const char* __file, const char* __message, ...);
 void bvri_wassert(const char* __message, const char* __file, unsigned long long __line);
@@ -46,6 +61,8 @@ void bvri_wassert_break(const char* __message, const char* __file, unsigned long
 int bvri_werror(const char* __message, int __code);
 void bvri_break(const char* __file, unsigned long long __line);
 
+#define BVR_STR(macro) #macro
+#define BVR_MACRO_STR(macro) (char*)BVR_STR(macro)
 #define BVR_FORMAT(message, ...)(char*)(bvri_string_format(message, __VA_ARGS__))
 
 #define BVR_PRINT(message)(void)(bvri_wmessage(stdout, __LINE__, __FILE__, message))
@@ -62,6 +79,8 @@ void bvri_break(const char* __file, unsigned long long __line);
     (((expression) == 0) ? bvri_wassert(#expression, __FILE__, __LINE__) : 0)  \
 )
 #endif
+
+#define BVR_FILE_EXISTS(path) (void)(((access(path, F_OK) != 0) ? bvri_wassert(path, __FILE__, __LINE__) : 0))
 
 #define BVR_BREAK() (void)(bvri_break(__FILE__, __LINE__))
 

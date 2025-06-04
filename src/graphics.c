@@ -11,51 +11,69 @@
 void bvr_pipeline_state_enable(struct bvr_pipeline_state_s* state){
     BVR_ASSERT(state);
 
-    // blending
-    if(BVR_HAS_FLAG(state->blending, BVR_BLEND_ENABLE)){
+    if(state->blending){
         glEnable(GL_BLEND);
 
-        if(BVR_HAS_FLAG(state->blending, BVR_BLEND_FUNC_ALPHA_ONE_MINUS)){
+        switch(state->blending)
+        {
+        case BVR_BLEND_FUNC_ALPHA_ONE_MINUS:
             glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-        }
-        else if(BVR_HAS_FLAG(state->blending, BVR_BLEND_FUNC_ALPHA_ADD)){
+            break;
+        case BVR_BLEND_FUNC_ALPHA_ADD:
             glBlendFunc(GL_ONE, GL_ONE);
-        }
-        else if(BVR_HAS_FLAG(state->blending, BVR_BLEND_FUNC_ALPHA_MULT)){
-            glBlendFunc(GL_ONE, GL_SRC_COLOR); // ????
+            break;
+        case BVR_BLEND_FUNC_ALPHA_MULT:
+            glBlendFunc(GL_ONE, GL_SRC_COLOR);
+            break;
+        default:
+            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+            break;
         }
     }
     else {
         glDisable(GL_BLEND);
     }
 
-    // depth testing
-    if(BVR_HAS_FLAG(state->depth, BVR_DEPTH_TEST_ENABLE)){
+    if(state->depth){
         glEnable(GL_DEPTH_TEST);
-        
-        if(BVR_HAS_FLAG(state->depth, BVR_DEPTH_FUNC_NEVER)){
+
+        switch (state->depth)
+        {
+        case BVR_DEPTH_FUNC_NEVER:
             glDepthFunc(GL_NEVER);
-        }
-        else if(BVR_HAS_FLAG(state->depth, BVR_DEPTH_FUNC_ALWAYS)){
+            break;
+        
+        case BVR_DEPTH_FUNC_ALWAYS:
             glDepthFunc(GL_ALWAYS);
-        }
-        else if(BVR_HAS_FLAG(state->depth, BVR_DEPTH_FUNC_LESS)){
+            break;
+        
+        case BVR_DEPTH_FUNC_LESS:
             glDepthFunc(GL_LESS);
-        }
-        else if(BVR_HAS_FLAG(state->depth, BVR_DEPTH_FUNC_GREATER)){
+            break;
+    
+        case BVR_DEPTH_FUNC_GREATER:
             glDepthFunc(GL_GREATER);
-        }
-        else if(BVR_HAS_FLAG(state->depth, BVR_DEPTH_FUNC_LEQUAL)){
+            break;
+
+        case BVR_DEPTH_FUNC_LEQUAL:
             glDepthFunc(GL_LEQUAL);
-        }
-        else if(BVR_HAS_FLAG(state->depth, BVR_DEPTH_FUNC_GEQUAL)){
+            break;
+        
+        case BVR_DEPTH_FUNC_GEQUAL:
             glDepthFunc(GL_GEQUAL);
-        }
-        else if(BVR_HAS_FLAG(state->depth, BVR_DEPTH_FUNC_NOTEQUAL)){
+            break;
+
+        case BVR_DEPTH_FUNC_NOTEQUAL:
             glDepthFunc(GL_NOTEQUAL);
-        }
-        else if(BVR_HAS_FLAG(state->depth, BVR_DEPTH_FUNC_EQUAL)){
+            break;
+        
+        case BVR_DEPTH_FUNC_EQUAL:
             glDepthFunc(GL_EQUAL);
+            break;
+
+        default:
+            glDepthFunc(GL_ALWAYS);
+            break;
         }
     }
     else {
@@ -63,24 +81,73 @@ void bvr_pipeline_state_enable(struct bvr_pipeline_state_s* state){
     }
 }
 
+void bvr_error(){
+    char found_error = 0;
+    uint32_t err;
+
+    while ((err = glGetError()) != GL_NO_ERROR)
+    {
+        switch (err)
+        {
+        case GL_NO_ERROR:
+            BVR_PRINT("GL_NO_ERROR");
+            break;
+    
+        case GL_INVALID_ENUM:
+            BVR_PRINT("GL_INVALID_ENUM");
+            break;
+    
+        case GL_INVALID_VALUE:
+            BVR_PRINT("GL_INVALID_VALUE");
+            break;
+    
+        case GL_INVALID_OPERATION:
+            BVR_PRINT("GL_INVALID_OPERATION");
+            break;
+    
+        case GL_STACK_OVERFLOW:
+            BVR_PRINT("GL_STACK_OVERFLOW");
+            break;
+    
+        case GL_STACK_UNDERFLOW:
+            BVR_PRINT("GL_STACK_UNDERFLOW");
+            break;
+    
+        case GL_OUT_OF_MEMORY:
+            BVR_PRINT("GL_OUT_OF_MEMORY");
+            break;
+        case GL_INVALID_FRAMEBUFFER_OPERATION:
+            BVR_PRINT("GL_INVALID_FRAMEBUFFER_OPERATION");
+            break;
+        default:
+            BVR_ASSERT(0);
+        }
+        found_error = 1;
+    }
+
+    BVR_ASSERT(!found_error || "Opengl has throw error(s)!");
+}
+
 int bvr_create_framebuffer(bvr_framebuffer_t* framebuffer, int width, int height, const char* shader){
     BVR_ASSERT(framebuffer);
     BVR_ASSERT(width > 0 && height > 0);
-    BVR_ASSERT(shader);
 
     framebuffer->width = width;
     framebuffer->height = height;
-    framebuffer->prev_width = width;
-    framebuffer->prev_height = height;
+    framebuffer->target_width = width;
+    framebuffer->target_height = height;
 
     {
+        int half_width = width * 0.5f;
+        int half_height = height * 0.5f;
+
         const float quad[24] = {
-            -1.0f,  1.0f, 0.0f, 1.0f,
-            -1.0f, -1.0f, 0.0f, 0.0f,
-            1.0f,  -1.0f, 1.0f, 0.0f,
-            -1.0f,  1.0f, 0.0f, 1.0f,
-            1.0f,  -1.0f, 1.0f, 0.0f,
-            1.0f,   1.0f, 1.0f, 1.0f,
+            -half_width,   half_height, 0.0f, 1.0f,
+            -half_width,  -half_height, 0.0f, 0.0f,
+             half_width,  -half_height, 1.0f, 0.0f,
+            -half_width,   half_height, 0.0f, 1.0f,
+             half_width,  -half_height, 1.0f, 0.0f,
+             half_width,   half_height, 1.0f, 1.0f,
         };
 
         glGenVertexArrays(1, &framebuffer->vertex_buffer);
@@ -97,7 +164,37 @@ int bvr_create_framebuffer(bvr_framebuffer_t* framebuffer, int width, int height
         glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)8);
     }
 
-    bvr_create_shader(&framebuffer->shader, shader, BVR_FRAMEBUFFER_SHADER);
+    if(shader){
+        bvr_create_shader(&framebuffer->shader, shader, BVR_FRAMEBUFFER_SHADER);
+    }
+    else {
+        const char* vertex_shader = 
+            "#version 400\n"
+            "layout(location=0) in vec2 in_position;\n"
+            "layout(location=1) in vec2 in_uvs;\n"
+            "uniform mat4 bvr_projection;\n"
+            "out V_DATA {\n"
+            "	vec2 uvs;\n"
+            "} vertex;\n"
+            "void main() {\n"
+            "	gl_Position = bvr_projection * vec4(in_position, 0.0, 1.0);\n"
+            "	vertex.uvs = in_uvs;\n"
+            "}";
+
+        const char* fragment_shader = 
+            "#version 400\n"
+            "in V_DATA {\n"
+	        "vec2 uvs;\n"
+            "} vertex;\n"
+            "uniform sampler2D bvr_texture;\n"
+            "void main() {\n"
+            	"vec4 tex = texture(bvr_texture, vertex.uvs);\n"
+            	"gl_FragColor = vec4(tex.rgb, 1.0);\n"
+            "}";
+        
+        bvri_create_shader_vert_frag(&framebuffer->shader, vertex_shader, fragment_shader);
+        bvr_shader_register_uniform(&framebuffer->shader, BVR_MAT4, 1, "bvr_projection");
+    }
 
     glGenFramebuffers(1, &framebuffer->buffer);
     glBindFramebuffer(GL_FRAMEBUFFER, framebuffer->buffer);
@@ -131,22 +228,36 @@ void bvr_framebuffer_enable(bvr_framebuffer_t* framebuffer){
 
     glBindFramebuffer(GL_FRAMEBUFFER, framebuffer->buffer);
     glGetIntegerv(GL_VIEWPORT, viewport);
-    framebuffer->prev_width = viewport[2];
-    framebuffer->prev_height = viewport[3];
+    framebuffer->target_width = viewport[2];
+    framebuffer->target_height = viewport[3];
 
     glViewport(0, 0, framebuffer->width, framebuffer->height);
 }
 
 void bvr_framebuffer_disable(bvr_framebuffer_t* framebuffer){
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glViewport(0, 0, framebuffer->target_width, framebuffer->target_height);
 }
 
 void bvr_framebuffer_clear(bvr_framebuffer_t* framebuffer, vec3 color){
-    glClearColor(0, 0, 0, 1.0f);
+    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
 void bvr_framebuffer_blit(bvr_framebuffer_t* framebuffer){
+    mat4x4 ortho;
+    mat4_ortho(ortho, 
+        -framebuffer->width  / 2.0f,
+         framebuffer->width  / 2.0f,
+        -framebuffer->height / 2.0f,
+         framebuffer->height / 2.0f,
+        0.0f, 0.1f
+    );
+
+    bvr_shader_set_uniformi(&framebuffer->shader.uniforms[1], &ortho[0][0]);
+
+    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT);
     bvr_shader_enable(&framebuffer->shader);
 
     glBindVertexArray(framebuffer->vertex_buffer);

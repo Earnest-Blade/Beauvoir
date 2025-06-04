@@ -64,6 +64,7 @@
 #define BVR_KEY_DELETE        76    //SDL_SCANCODE_DELETE
 #define BVR_KEY_RIGHT         79    //SDL_SCANCODE_RIGHT
 #define BVR_KEY_LEFT          80    //SDL_SCANCODE_LEFT
+#define BVR_KEY_PRESSED       80    
 #define BVR_KEY_DOWN          81    //SDL_SCANCODE_DOWN
 #define BVR_KEY_UP            82    //SDL_SCANCODE_UP
 #define BVR_KEY_PAGE_UP       75    //SDL_SCANCODE_PAGEUP
@@ -135,6 +136,8 @@
 #define BVR_PRESSED 1
 #define BVR_RELEASE 2
 
+#define BVR_WINDOW_USER_FRAMEBUFFER 0x01
+
 #ifndef BVR_WINDOW_FRAMEBUFFER_PATH
     #define BVR_WINDOW_FRAMEBUFFER_PATH "res/framebuffer.glsl"
 #endif
@@ -171,10 +174,13 @@ void bvr_window_push_buffers(bvr_window_t* window);
 void bvr_destroy_window(bvr_window_t* window);
 
 int bvr_key_down(bvr_window_t* window, uint16_t key);
+int bvr_key_presssed(bvr_window_t* window, uint16_t key);
 int bvr_button_down(bvr_window_t* window, uint16_t button);
 
 void bvr_mouse_position(bvr_window_t* window, float* x, float* y);
 void bvr_mouse_relative_position(bvr_window_t* window, float* x, float *y);
+
+void bvr_open_file_dialog(void (*callback) (bvr_string_t* path));
 
 /*
     Returns the number of milliseconds since SDL has started.

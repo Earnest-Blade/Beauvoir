@@ -6,6 +6,8 @@
 #include <memory.h>
 
 #include <SDL3/SDL.h>
+#include <SDL3/SDL_dialog.h>
+
 #include <glad/glad.h>
 
 int bvr_create_window(bvr_window_t* window, int width, int height, const char* title, int flags){
@@ -18,7 +20,7 @@ int bvr_create_window(bvr_window_t* window, int width, int height, const char* t
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_FORWARD_COMPATIBLE_FLAG);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
     
     SDL_GL_SetAttribute(SDL_GL_RED_SIZE, 8);
     SDL_GL_SetAttribute(SDL_GL_GREEN_SIZE, 8);
@@ -55,17 +57,19 @@ int bvr_create_window(bvr_window_t* window, int width, int height, const char* t
     BVR_ASSERT(gladLoadGLES2Loader((GLADloadproc)SDL_GL_GetProcAddress));
     BVR_PRINT(glGetString(GL_VERSION));
 
-    bvr_create_framebuffer(&window->framebuffer, width, height, BVR_WINDOW_FRAMEBUFFER_PATH);
+    // create framebuffer
+    if(BVR_HAS_FLAG(flags, BVR_WINDOW_USER_FRAMEBUFFER)){
+        bvr_create_framebuffer(&window->framebuffer, width, height, BVR_WINDOW_FRAMEBUFFER_PATH);
+    }
+    else {
+        bvr_create_framebuffer(&window->framebuffer, width, height, NULL);
+    }
 
     window->awake = 1;
 }
 
 void bvr_window_poll_events(bvr_window_t* window){
     SDL_Event event;
-
-    memset(window->inputs.keys, 0, BVR_KEYBOARD_SIZE * sizeof(char));
-    memset(window->inputs.buttons, 0, BVR_MOUSE_SIZE * sizeof(char));
-    memset(window->inputs.relative_motion, 0, sizeof(window->inputs.relative_motion));
 
     SDL_StartTextInput(window->handle);
 
@@ -82,7 +86,12 @@ void bvr_window_poll_events(bvr_window_t* window){
         case SDL_EVENT_KEY_UP:
         case SDL_EVENT_KEY_DOWN:
             {
-                int down = (event.type == SDL_EVENT_KEY_DOWN) + 1;
+                int down = (event.type == SDL_EVENT_KEY_DOWN) + BVR_KEY_UP;
+                int kevent = down;
+                if(!event.key.repeat && down - BVR_KEY_UP){
+                    kevent = BVR_KEY_PRESSED;
+                }
+                
                 if(event.key.mod){
                     switch (event.key.mod)
                     {
@@ -108,7 +117,7 @@ void bvr_window_poll_events(bvr_window_t* window){
                     }
                 }
                 
-                window->inputs.keys[event.key.scancode] = down;
+                window->inputs.keys[event.key.scancode] = kevent;
             }
             break;
         case SDL_EVENT_MOUSE_BUTTON_UP:
@@ -179,12 +188,16 @@ void bvr_destroy_window(bvr_window_t* window){
     window->handle = NULL;
 }
 
+int bvr_key_presssed(bvr_window_t* window, uint16_t key){
+    return window->inputs.keys[key] == BVR_KEY_PRESSED;
+}
+
 int bvr_key_down(bvr_window_t* window, uint16_t key){
-    return window->inputs.keys[key] == BVR_RELEASE;
+    return window->inputs.keys[key] == BVR_KEY_DOWN || window->inputs.keys[key] == BVR_KEY_PRESSED;
 }
 
 int bvr_button_down(bvr_window_t* window, uint16_t button){
-    return window->inputs.buttons[button] == BVR_RELEASE;
+    return window->inputs.buttons[button] == BVR_KEY_DOWN;
 }
 
 void bvr_mouse_position(bvr_window_t* window, float* x, float* y){
@@ -194,6 +207,26 @@ void bvr_mouse_position(bvr_window_t* window, float* x, float* y){
 void bvr_mouse_relative_position(bvr_window_t* window, float* x, float *y){
     *x = window->inputs.relative_motion[0];
     *y = window->inputs.relative_motion[1];
+}
+
+void bvri_file_dialog_callback(void (*userdata) (bvr_string_t* path), const char * const *filelist, int filter){
+    bvr_string_t string;
+    string.length = 0;
+    string.string = NULL;
+
+    if(filelist && userdata){
+        bvr_create_string(&string, filelist[0]);
+        userdata(&string);
+    }
+
+    bvr_destroy_string(&string);
+}
+
+void bvr_open_file_dialog(void (*callback) (bvr_string_t* path)){
+    SDL_ShowOpenFileDialog(
+        (SDL_DialogFileCallback)bvri_file_dialog_callback, callback, NULL,
+        NULL, 0, NULL, 0
+    );
 }
 
 uint64_t bvr_frames(){

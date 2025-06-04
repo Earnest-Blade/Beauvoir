@@ -17,7 +17,8 @@ int bvr_create_nuklear(bvr_nuklear_t* nuklear, bvr_window_t* window){
     nuklear->element_buffer_length = 128 * 1024;
 
     nuklear->window = window;
-    nuklear->context = nk_sdl_init(window->handle);
+    nuklear->scale = 1.0f;
+    nuklear->context = nk_sdl_init(window->handle, window->framebuffer.width, window->framebuffer.height);
 
     nk_sdl_font_stash_begin(&nuklear->atlas);
     /*
@@ -127,7 +128,11 @@ void bvr_nuklear_render(bvr_nuklear_t* nuklear){
      * Make sure to either a.) save and restore or b.) reset your own state after
      * rendering the UI. */
 
-    nk_sdl_render(nuklear->antialiasing, nuklear->vertex_buffer_length, nuklear->element_buffer_length);
+    nk_sdl_render(nuklear->antialiasing, 
+        nuklear->vertex_buffer_length, 
+        nuklear->element_buffer_length, 
+        nuklear->scale
+    );
 }
 
 void bvr_destroy_nuklear(bvr_nuklear_t* nuklear){
@@ -139,7 +144,7 @@ void bvr_destroy_nuklear(bvr_nuklear_t* nuklear){
 void bvr_nuklear_actor_label(bvr_nuklear_t* nuklear, struct bvr_actor_s* actor){
     BVR_ASSERT(nuklear);
     if(((struct nk_context*)nuklear->context)->begin){
-        bvr_nuklear_vec3_label(nuklear, actor->name.data, actor->transform.position);
+        bvr_nuklear_vec3_label(nuklear, actor->name.string, actor->transform.position);
     }
 }
 

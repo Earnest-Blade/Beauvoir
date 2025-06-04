@@ -3,6 +3,7 @@
 #include <BVR/file.h>
 
 #include <stdlib.h>
+#include <memory.h>
 
 #include <GLAD/glad.h>
 
@@ -18,72 +19,94 @@ static void bvri_update_transform(struct bvr_actor_s* actor){
     actor->transform.matrix[3][0] = actor->transform.position[0];
     actor->transform.matrix[3][1] = actor->transform.position[1];
     actor->transform.matrix[3][2] = actor->transform.position[2];
+
+    // scale matrix
+    actor->transform.matrix[0][0] = actor->transform.scale[0];
+    actor->transform.matrix[1][1] = actor->transform.scale[0];
+    actor->transform.matrix[2][2] = actor->transform.scale[0];
 }
 
-/*
-    Constructor for any dynamic actor.
-*/
-static void bvri_create_dynamic_actor(bvr_dynamic_model_t* actor, int flags){
-    BVR_ASSERT(actor);
-
+static void bvri_create_generic_dynactor(bvr_dynamic_actor_t* actor, int flags){
     bvr_create_collider(&actor->collider, NULL, 0);
     actor->collider.transform = &actor->object.transform;
 
-    actor->collider.body.mode = BVR_COLLISION_DISABLE | BVR_COLLISION_AABB;
+    actor->collider.body.mode = BVR_COLLISION_DISABLE;
+    actor->collider.shape = BVR_COLLIDER_BOX;
+    
     if(BVR_HAS_FLAG(flags, BVR_COLLISION_ENABLE)){
         actor->collider.body.mode |= BVR_COLLISION_ENABLE;
     }
 
     if(BVR_HAS_FLAG(flags, BVR_DYNACTOR_AGGRESSIVE)){
-        actor->collider.body.mode |= 0x04; // aggressive
+        actor->collider.body.mode |= BVR_COLLISION_AGRESSIVE; // aggressive
     }
+    else {
+        actor->collider.body.mode |= BVR_COLLISION_PASSIVE;
+    }
+}
 
+/*
+    Constructor for any dynamic actor.
+*/
+static void bvri_create_dynamic_actor(bvr_dynamic_actor_t* actor, int flags){
+    BVR_ASSERT(actor);
+
+    bvri_create_generic_dynactor(actor, flags);
+
+    // generate bounding boxes by using mesh's vertices
     if(BVR_HAS_FLAG(flags, BVR_DYNACTOR_CREATE_COLLIDER_FROM_VERTICES)){
-        if(actor->mesh.vertex_buffer){
-            float* vertices_ptr;
-            float vertices[4];
-
-            glBindBuffer(GL_ARRAY_BUFFER, actor->mesh.vertex_buffer);
-            vertices_ptr = glMapBufferRange(GL_ARRAY_BUFFER, 0, actor->mesh.vertex_count, GL_MAP_READ_BIT);
-            BVR_ASSERT(vertices_ptr);
-            BVR_ASSERT(actor->mesh.vertex_count == 16);
-
-            vertices[0] = vertices_ptr[0]; // top
-            vertices[1] = -vertices_ptr[1];  // left
-            vertices[2] = -vertices_ptr[0] * 2; // bottom   // height
-            vertices[3] = vertices_ptr[1] * 2;  // right    // width
-
-            actor->collider.geometry.elemsize = sizeof(float);
-            actor->collider.geometry.size = 4 * sizeof(float);
-            actor->collider.geometry.data = malloc(actor->collider.geometry.size);
-            BVR_ASSERT(actor->collider.geometry.data);
-
-            memcpy(actor->collider.geometry.data, vertices, actor->collider.geometry.size);
-
-            glUnmapBuffer(GL_ARRAY_BUFFER);
-            glBindBuffer(GL_ARRAY_BUFFER, 0);
+        if(actor->mesh.attrib == BVR_MESH_ATTRIB_V3 || 
+            actor->mesh.attrib == BVR_MESH_ATTRIB_V3UV2){
+            
+            BVR_PRINT("cannot generate bounding box for 3d meshes!");
         }
         else {
-            BVR_PRINT("failed to copy vertices data!");
+            if(actor->mesh.vertex_buffer){
+                float* vertices_ptr;
+                struct bvr_bounds_s bounds;
+    
+                // get a pointer to mesh's vertices
+                glBindBuffer(GL_ARRAY_BUFFER, actor->mesh.vertex_buffer);
+                vertices_ptr = glMapBufferRange(GL_ARRAY_BUFFER, 0, actor->mesh.vertex_count, GL_MAP_READ_BIT);
+                BVR_ASSERT(vertices_ptr);
+    
+                vec2_copy(bounds.coords, actor->object.transform.position);
+                bounds.width = 0;
+                bounds.height = 0;
+    
+                // get max bounds
+                for (size_t i = 0; i < actor->mesh.vertex_count; i += actor->mesh.stride)
+                {
+                    if(abs(vertices_ptr[i + 0] * 2) > bounds.width){
+                        bounds.width = abs(vertices_ptr[i + 0] * 2);
+                    }
+                    if(abs(vertices_ptr[i + 1] * 2) > bounds.height){
+                        bounds.height = abs(vertices_ptr[i + 1] * 2);
+                    }
+                }
+                
+                // allocate geometry
+                actor->collider.geometry.elemsize = sizeof(struct bvr_bounds_s);
+                actor->collider.geometry.size = 1 * sizeof(struct bvr_bounds_s);
+                actor->collider.geometry.data = malloc(actor->collider.geometry.size);
+                BVR_ASSERT(actor->collider.geometry.data);
+    
+                memcpy(actor->collider.geometry.data, &bounds, actor->collider.geometry.size);
+    
+                glUnmapBuffer(GL_ARRAY_BUFFER);
+                glBindBuffer(GL_ARRAY_BUFFER, 0);
+            }
+            else {
+                BVR_PRINT("failed to copy vertices data!");
+            }
         }
     }
-
 }
 
 static void bvri_create_bitmap_layer(bvr_bitmap_layer_t* layer, int flags){
     BVR_ASSERT(layer);
 
-    bvr_create_collider(&layer->collider, NULL, 0);
-    layer->collider.transform = &layer->object.transform;
-
-    layer->collider.body.mode = BVR_COLLISION_DISABLE | BVR_COLLISION_AABB;
-    if(BVR_HAS_FLAG(flags, BVR_COLLISION_ENABLE)){
-        layer->collider.body.mode |= BVR_COLLISION_ENABLE;
-    }
-
-    if(BVR_HAS_FLAG(flags, BVR_DYNACTOR_AGGRESSIVE)){
-        layer->collider.body.mode |= 0x04; // aggressive
-    }
+    bvri_create_generic_dynactor((bvr_dynamic_actor_t*)layer, flags);
 
     /*
         Here, we're trying to bind collision boxes by using a bit map
@@ -145,18 +168,14 @@ static void bvri_create_bitmap_layer(bvr_bitmap_layer_t* layer, int flags){
                 
             }
             
+            // set bounds
             rects[rect_count].coords[0] = (float)x;
             rects[rect_count].coords[1] = (float)y;
             rects[rect_count].width = rect_width - 1;
             rects[rect_count].height = rect_height - 2;
-
-            
-            BVR_PRINTF("x %f y %f w %i h %i", 
-                rects[rect_count].coords[0], rects[rect_count].coords[1], 
-                rects[rect_count].width, rects[rect_count].height
-            );
-
+            BVR_PRINTF("%f %f %i %i", rects[rect_count].coords[0], rects[rect_count].coords[1], rects[rect_count].width, rects[rect_count].height);
             rect_count++;
+
 
             if(rect_count >= BVR_BUFFER_SIZE / 2){
                 BVR_PRINT("skipping colliders, there is too much sub rectangles...");
@@ -179,15 +198,16 @@ void bvr_create_actor(struct bvr_actor_s* actor, const char* name, bvr_actor_typ
     BVR_ASSERT(actor);
 
     actor->type = type;
-    actor->id = (uint32_t)actor;
     actor->flags = flags;
     
+    actor->transform.active = 1;
     BVR_IDENTITY_VEC3(actor->transform.position);
     BVR_IDENTITY_VEC3(actor->transform.rotation);
     BVR_SCALE_VEC3(actor->transform.scale, 1.0f);
 
     BVR_IDENTITY_MAT4(actor->transform.matrix);
     bvr_create_string(&actor->name, name);
+    bvr_create_uuid(actor->id);
 
     BVR_PRINTF("created a new actor %x", actor);
 
@@ -208,7 +228,7 @@ void bvr_create_actor(struct bvr_actor_s* actor, const char* name, bvr_actor_typ
         break;
     
     case BVR_DYNAMIC_ACTOR:
-        bvri_create_dynamic_actor((bvr_dynamic_model_t*)actor, flags);
+        bvri_create_dynamic_actor((bvr_dynamic_actor_t*)actor, flags);
         break;
 
     default:
@@ -217,10 +237,47 @@ void bvr_create_actor(struct bvr_actor_s* actor, const char* name, bvr_actor_typ
 }
 
 void bvr_destroy_actor(struct bvr_actor_s* actor){
-    bvr_destroy_string(&actor->name);
+    BVR_ASSERT(actor);
+
+    if(actor->name.string){
+        bvr_destroy_string(&actor->name);
+    }
+
+    switch (actor->type)
+    {
+    case BVR_EMPTY_ACTOR:
+        /* code */
+        break;
+    case BVR_BITMAP_ACTOR:
+        {
+            bvr_destroy_mesh(&((bvr_bitmap_layer_t*)actor)->mesh);
+            bvr_destroy_shader(&((bvr_bitmap_layer_t*)actor)->shader);
+            bvr_destroy_collider(&((bvr_bitmap_layer_t*)actor)->collider);
+            bvr_destroy_texture(&((bvr_bitmap_layer_t*)actor)->bitmap);
+        }
+        break;
+    case BVR_STATIC_ACTOR:
+        {
+            bvr_destroy_mesh(&((bvr_static_actor_t*)actor)->mesh);
+            bvr_destroy_shader(&((bvr_static_actor_t*)actor)->shader);
+        }
+    case BVR_DYNAMIC_ACTOR:
+        {
+            bvr_destroy_mesh(&((bvr_dynamic_actor_t*)actor)->mesh);
+            bvr_destroy_shader(&((bvr_dynamic_actor_t*)actor)->shader);
+            bvr_destroy_collider(&((bvr_dynamic_actor_t*)actor)->collider);
+        }
+        break;
+    default:
+        break;
+    }
 }
 
-void bvr_draw_static_model(bvr_static_model_t* actor, int drawmode){
+void bvr_draw_actor(bvr_static_actor_t* actor, int drawmode){
+    if(!actor->object.transform.active){
+        return;
+    }
+
     bvri_update_transform((struct bvr_actor_s*)actor);
 
     bvr_shader_enable(&actor->shader);

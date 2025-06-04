@@ -21,7 +21,7 @@ struct bvri_texture_uniform_s {
 static int bvri_compile_shader(uint32_t* shader, bvr_string_t* content, int type){
     *shader = glCreateShader(type);
 
-    glShaderSource(*shader, 1, (const char**)&content->data, NULL);
+    glShaderSource(*shader, 1, (const char**)&content->string, NULL);
     glCompileShader(*shader);
 
     int s;
@@ -61,8 +61,8 @@ static int bvri_register_shader_state(bvr_shader_t* program, bvr_shader_stage_t*
     BVR_ASSERT(header);
     BVR_ASSERT(name);
 
-    char shader_header_str[BVR_SMALL_BUFFER_SIZE];
-    memset(shader_header_str, 0, BVR_SMALL_BUFFER_SIZE);
+    char shader_header_str[BVR_BUFFER_SIZE];
+    memset(shader_header_str, 0, BVR_BUFFER_SIZE);
 
     bvr_string_t shader_str;
 
@@ -72,7 +72,7 @@ static int bvri_register_shader_state(bvr_shader_t* program, bvr_shader_stage_t*
     strncat(shader_header_str, "\n", 1);
 
     bvr_create_string(&shader_str, shader_header_str);
-    bvr_string_concat(&shader_str, content->data);
+    bvr_string_concat(&shader_str, content->string);
 
     if (type && shader_str.length) {
         if (bvri_compile_shader(&shader->shader, &shader_str, type)) {
@@ -100,8 +100,16 @@ void bvr_enable_uniform_buffer(uint32_t buffer){
     glBindBuffer(GL_UNIFORM_BUFFER, buffer);
 }
 
-void bvr_uniform_buffer_set(uint32_t buffer, uint32_t offset, size_t size, void* data){
+void bvr_uniform_buffer_set(uint32_t offset, size_t size, void* data){
     glBufferSubData(GL_UNIFORM_BUFFER, offset, size, data);
+}
+
+void* bvr_uniform_buffer_map(uint32_t offset, size_t size){
+    return glMapBufferRange(GL_UNIFORM_BUFFER, offset, size, GL_MAP_READ_BIT);
+}
+
+void bvr_uniform_buffer_close(){
+    glUnmapBuffer(GL_UNIFORM_BUFFER);
 }
 
 void bvr_destroy_uniform_buffer(uint32_t* buffer){
@@ -200,6 +208,11 @@ shader_cstor_bidings:
         BVR_PRINT("failed to compile shader!");
     }
 
+    if(BVR_HAS_FLAG(flags, BVR_FRAMEBUFFER_SHADER)){
+        bvr_destroy_string(&file_content);
+        return BVR_OK;
+    }
+
     // create default blocks
     
     // create camera block
@@ -218,7 +231,7 @@ shader_cstor_bidings:
     shader->uniforms[0].memory.data = NULL;
     shader->uniforms[0].memory.size = sizeof(mat4x4);
     shader->uniforms[0].memory.elemsize = sizeof(mat4x4);
-    shader->uniforms[0].name.data = NULL;
+    shader->uniforms[0].name.string = NULL;
     shader->uniforms[0].name.length = 0;
     shader->uniforms[0].type = BVR_MAT4;
     if (shader->blocks[0].location == -1) {
@@ -228,6 +241,31 @@ shader_cstor_bidings:
     bvr_destroy_string(&file_content);
 
     return BVR_OK;
+}
+
+int bvri_create_shader_vert_frag(bvr_shader_t* shader, const char* vert, const char* frag){
+    BVR_ASSERT(shader);
+    BVR_ASSERT(vert);
+    BVR_ASSERT(frag);
+
+    shader->program = glCreateProgram();
+    shader->flags = 0;
+    shader->shader_count = 2;
+    shader->uniform_count = 1;
+    shader->block_count = 1;
+
+    bvr_string_t vertex;
+    bvr_string_t fragment;
+
+    bvr_create_string(&vertex, vert);
+    bvr_create_string(&fragment, frag);
+
+    bvri_compile_shader(&shader->shaders[0].shader, &vertex, GL_VERTEX_SHADER);
+    bvri_compile_shader(&shader->shaders[1].shader, &fragment, GL_FRAGMENT_SHADER);
+    
+    glAttachShader(shader->program, shader->shaders[0].shader);
+    glAttachShader(shader->program, shader->shaders[1].shader);
+    bvri_link_shader(shader->program);
 }
 
 bvr_shader_uniform_t* bvr_shader_register_uniform(bvr_shader_t* shader, int type, int count, const char* name){
@@ -253,14 +291,15 @@ bvr_shader_uniform_t* bvr_shader_register_uniform(bvr_shader_t* shader, int type
         else{
             shader->uniforms[shader->uniform_count].memory.elemsize = bvr_sizeof(type);
             shader->uniforms[shader->uniform_count].memory.size = count * shader->uniforms[shader->uniform_count].memory.elemsize;
+            
             shader->uniforms[shader->uniform_count].memory.data = calloc(shader->uniforms[shader->uniform_count].memory.size, 1);
             BVR_ASSERT(shader->uniforms[shader->uniform_count].memory.data);
         }
         
         bvr_create_string(&shader->uniforms[shader->uniform_count].name, name);
 
-        shader->uniform_count++;
-        return &shader->uniforms[shader->uniform_count - 1];
+
+        return &shader->uniforms[shader->uniform_count++];
     }
 
     BVR_PRINTF("cannot find uniform '%s'!", name);
@@ -318,9 +357,37 @@ bvr_shader_uniform_t* bvr_shader_register_texture(bvr_shader_t* shader, int type
     return NULL;
 }
 
-void bvr_shader_set_uniformi(bvr_shader_uniform_t* uniform, void* data){
+bvr_shader_block_t* bvr_shader_register_block(bvr_shader_t* shader, const char* name, int type, int count, int index){
+    BVR_ASSERT(shader);
+    BVR_ASSERT(count > 0);
 
+    if(shader->block_count + 1 >= BVR_MAX_SHADER_BLOCK_COUNT){
+        BVR_PRINTF("block maximum capacity reached for shader '%i'!", shader->program);
+        return NULL;
+    }
+
+    if(name && index >= 0){
+        shader->blocks[shader->block_count].type = type;
+        shader->blocks[shader->block_count].count = count;
+        shader->blocks[shader->block_count].location = glGetUniformBlockIndex(shader->program, name);
+        if(shader->blocks[shader->block_count].location == -1){
+            BVR_PRINT("cannot find unfirm block!");
+            return NULL;
+        }
+
+        glUniformBlockBinding(shader->program, shader->blocks[shader->block_count].location, index);
+        return &shader->blocks[shader->block_count++];
+    }
+    else {
+        BVR_PRINT("cannot find uniform block!");
+        return NULL;
+    }
+}
+
+void bvr_shader_set_uniformi(bvr_shader_uniform_t* uniform, void* data){
     if(data && uniform){
+        BVR_ASSERT(uniform->memory.data);
+
         memcpy(uniform->memory.data, data, uniform->memory.size);
     }
     else {
@@ -339,7 +406,7 @@ void bvr_shader_set_uniform(bvr_shader_t* shader, const char* name, void* data){
             continue;
         }
 
-        if (strcmp(shader->uniforms[i].name.data, name) == 0) {
+        if (strcmp(shader->uniforms[i].name.string, name) == 0) {
             bvr_shader_set_uniformi(&shader->uniforms[i], data);
         }
     }
@@ -365,7 +432,7 @@ void bvr_shader_set_texture(bvr_shader_t* shader, const char* name, int* id, int
 
     for (size_t i = 1; i < shader->uniform_count; i++)
     {
-        if (strcmp(shader->uniforms[i].name.data, name) == 0) {
+        if (strcmp(shader->uniforms[i].name.string, name) == 0) {
             bvr_shader_set_texturei(&shader->uniforms[i], id, layer);
         }
     }

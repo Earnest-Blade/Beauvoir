@@ -1,6 +1,7 @@
 #pragma once
 
 #include <BVR/buffer.h>
+#include <BVR/utils.h>
 
 #include <stdint.h>
 #include <stdio.h>
@@ -65,6 +66,39 @@
 #define BVR_TEXTURE_WRAP_REPEAT 0x2901
 #define BVR_TEXTURE_WRAP_CLAMP_TO_EDGE 0x812F
 
+#define BVR_LAYER_CLIPPED 0x01
+
+typedef enum bvr_layer_blend_mode_e {
+    BVR_LAYER_BLEND_PASSTHROUGH     = 0x70617373,
+    BVR_LAYER_BLEND_NORMAL          = 0x6E6F726D,
+    BVR_LAYER_BLEND_DISSOLVE        = 0x64697373,
+    BVR_LAYER_BLEND_DARKEN          = 0x6461726B,
+    BVR_LAYER_BLEND_MULTIPLY        = 0x6D756C00,
+    BVR_LAYER_BLEND_COLORBURN       = 0x69646976,
+    BVR_LAYER_BLEND_LINEARBURN      = 0x6C62726E,
+    BVR_LAYER_BLEND_DARKERCOLOR     = 0x646B436C,
+    BVR_LAYER_BLEND_LIGHTEN         = 0x6C697465,
+    BVR_LAYER_BLEND_SCREEN          = 0x7363726E,
+    BVR_LAYER_BLEND_COLORDODGE      = 0x64697600,
+    BVR_LAYER_BLEND_LINEARDODGE     = 0x6C646467,
+    BVR_LAYER_BLEND_LIGHTERCOLOR    = 0x6C67436C,
+    BVR_LAYER_BLEND_OVERLAY         = 0x6F766572,
+    BVR_LAYER_BLEND_SOFTLIGHT       = 0x734C6974,
+    BVR_LAYER_BLEND_HARDLIGHT       = 0x684C6974,
+    BVR_LAYER_BLEND_VIVIDLIGHT      = 0x764C6974,
+    BVR_LAYER_BLEND_LINEARLIGHT     = 0x6C4C6974,
+    BVR_LAYER_BLEND_PINLIGHT        = 0x704C6974,
+    BVR_LAYER_BLEND_HARDMIX         = 0x684D6978,
+    BVR_LAYER_BLEND_DIFFERENCE      = 0x64696666,
+    BVR_LAYER_BLEND_EXCLUSION       = 0x736D7564,
+    BVR_LAYER_BLEND_SUBSTRACT       = 0x66737566,
+    BVR_LAYER_BLEND_DIVIDE          = 0x66646976,
+    BVR_LAYER_BLEND_HUE             = 0x68756500,
+    BVR_LAYER_BLEND_SATURATION      = 0x73617400,
+    BVR_LAYER_BLEND_COLOR           = 0x636F6C72,
+    BVR_LAYER_BLEND_LUMINOSITY      = 0x65756D00
+} bvr_layer_blend_mode_t;
+
 /*
     Contains image layer informations
 */
@@ -72,9 +106,11 @@ typedef struct bvr_layer_s {
     bvr_string_t name;
     uint16_t flags;
 
-    uint16_t blend_mode;
     int width, height;
     int anchor_x, anchor_y;
+
+    short opacity;
+    bvr_layer_blend_mode_t blend_mode;
 } bvr_layer_t;
 
 /*
@@ -123,7 +159,8 @@ typedef struct bvr_layered_texture_s {
 } bvr_layered_texture_t;
 
 int bvr_create_imagef(bvr_image_t* image, FILE* file);
-static inline int bvr_create_image(bvr_image_t* image, const char* path){
+BVR_H_FUNC int bvr_create_image(bvr_image_t* image, const char* path){
+    BVR_FILE_EXISTS(path);
     FILE* file = fopen(path, "rb");
     int success = bvr_create_imagef(image, file);
     fclose(file);
@@ -141,14 +178,15 @@ void bvr_flip_image_vertically(bvr_image_t* image);
     Copy a specific image channel over another pixel buffer.
     The targeted pixel buffer must be allocated.
 */
-int bvr_image_get_channel_pixels(bvr_image_t* image, int channel, uint8_t* buffer);
+int bvr_image_copy_channel(bvr_image_t* image, int channel, uint8_t* buffer);
 
 void bvr_destroy_image(bvr_image_t* image);
 
 /* 2D TEXTURE */
 int bvr_create_texture_from_image(bvr_texture_t* texture, bvr_image_t* image, int filter, int wrap);
 int bvr_create_texturef(bvr_texture_t* texture, FILE* file, int filter, int wrap);
-static inline int bvr_create_texture(bvr_texture_t* texture, const char* path, int filter, int wrap){
+BVR_H_FUNC int bvr_create_texture(bvr_texture_t* texture, const char* path, int filter, int wrap){
+    BVR_FILE_EXISTS(path);
     FILE* file = fopen(path, "rb");
     int success = bvr_create_texturef(texture, file, filter, wrap);
     fclose(file);
@@ -168,7 +206,8 @@ void bvr_destroy_texture(bvr_texture_t* texture);
 
 /* ATLAS TEXTURE */
 int bvr_create_texture_atlasf(bvr_texture_atlas_t* atlas, FILE* file, uint32_t tile_width, uint32_t tile_height, int filter, int wrap);
-static inline int bvr_create_texture_atlas(bvr_texture_atlas_t* atlas, const char* path, uint32_t tile_width, uint32_t tile_height, int filter, int wrap){
+BVR_H_FUNC int bvr_create_texture_atlas(bvr_texture_atlas_t* atlas, const char* path, uint32_t tile_width, uint32_t tile_height, int filter, int wrap){
+    BVR_FILE_EXISTS(path);
     FILE* file = fopen(path, "rb");
     int success = bvr_create_texture_atlasf(atlas, file, tile_width, tile_height, filter, wrap);
     fclose(file);
@@ -181,7 +220,8 @@ void bvr_destroy_texture_atlas(bvr_texture_atlas_t* atlas);
 
 /* LAYERED TEXTURE */
 int bvr_create_layered_texturef(bvr_layered_texture_t* texture, FILE* file, int filter, int wrap);
-static inline int bvr_create_layered_texture(bvr_layered_texture_t* texture, const char* path, int filter, int wrap){
+BVR_H_FUNC int bvr_create_layered_texture(bvr_layered_texture_t* texture, const char* path, int filter, int wrap){
+    BVR_FILE_EXISTS(path);
     FILE* file = fopen(path, "rb");
     int success = bvr_create_layered_texturef(texture, file, filter, wrap);
     fclose(file);

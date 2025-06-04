@@ -7,14 +7,20 @@
     #define BVR_COLLIDER_COLLECTION_SIZE 128
 #endif
 
-#define BVR_COLLISION_DISABLE   0x0
-#define BVR_COLLISION_ENABLE    0x1
-#define BVR_COLLISION_AABB      0x2
+#define BVR_COLLISION_DISABLE   0x00
+#define BVR_COLLISION_ENABLE    0x01
+#define BVR_COLLISION_AGRESSIVE 0x02
+#define BVR_COLLISION_PASSIVE   0x04
 
 /*
     Contains an array of collider pointers.
 */
 typedef struct bvr_pool_s bvr_collider_collection_t;
+
+typedef enum bvr_collider_shape_e {
+    BVR_COLLIDER_EMPTY,
+    BVR_COLLIDER_BOX,
+} bvr_collider_shape_t;
 
 struct bvr_body_s {
     float acceleration;
@@ -26,7 +32,9 @@ struct bvr_body_s {
 
 typedef struct bvr_collider_s {
     struct bvr_body_s body;
+
     struct bvr_buffer_s geometry;
+    bvr_collider_shape_t shape;
 
     struct bvr_transform_s* transform;
 } bvr_collider_t;

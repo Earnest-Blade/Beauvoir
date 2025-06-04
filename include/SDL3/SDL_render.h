@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2024 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2025 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -533,9 +533,8 @@ extern SDL_DECLSPEC bool SDLCALL SDL_GetCurrentRenderOutputSize(SDL_Renderer *re
  * \param access one of the enumerated values in SDL_TextureAccess.
  * \param w the width of the texture in pixels.
  * \param h the height of the texture in pixels.
- * \returns a pointer to the created texture or NULL if no rendering context
- *          was active, the format was unsupported, or the width or height
- *          were out of range; call SDL_GetError() for more information.
+ * \returns the created texture or NULL on failure; call SDL_GetError() for
+ *          more information.
  *
  * \threadsafety This function should only be called on the main thread.
  *
@@ -673,9 +672,8 @@ extern SDL_DECLSPEC SDL_Texture * SDLCALL SDL_CreateTextureFromSurface(SDL_Rende
  *
  * \param renderer the rendering context.
  * \param props the properties to use.
- * \returns a pointer to the created texture or NULL if no rendering context
- *          was active, the format was unsupported, or the width or height
- *          were out of range; call SDL_GetError() for more information.
+ * \returns the created texture or NULL on failure; call SDL_GetError() for
+ *          more information.
  *
  * \threadsafety This function should only be called on the main thread.
  *
@@ -1500,10 +1498,18 @@ extern SDL_DECLSPEC bool SDLCALL SDL_RenderCoordinatesToWindow(SDL_Renderer *ren
  * - The scale (SDL_SetRenderScale)
  * - The viewport (SDL_SetRenderViewport)
  *
+ * Various event types are converted with this function: mouse, touch, pen,
+ * etc.
+ *
  * Touch coordinates are converted from normalized coordinates in the window
  * to non-normalized rendering coordinates.
  *
- * Once converted, the coordinates may be outside the rendering area.
+ * Relative mouse coordinates (xrel and yrel event fields) are _also_
+ * converted. Applications that do not want these fields converted should use
+ * SDL_RenderCoordinatesFromWindow() on the specific event fields instead of
+ * converting the entire event structure.
+ *
+ * Once converted, coordinates may be outside the rendering area.
  *
  * \param renderer the rendering context.
  * \param event the event to modify.
