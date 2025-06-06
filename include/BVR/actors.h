@@ -35,6 +35,12 @@ struct bvr_actor_s {
     bvr_uuid_t id;
     int flags;
 
+    uint8_t active;
+    uint16_t order_in_layer;
+
+    // TODO find why tranform overwrite order in layer
+    uint32_t padding;
+
     struct bvr_transform_s transform;
 };
 
@@ -80,5 +86,4 @@ typedef struct bvr_bitmap_layer_s {
 void bvr_create_actor(struct bvr_actor_s* actor, const char* name, bvr_actor_type_t type, int flags);
 void bvr_destroy_actor(struct bvr_actor_s* actor);
 
-void bvr_draw_layer_actor(bvr_layer_actor_t* actor);
-void bvr_draw_actor(bvr_static_actor_t* actor, int drawmode);
+void bvr_draw_actor(struct bvr_actor_s* actor, int drawmode);

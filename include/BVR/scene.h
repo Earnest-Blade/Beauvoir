@@ -80,6 +80,8 @@ typedef struct bvr_book_s {
 */
 int bvr_create_book(bvr_book_t* book);
 
+bvr_book_t* bvr_get_book_instance();
+
 BVR_H_FUNC void bvr_create_book_memories(bvr_book_t* book, const size_t asset_size, const size_t garbage_size){
     bvr_create_memstream(&book->asset_stream, asset_size);
     bvr_create_memstream(&book->garbage_stream, garbage_size);
@@ -98,8 +100,14 @@ BVR_H_FUNC int bvr_is_awake(bvr_book_t* book){
 void bvr_new_frame(bvr_book_t* book);
 
 void bvr_update(bvr_book_t* book);
+
 /*
-    push Beauvoir's graphics to the window
+    render all draw commands
+*/
+void bvr_flush(bvr_book_t* book);
+
+/*
+    swap framebuffers and push buffers to the screen
 */
 void bvr_render(bvr_book_t* book);
 

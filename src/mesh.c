@@ -557,7 +557,7 @@ static int bvri_create_mesh_buffers(bvr_mesh_t* mesh, size_t vertices_size, size
     return BVR_OK;
 }
 
-void bvr_mesh_draw(bvr_mesh_t* mesh, int drawmode){
+/*void bvr_mesh_draw(bvr_mesh_t* mesh, int drawmode){
     glBindVertexArray(mesh->array_buffer);
     glBindBuffer(GL_ARRAY_BUFFER, mesh->vertex_buffer);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh->element_buffer);
@@ -583,7 +583,7 @@ void bvr_mesh_draw(bvr_mesh_t* mesh, int drawmode){
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
-}
+}*/
 
 void bvr_destroy_mesh(bvr_mesh_t* mesh){
     BVR_ASSERT(mesh);

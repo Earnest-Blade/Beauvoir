@@ -1,6 +1,7 @@
 #include <BVR/actors.h>
 
 #include <BVR/file.h>
+#include <BVR/graphics.h>
 
 #include <stdlib.h>
 #include <memory.h>
@@ -8,7 +9,7 @@
 #include <GLAD/glad.h>
 
 /*
-    
+    calculate actor's transformation matrix
 */
 static void bvri_update_transform(struct bvr_actor_s* actor){
     BVR_ASSERT(actor);
@@ -26,6 +27,9 @@ static void bvri_update_transform(struct bvr_actor_s* actor){
     actor->transform.matrix[2][2] = actor->transform.scale[0];
 }
 
+/*
+    Generic contructor for dynamics actors
+*/
 static void bvri_create_generic_dynactor(bvr_dynamic_actor_t* actor, int flags){
     bvr_create_collider(&actor->collider, NULL, 0);
     actor->collider.transform = &actor->object.transform;
@@ -200,7 +204,7 @@ void bvr_create_actor(struct bvr_actor_s* actor, const char* name, bvr_actor_typ
     actor->type = type;
     actor->flags = flags;
     
-    actor->transform.active = 1;
+    actor->active = 1;
     BVR_IDENTITY_VEC3(actor->transform.position);
     BVR_IDENTITY_VEC3(actor->transform.rotation);
     BVR_SCALE_VEC3(actor->transform.scale, 1.0f);
@@ -273,45 +277,89 @@ void bvr_destroy_actor(struct bvr_actor_s* actor){
     }
 }
 
-void bvr_draw_layer_actor(bvr_layer_actor_t* actor){
-    if(!actor->object.transform.active){
-        return;
-    }
+static void bvri_draw_layer_actor(bvr_layer_actor_t* actor){
+    struct bvr_draw_command_s cmd;
+    bvr_shader_uniform_t* texture;
 
     bvri_update_transform(&actor->object);
-
     bvr_shader_enable(&actor->shader);
-    for (int layer = 0; layer < BVR_BUFFER_COUNT(actor->texture.image.layers); layer++)
+
+    for (int layer = BVR_BUFFER_COUNT(actor->texture.image.layers); layer >= 0; layer--)
     {
         if(!(((bvr_layer_t*)actor->texture.image.layers.data)[layer]).opacity){
             continue;
         }
 
-        bvr_layered_texture_enable(&actor->texture, BVR_TEXTURE_UNIT0);
+        texture = bvr_find_uniform(&actor->shader, "bvr_texture");
 
-        bvr_shader_use_uniform(bvr_find_uniform(&actor->shader, "bvr_layer"), &layer);
+        bvr_shader_set_texturei(texture, NULL, &layer);
+
+        bvr_shader_use_uniform(texture, NULL);
         bvr_shader_use_uniform(&actor->shader.uniforms[0], &actor->object.transform.matrix[0][0]);
 
-        bvr_mesh_draw(&actor->mesh, BVR_DRAWMODE_TRIANGLES);
+        //bvr_mesh_draw(&actor->mesh, BVR_DRAWMODE_TRIANGLES);
+        cmd.order = actor->object.order_in_layer + (BVR_BUFFER_COUNT(actor->texture.image.layers) - layer);
+        cmd.array_buffer = actor->mesh.array_buffer;
+        cmd.vertex_buffer = actor->mesh.vertex_buffer;
+        cmd.element_buffer = actor->mesh.element_buffer;
+        cmd.attrib_count = actor->mesh.attrib_count;
 
-        bvr_layered_texture_disable();
+        cmd.shader = &actor->shader;
+        cmd.texture_type = BVR_TEXTURE_2D_ARRAY;
+        cmd.texture = (bvr_texture_t*)&actor->texture;
+        cmd.draw_mode = BVR_DRAWMODE_TRIANGLES;
+        cmd.element_count = actor->mesh.element_count;
+        cmd.element_offset = 0;
+
+        bvr_pipeline_add_draw_cmd(&cmd);
     }
 
     bvr_shader_disable();
-    
 }
 
-void bvr_draw_actor(bvr_static_actor_t* actor, int drawmode){
-    if(!actor->object.transform.active){
+void bvr_draw_actor(struct bvr_actor_s* actor, int drawmode){
+    // skip actor if 
+    if(!actor->active ){
         return;
     }
 
-    bvri_update_transform(&actor->object);
+    // empty actors cannot be drawn
+    if(actor->type == BVR_EMPTY_ACTOR){
+        return;
+    }
 
-    bvr_shader_enable(&actor->shader);
-    bvr_shader_use_uniform(&actor->shader.uniforms[0], &actor->object.transform.matrix[0][0]);
+    // layered actors are drawn differentlty
+    if(actor->type == BVR_LAYER_ACTOR){
+        bvri_draw_layer_actor((bvr_layer_actor_t*)actor);
+        return;
+    }
 
-    bvr_mesh_draw(&actor->mesh, drawmode);
+    // update shaders transform
+    bvri_update_transform(actor);
+
+    bvr_static_actor_t* sactor = (bvr_static_actor_t*)actor;
+
+    bvr_shader_enable(&sactor->shader);
+    bvr_shader_use_uniform(&sactor->shader.uniforms[0], &actor->transform.matrix[0][0]);
+
+    struct bvr_draw_command_s cmd;
+    cmd.order = actor->order_in_layer;
+    cmd.array_buffer = sactor->mesh.array_buffer;
+    cmd.vertex_buffer = sactor->mesh.vertex_buffer;
+    cmd.element_buffer = sactor->mesh.element_buffer;
+    cmd.attrib_count = sactor->mesh.attrib_count;
+
+    cmd.shader = &sactor->shader;
+    cmd.texture = NULL;
+    cmd.draw_mode = drawmode;
+
+    for (size_t i = 0; i < BVR_BUFFER_COUNT(sactor->mesh.vertex_groups); i++)
+    {
+        cmd.element_offset = ((bvr_vertex_group_t*)sactor->mesh.vertex_groups.data)[i].element_offset;
+        cmd.element_count = ((bvr_vertex_group_t*)sactor->mesh.vertex_groups.data)[i].element_count;
+        bvr_pipeline_add_draw_cmd(&cmd);
+    }
+    
 
     bvr_shader_disable();
 }

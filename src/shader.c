@@ -412,6 +412,7 @@ void bvr_shader_set_texturei(bvr_shader_uniform_t* uniform, int* id, int* layer)
             texture.layer = *layer;
         }
 
+
         memcpy(uniform->memory.data, &texture, sizeof(texture.id) + sizeof(texture.layer));
     }
 }
@@ -433,6 +434,7 @@ void bvr_shader_use_uniform(bvr_shader_uniform_t* uniform, void* data){
     }
 
     if(data){
+
         switch (uniform->type)
         {
         case BVR_FLOAT: 
@@ -462,6 +464,7 @@ void bvr_shader_use_uniform(bvr_shader_uniform_t* uniform, void* data){
         case BVR_TEXTURE_2D_ARRAY:
             {
                 struct bvri_texture_uniform_s* texture = (struct bvri_texture_uniform_s*)uniform->memory.data;
+                
                 glUniform1i(uniform->location, texture->unit);
                 glUniform1i(texture->layer_location, texture->layer);
             }

@@ -4,6 +4,7 @@
 
 #include <BVR/math.h>
 #include <BVR/utils.h>
+#include <BVR/scene.h>
 
 #include <memory.h>
 #include <malloc.h>
@@ -13,7 +14,6 @@ void bvr_pipeline_state_enable(struct bvr_pipeline_state_s* state){
 
     if(state->blending){
         glEnable(GL_BLEND);
-
         switch(state->blending)
         {
         case BVR_BLEND_FUNC_ALPHA_ONE_MINUS:
@@ -78,6 +78,49 @@ void bvr_pipeline_state_enable(struct bvr_pipeline_state_s* state){
     }
     else {
         glDisable(GL_DEPTH_TEST);
+    }
+}
+
+void bvr_pipeline_draw_cmd(struct bvr_draw_command_s* cmd){
+    bvr_shader_enable(cmd->shader);
+
+    if(cmd->texture){
+        if(cmd->texture_type == BVR_TEXTURE_2D){
+            bvr_texture_enable(cmd->texture, BVR_TEXTURE_UNIT0);
+        }
+        else {
+            bvr_texture_atlas_enablei((bvr_texture_atlas_t*)cmd->texture, BVR_TEXTURE_UNIT0);
+        }
+    }
+
+    glBindVertexArray(cmd->array_buffer);
+    glBindBuffer(GL_ARRAY_BUFFER, cmd->vertex_buffer);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, cmd->element_buffer);
+
+    for (size_t i = 0; i < cmd->attrib_count; i++)
+    {
+        glEnableVertexAttribArray(0);
+    }
+    
+    glDrawElements(cmd->draw_mode, cmd->element_count, GL_UNSIGNED_INT, (void*)cmd->element_offset);
+
+    for (size_t i = 0; i < cmd->attrib_count; i++)
+    {
+        glEnableVertexAttribArray(1);
+    }
+
+    glBindVertexArray(cmd->array_buffer);
+    glBindBuffer(GL_ARRAY_BUFFER, cmd->vertex_buffer);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, cmd->element_buffer);
+}
+
+void bvr_pipeline_add_draw_cmd(struct bvr_draw_command_s* cmd){
+    BVR_ASSERT(cmd);
+
+    if(bvr_get_book_instance()->pipeline.command_count + 1 < BVR_MAX_DRAW_COMMAND){
+        memcpy(
+            &bvr_get_book_instance()->pipeline.commands[bvr_get_book_instance()->pipeline.command_count++], 
+            cmd, sizeof(struct bvr_draw_command_s));
     }
 }
 

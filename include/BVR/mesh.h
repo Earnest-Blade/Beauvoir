@@ -93,8 +93,6 @@ BVR_H_FUNC int bvr_create_mesh(bvr_mesh_t* mesh, const char* path, bvr_mesh_arra
     return status;
 }
 
-void bvr_mesh_draw(bvr_mesh_t* mesh, int drawmode);
-
 void bvr_destroy_mesh(bvr_mesh_t* mesh);
 
 #ifdef BVR_GEOMETRY_IMPLEMENTATION

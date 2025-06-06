@@ -6,8 +6,13 @@
 
 #include <malloc.h>
 
+static bvr_book_t* __book_instance = NULL;
+
 int bvr_create_book(bvr_book_t* book){
     BVR_ASSERT(book);
+    BVR_ASSERT(!__book_instance);
+
+    __book_instance = book;
 
     memset(&book->audio, 0, sizeof(bvr_audio_stream_t));
     memset(&book->window, 0, sizeof(bvr_window_t));
@@ -18,7 +23,8 @@ int bvr_create_book(bvr_book_t* book){
     book->current_time = 0.0f;
 
     book->pipeline.rendering_pass.blending = BVR_BLEND_FUNC_ALPHA_ONE_MINUS;
-    book->pipeline.rendering_pass.depth = BVR_DEPTH_FUNC_LESS;
+    book->pipeline.rendering_pass.depth = BVR_DEPTH_TEST_ENABLE;
+    book->pipeline.rendering_pass.depth ^= BVR_DEPTH_FUNC_LESS;
     book->pipeline.rendering_pass.flags = 0;
 
     book->pipeline.swap_pass.blending = BVR_BLEND_DISABLE;
@@ -29,10 +35,17 @@ int bvr_create_book(bvr_book_t* book){
     book->pipeline.clear_color[1] = 0.0f;
     book->pipeline.clear_color[2] = 0.0f;
 
+    book->pipeline.command_count = 0;
+    memset(&book->pipeline.commands, 0, sizeof(book->pipeline.commands));
+
     bvr_create_memstream(&book->asset_stream, 0);
     bvr_create_memstream(&book->garbage_stream, 0);
 
     return BVR_OK;
+}
+
+bvr_book_t* bvr_get_book_instance(){
+    return __book_instance;
 }
 
 void bvr_new_frame(bvr_book_t* book){
@@ -46,6 +59,9 @@ void bvr_new_frame(bvr_book_t* book){
     bvr_framebuffer_clear(&book->window.framebuffer, book->pipeline.clear_color);
 
     bvr_pipeline_state_enable(&book->pipeline.rendering_pass);
+
+    // reset pipeline
+    book->pipeline.command_count = 0;
 
     /* calculate camera matrices */
     mat4x4 projection, view;
@@ -83,7 +99,7 @@ void bvr_update(bvr_book_t* book){
 
     BVR_POOL_FOR_EACH(collider, book->page.colliders){        
 
-        if(!collider || !collider->transform->active){
+        if(!collider){
             break;
         }
 
@@ -123,14 +139,39 @@ void bvr_update(bvr_book_t* book){
     }
 }
 
+void bvr_flush(bvr_book_t* book){
+    // draw each element of the draw command array
+    qsort(
+        book->pipeline.commands, 
+        book->pipeline.command_count, 
+        sizeof(struct bvr_draw_command_s), 
+        bvr_pipeline_compare_commands
+    );
+    
+    for (size_t i = 0; i < book->pipeline.command_count; i++)
+    {
+        bvr_pipeline_draw_cmd(&book->pipeline.commands[i]);
+    }
+
+    book->pipeline.command_count = 0;
+}
+
 void bvr_render(bvr_book_t* book){
+
+    // if there is still draw commands, flush
+    if(book->pipeline.command_count){
+        bvr_flush(book);
+    }
+
+    // disable the rendering framebuffer
     bvr_framebuffer_disable(&book->window.framebuffer);
 
+    // swap pass
     bvr_pipeline_state_enable(&book->pipeline.swap_pass);
     bvr_framebuffer_clear(NULL, NULL);
 
+    // push rendered scene to the screen
     bvr_framebuffer_blit(&book->window.framebuffer);
-    
     bvr_window_push_buffers(&book->window);
 
 #ifndef BVR_NO_FPS_CAP
@@ -179,7 +220,6 @@ bvr_camera_t* bvr_create_orthographic_camera(bvr_page_t* page, bvr_framebuffer_t
     page->camera.far = far;
     page->camera.field_of_view.scale = scale;
     
-    page->camera.transform.active = 1;
     BVR_IDENTITY_VEC3(page->camera.transform.position);
     BVR_IDENTITY_VEC4(page->camera.transform.rotation);
     BVR_IDENTITY_VEC3(page->camera.transform.scale);

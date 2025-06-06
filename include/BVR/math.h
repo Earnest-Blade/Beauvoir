@@ -18,8 +18,6 @@ typedef struct bvr_transform_s {
     quat rotation;
 
     mat4x4 matrix;
-
-    char active;
 } bvr_transform_t;
 
 struct bvr_bounds_s {

@@ -1446,7 +1446,6 @@ void bvr_destroy_texture(bvr_texture_t* texture){
     bvr_destroy_image(&texture->image);
 }
 
-
 int bvr_create_texture_atlasf(bvr_texture_atlas_t* atlas, FILE* file, 
         uint32_t tile_width, uint32_t tile_height, int filter, int wrap){
 
