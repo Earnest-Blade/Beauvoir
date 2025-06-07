@@ -21,7 +21,7 @@
         #define BVR_TARGET_FRAMERATE 60
     #endif
 
-    #define BVR_FRAMERATE (1000 / BVR_TARGET_FRAMERATE)
+    #define BVR_FRAMERATE (1 / BVR_TARGET_FRAMERATE)
 #endif
 
 typedef struct bvr_camera_s {
@@ -71,7 +71,7 @@ typedef struct bvr_book_s {
 
     bvr_page_t page;
 
-    float delta_time;
+    float delta_time, average_render_time;
     uint64_t prev_time, current_time;
 } bvr_book_t;
 

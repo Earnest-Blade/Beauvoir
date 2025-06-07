@@ -4,7 +4,7 @@
 
 #include <stdio.h>
 
-#define BVR_BUFFER_COUNT(buffer)((unsigned long long)(buffer.size / buffer.elemsize))
+#define BVR_BUFFER_COUNT(buffer)(buffer.data != NULL ? ((unsigned long long)(buffer.size / buffer.elemsize)) : 0)
 
 #ifndef BVR_BUFFER_SIZE
     #define BVR_BUFFER_SIZE 1024

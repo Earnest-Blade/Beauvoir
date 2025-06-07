@@ -84,12 +84,22 @@ void bvr_pipeline_state_enable(struct bvr_pipeline_state_s* state){
 void bvr_pipeline_draw_cmd(struct bvr_draw_command_s* cmd){
     bvr_shader_enable(cmd->shader);
 
+    // bind correct texture
     if(cmd->texture){
         if(cmd->texture_type == BVR_TEXTURE_2D){
             bvr_texture_enable(cmd->texture, BVR_TEXTURE_UNIT0);
         }
-        else {
+        else if(cmd->texture_type == BVR_TEXTURE_2D_ARRAY) {
             bvr_texture_atlas_enablei((bvr_texture_atlas_t*)cmd->texture, BVR_TEXTURE_UNIT0);
+
+            // update layer index with user data
+            if(cmd->user_data){
+                bvr_shader_set_texture(cmd->shader, "bvr_texture", NULL, cmd->user_data);
+                bvr_shader_use_uniform(bvr_find_uniform(cmd->shader, "bvr_texture"), NULL);
+                
+                free(cmd->user_data);
+                cmd->user_data = NULL;
+            }
         }
     }
 
@@ -112,6 +122,12 @@ void bvr_pipeline_draw_cmd(struct bvr_draw_command_s* cmd){
     glBindVertexArray(cmd->array_buffer);
     glBindBuffer(GL_ARRAY_BUFFER, cmd->vertex_buffer);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, cmd->element_buffer);
+
+    // try to avoid mem leeks
+    if(cmd->user_data){
+        free(cmd->user_data);
+        cmd->user_data = NULL;
+    }
 }
 
 void bvr_pipeline_add_draw_cmd(struct bvr_draw_command_s* cmd){

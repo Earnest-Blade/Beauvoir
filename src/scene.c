@@ -21,6 +21,7 @@ int bvr_create_book(bvr_book_t* book){
     book->delta_time = 0.0f;
     book->prev_time = 0.0f;
     book->current_time = 0.0f;
+    book->average_render_time = 0.0f;
 
     book->pipeline.rendering_pass.blending = BVR_BLEND_FUNC_ALPHA_ONE_MINUS;
     book->pipeline.rendering_pass.depth = BVR_DEPTH_TEST_ENABLE;
@@ -157,7 +158,6 @@ void bvr_flush(bvr_book_t* book){
 }
 
 void bvr_render(bvr_book_t* book){
-
     // if there is still draw commands, flush
     if(book->pipeline.command_count){
         bvr_flush(book);
@@ -181,6 +181,7 @@ void bvr_render(bvr_book_t* book){
     }
 #endif
 
+    book->average_render_time = flerp(book->average_render_time, book->delta_time, 0.5f);
     book->prev_time = book->current_time;
 
     bvr_error();

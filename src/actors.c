@@ -35,7 +35,7 @@ static void bvri_create_generic_dynactor(bvr_dynamic_actor_t* actor, int flags){
     actor->collider.transform = &actor->object.transform;
 
     actor->collider.body.mode = BVR_COLLISION_DISABLE;
-    actor->collider.shape = BVR_COLLIDER_BOX;
+    actor->collider.shape = BVR_COLLIDER_EMPTY;
     
     if(BVR_HAS_FLAG(flags, BVR_COLLISION_ENABLE)){
         actor->collider.body.mode |= BVR_COLLISION_ENABLE;
@@ -66,6 +66,8 @@ static void bvri_create_dynamic_actor(bvr_dynamic_actor_t* actor, int flags){
         }
         else {
             if(actor->mesh.vertex_buffer){
+                actor->collider.shape = BVR_COLLIDER_BOX;
+
                 float* vertices_ptr;
                 struct bvr_bounds_s bounds;
     
@@ -294,11 +296,10 @@ static void bvri_draw_layer_actor(bvr_layer_actor_t* actor){
 
         bvr_shader_set_texturei(texture, NULL, &layer);
 
-        bvr_shader_use_uniform(texture, NULL);
         bvr_shader_use_uniform(&actor->shader.uniforms[0], &actor->object.transform.matrix[0][0]);
 
         //bvr_mesh_draw(&actor->mesh, BVR_DRAWMODE_TRIANGLES);
-        cmd.order = actor->object.order_in_layer + (BVR_BUFFER_COUNT(actor->texture.image.layers) - layer);
+        cmd.order = actor->object.order_in_layer + layer * 2;
         cmd.array_buffer = actor->mesh.array_buffer;
         cmd.vertex_buffer = actor->mesh.vertex_buffer;
         cmd.element_buffer = actor->mesh.element_buffer;
@@ -310,6 +311,11 @@ static void bvri_draw_layer_actor(bvr_layer_actor_t* actor){
         cmd.draw_mode = BVR_DRAWMODE_TRIANGLES;
         cmd.element_count = actor->mesh.element_count;
         cmd.element_offset = 0;
+
+        cmd.user_data = malloc(sizeof(int));
+        BVR_ASSERT(cmd.user_data);
+
+        memcpy(cmd.user_data, &layer, sizeof(int));
 
         bvr_pipeline_add_draw_cmd(&cmd);
     }
@@ -351,7 +357,9 @@ void bvr_draw_actor(struct bvr_actor_s* actor, int drawmode){
 
     cmd.shader = &sactor->shader;
     cmd.texture = NULL;
+    cmd.texture_type = 0;
     cmd.draw_mode = drawmode;
+    cmd.user_data = NULL;
 
     for (size_t i = 0; i < BVR_BUFFER_COUNT(sactor->mesh.vertex_groups); i++)
     {

@@ -31,7 +31,7 @@
 #define BVR_DEPTH_FUNC_NOTEQUAL 0x080
 #define BVR_DEPTH_FUNC_EQUAL    0x100
 
-#define BVR_MAX_DRAW_COMMAND 64
+#define BVR_MAX_DRAW_COMMAND 258
 
 struct bvr_pipeline_state_s {
     int blending;

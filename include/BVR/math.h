@@ -48,6 +48,10 @@ struct bvr_bounds_s {
                                 mat[3][2] = 0.0f;\
                                 mat[3][3] = 1.0f;
 
+BVR_H_FUNC float flerp(float a, float b, float t){
+    return a + t * (b - a);
+}
+
 BVR_H_FUNC void vec2_add(vec2 result, vec2 const a, vec2 const b){
     result[0] = a[0] + b[0];
     result[1] = a[1] + b[1];

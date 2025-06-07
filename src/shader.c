@@ -479,7 +479,7 @@ void bvr_shader_enable(bvr_shader_t* shader){
     glUseProgram(shader->program);
     
     // start at one it order to omit transform uniform
-    for (size_t uniform = 1; uniform < shader->uniform_count; uniform++)
+    for (size_t uniform = 0; uniform < shader->uniform_count; uniform++)
     {
         bvr_shader_use_uniform(&shader->uniforms[uniform], NULL);
     }

@@ -319,7 +319,10 @@ void bvr_editor_draw_inspector(){
             {
                 bvr_pipeline_t* pipeline = (bvr_pipeline_t*)__editor->inspector_command.pointer;
                 
-                nk_layout_row_dynamic(__editor->gui.context, 25, 1);
+                nk_layout_row_dynamic(__editor->gui.context, 15, 1);
+
+                nk_label(__editor->gui.context, BVR_FORMAT("render time %f ms", __editor->book->average_render_time), NK_TEXT_ALIGN_LEFT);
+                nk_label(__editor->gui.context, BVR_FORMAT("fps %f", 1.0f / __editor->book->average_render_time), NK_TEXT_ALIGN_LEFT);
 
                 nk_checkbox_label(__editor->gui.context, "is blending", &pipeline->rendering_pass.blending);
                 nk_checkbox_label(__editor->gui.context, "is depth testing", &pipeline->rendering_pass.depth);
@@ -327,6 +330,7 @@ void bvr_editor_draw_inspector(){
                 int blending = pipeline->rendering_pass.blending;
                 int depth = pipeline->rendering_pass.depth;
 
+                nk_layout_row_dynamic(__editor->gui.context, 20, 1);
                 if(nk_combo_begin_label(__editor->gui.context, "blending", nk_vec2(200, 150))){
                     nk_layout_row_dynamic(__editor->gui.context, 15, 1);
 
@@ -521,7 +525,8 @@ void bvr_editor_draw_inspector(){
 
                 nk_layout_row_dynamic(__editor->gui.context, 100, 1);
                 if(nk_group_begin_titled(__editor->gui.context, BVR_FORMAT("collider%i", collider), "bounds", NK_WINDOW_BORDER | NK_WINDOW_TITLE)){
-                    if(collider->shape = BVR_COLLIDER_BOX){
+                    
+                    if(collider->shape == BVR_COLLIDER_BOX){
                         struct bvr_bounds_s* bounds = (struct bvr_bounds_s*)collider->geometry.data;
                     
                         {
