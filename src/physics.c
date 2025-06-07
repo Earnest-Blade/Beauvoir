@@ -44,7 +44,7 @@ void bvr_body_apply_motion(struct bvr_body_s* body, struct bvr_transform_s* tran
         https://graphics.stanford.edu/courses/cs468-01-fall/Papers/cameron.pdf
 */
 
-void bvr_create_collider(bvr_collider_t* collider, float* vertices, size_t count){
+void bvr_create_collider(bvr_collider_t* collider, float* vertices, uint64 count){
     BVR_ASSERT(collider);
 
     collider->body.acceleration = 0;
@@ -84,9 +84,9 @@ static int bvri_aabb(struct bvr_bounds_s* a, struct bvr_bounds_s* b, vec3 a_iner
 static void bvri_compare_box_colliders(bvr_collider_t* a, bvr_collider_t* b, struct bvr_collision_result_s* result){
     struct bvr_bounds_s ba, bb;
 
-    for (size_t ax = 0; ax < BVR_BUFFER_COUNT(a->geometry); ax++)
+    for (uint64 ax = 0; ax < BVR_BUFFER_COUNT(a->geometry); ax++)
     {
-        for (size_t bx = 0; bx < BVR_BUFFER_COUNT(b->geometry); bx++)
+        for (uint64 bx = 0; bx < BVR_BUFFER_COUNT(b->geometry); bx++)
         {
             memcpy(&ba, a->geometry.data + ax * sizeof(struct bvr_bounds_s), sizeof(struct bvr_bounds_s));
             memcpy(&bb, b->geometry.data + bx * sizeof(struct bvr_bounds_s), sizeof(struct bvr_bounds_s));

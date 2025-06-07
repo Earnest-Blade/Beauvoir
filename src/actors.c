@@ -81,7 +81,7 @@ static void bvri_create_dynamic_actor(bvr_dynamic_actor_t* actor, int flags){
                 bounds.height = 0;
     
                 // get max bounds
-                for (size_t i = 0; i < actor->mesh.vertex_count; i += actor->mesh.stride)
+                for (uint64 i = 0; i < actor->mesh.vertex_count; i += actor->mesh.stride)
                 {
                     if(abs(vertices_ptr[i + 0] * 2) > bounds.width){
                         bounds.width = abs(vertices_ptr[i + 0] * 2);
@@ -121,14 +121,14 @@ static void bvri_create_bitmap_layer(bvr_bitmap_layer_t* layer, int flags){
         BVR_ASSERT(layer->bitmap.image.pixels);
 
         struct bvr_bounds_s rects[BVR_BUFFER_SIZE / 2];
-        uint8_t* pixels = malloc(layer->bitmap.image.width * layer->bitmap.image.height);
+        uint8* pixels = malloc(layer->bitmap.image.width * layer->bitmap.image.height);
         memcpy(pixels, layer->bitmap.image.pixels, layer->bitmap.image.width * layer->bitmap.image.height);
 
         int x, y;
         int rect_width, rect_height, rc;
         int rect_count = 0;
 
-        for (size_t i = 0; i < layer->bitmap.image.width * layer->bitmap.image.height; i++)
+        for (uint64 i = 0; i < layer->bitmap.image.width * layer->bitmap.image.height; i++)
         {
             // skip null pixels
             if(pixels[i] == 0){
@@ -152,7 +152,7 @@ static void bvri_create_bitmap_layer(bvr_bitmap_layer_t* layer, int flags){
             while (y + rect_height < layer->bitmap.image.height && rc)
             {
                 // for each vertical line check if the width is still correct 
-                for (size_t dx = 0; dx < rect_width; dx++)
+                for (uint64 dx = 0; dx < rect_width; dx++)
                 {
                     // if not, it's the end of the rectangle
                     if(pixels[(y + rect_height) * layer->bitmap.image.width + x + dx] == 0){
@@ -165,9 +165,9 @@ static void bvri_create_bitmap_layer(bvr_bitmap_layer_t* layer, int flags){
             }
 
             // clear the rectangle that we found 
-            for (size_t dy = 0; dy < rect_height; dy++)
+            for (uint64 dy = 0; dy < rect_height; dy++)
             {
-                for (size_t dx = 0; dx < rect_width; dx++)
+                for (uint64 dx = 0; dx < rect_width; dx++)
                 {
                     pixels[(y + dy) * layer->bitmap.image.width + x + dx] = 0;
                 }
@@ -361,7 +361,7 @@ void bvr_draw_actor(struct bvr_actor_s* actor, int drawmode){
     cmd.draw_mode = drawmode;
     cmd.user_data = NULL;
 
-    for (size_t i = 0; i < BVR_BUFFER_COUNT(sactor->mesh.vertex_groups); i++)
+    for (uint64 i = 0; i < BVR_BUFFER_COUNT(sactor->mesh.vertex_groups); i++)
     {
         cmd.element_offset = ((bvr_vertex_group_t*)sactor->mesh.vertex_groups.data)[i].element_offset;
         cmd.element_count = ((bvr_vertex_group_t*)sactor->mesh.vertex_groups.data)[i].element_count;

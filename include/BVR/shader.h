@@ -20,44 +20,39 @@
 
 typedef struct bvr_shader_uniform_s {
     struct bvr_buffer_s memory;
+
     bvr_string_t name;
     short location;
     int type;
 } bvr_shader_uniform_t;
 
 typedef struct bvr_shader_stage_s {
-    uint32_t shader;
+    uint32 shader;
     int type;
 } bvr_shader_stage_t;
 
 typedef struct bvr_shader_block_s {
     short location;
-    int type;
-    uint32_t count;
+    uint16 type;
+    uint32 count;
 } bvr_shader_block_t;
 
 typedef struct bvr_shader_s {
-    uint32_t program;
+    uint32 program;
 
-    bvr_shader_stage_t shaders[BVR_MAX_SHADER_COUNT];
-    bvr_shader_uniform_t uniforms[BVR_MAX_UNIFORM_COUNT];
-    bvr_shader_block_t blocks[BVR_MAX_SHADER_BLOCK_COUNT];
+    bvr_shader_stage_t shaders[BVR_MAX_SHADER_COUNT] __attribute__ ((packed));
+    bvr_shader_uniform_t uniforms[BVR_MAX_UNIFORM_COUNT] __attribute__ ((packed));
+    bvr_shader_block_t blocks[BVR_MAX_SHADER_BLOCK_COUNT] __attribute__ ((packed));
 
-    uint8_t shader_count;
-    uint8_t uniform_count, block_count;
+    uint8 shader_count;
+    uint8 uniform_count, block_count;
     
     int flags;
 } bvr_shader_t;
 
-void bvr_create_uniform_buffer(uint32_t* buffer, size_t size);
-void bvr_enable_uniform_buffer(uint32_t buffer);
-void bvr_uniform_buffer_set(uint32_t offset, size_t size, void* data);
-void* bvr_uniform_buffer_map(uint32_t offset, size_t size);
-void bvr_uniform_buffer_close();
-void bvr_destroy_uniform_buffer(uint32_t* buffer);
 
-int bvr_create_shaderf(bvr_shader_t* shader, FILE* file, int flags);
-static inline int bvr_create_shader(bvr_shader_t* shader, const char* path, int flags){
+int bvr_create_shaderf(bvr_shader_t* shader, FILE* file, const int flags);
+static inline int bvr_create_shader(bvr_shader_t* shader, const char* path, const int flags){
     BVR_FILE_EXISTS(path);
 
     FILE* file = fopen(path, "rb");
@@ -65,6 +60,13 @@ static inline int bvr_create_shader(bvr_shader_t* shader, const char* path, int 
     fclose(file);
     return a;
 } 
+
+void bvr_create_uniform_buffer(uint32* buffer, uint64 size);
+void bvr_enable_uniform_buffer(uint32 buffer);
+void bvr_uniform_buffer_set(uint32 offset, uint64 size, void* data);
+void* bvr_uniform_buffer_map(uint32 offset, uint64 size);
+void bvr_uniform_buffer_close();
+void bvr_destroy_uniform_buffer(uint32* buffer);
 
 /*
     Create an empty shader only with vertex and fragment shaders.
@@ -85,7 +87,7 @@ void bvr_shader_set_texture(bvr_shader_t* shader, const char* name, int* id, int
 void bvr_shader_use_uniform(bvr_shader_uniform_t* uniform, void* data);
 
 BVR_H_FUNC bvr_shader_uniform_t* bvr_find_uniform(bvr_shader_t* shader, const char* name){
-    for (size_t i = 1; i < shader->uniform_count; i++)
+    for (uint64 i = 1; i < shader->uniform_count; i++)
     {
         if(!shader->uniforms[i].name.length){
             continue;

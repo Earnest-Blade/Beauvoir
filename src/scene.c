@@ -50,7 +50,7 @@ bvr_book_t* bvr_get_book_instance(){
 }
 
 void bvr_new_frame(bvr_book_t* book){
-    bvr_window_poll_events(&book->window);
+    bvr_window_poll_events();
 
     book->current_time = bvr_frames();
     book->delta_time = (book->current_time - book->prev_time) / 1000.0f;
@@ -149,7 +149,7 @@ void bvr_flush(bvr_book_t* book){
         bvr_pipeline_compare_commands
     );
     
-    for (size_t i = 0; i < book->pipeline.command_count; i++)
+    for (uint64 i = 0; i < book->pipeline.command_count; i++)
     {
         bvr_pipeline_draw_cmd(&book->pipeline.commands[i]);
     }
@@ -168,11 +168,11 @@ void bvr_render(bvr_book_t* book){
 
     // swap pass
     bvr_pipeline_state_enable(&book->pipeline.swap_pass);
-    bvr_framebuffer_clear(NULL, NULL);
+    bvr_framebuffer_clear(NULL, book->pipeline.clear_color);
 
     // push rendered scene to the screen
     bvr_framebuffer_blit(&book->window.framebuffer);
-    bvr_window_push_buffers(&book->window);
+    bvr_window_push_buffers();
 
 #ifndef BVR_NO_FPS_CAP
     // wait for next frame. 

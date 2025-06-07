@@ -18,15 +18,20 @@ struct bvri_texture_uniform_s {
     int unit;
 };
 
-static int bvri_compile_shader(uint32_t* shader, bvr_string_t* content, int type){
+static int bvri_compile_shader(uint32* shader, bvr_string_t* const content, int type);
+static int bvri_link_shader(const uint32 program);
+static int bvri_register_shader_state(bvr_shader_t* program, bvr_shader_stage_t* shader, bvr_string_t* content, 
+    const char* header, const char* name, int type);
+
+static int bvri_compile_shader(uint32* shader, bvr_string_t* const content, int type){
     *shader = glCreateShader(type);
 
     glShaderSource(*shader, 1, (const char**)&content->string, NULL);
     glCompileShader(*shader);
 
-    int s;
-    glGetShaderiv(*shader, GL_COMPILE_STATUS, &s);
-    if(!s){
+    int state;
+    glGetShaderiv(*shader, GL_COMPILE_STATUS, &state);
+    if(!state){
         char buffer[BVR_BUFFER_SIZE];
         glGetShaderInfoLog(*shader, BVR_BUFFER_SIZE, NULL, buffer);
         BVR_PRINT(buffer);
@@ -37,12 +42,12 @@ static int bvri_compile_shader(uint32_t* shader, bvr_string_t* content, int type
     return BVR_OK;
 }
 
-static int bvri_link_shader(uint32_t program) {
+static int bvri_link_shader(const uint32 program) {
     glLinkProgram(program);
 
-    int s;
-    glGetProgramiv(program, GL_LINK_STATUS, &s);
-    if(!s){
+    int state;
+    glGetProgramiv(program, GL_LINK_STATUS, &state);
+    if(!state){
         char buffer[BVR_BUFFER_SIZE];
         glGetProgramInfoLog(program, BVR_BUFFER_SIZE, NULL, buffer);
         BVR_PRINT(buffer);
@@ -87,40 +92,7 @@ static int bvri_register_shader_state(bvr_shader_t* program, bvr_shader_stage_t*
     bvr_destroy_string(&shader_str);
 }
 
-void bvr_create_uniform_buffer(uint32_t* buffer, size_t size){
-    glGenBuffers(1, buffer);
-    glBindBuffer(GL_UNIFORM_BUFFER, *buffer);
-    glBufferData(GL_UNIFORM_BUFFER, size, NULL, GL_DYNAMIC_DRAW);
-    glBindBuffer(GL_UNIFORM_BUFFER, 0);
-
-    glBindBufferRange(GL_UNIFORM_BUFFER, 0, *buffer, 0, size);
-}
-
-void bvr_enable_uniform_buffer(uint32_t buffer){
-    glBindBuffer(GL_UNIFORM_BUFFER, buffer);
-}
-
-void bvr_uniform_buffer_set(uint32_t offset, size_t size, void* data){
-    glBufferSubData(GL_UNIFORM_BUFFER, offset, size, data);
-}
-
-void* bvr_uniform_buffer_map(uint32_t offset, size_t size){
-    return glMapBufferRange(GL_UNIFORM_BUFFER, offset, size, GL_MAP_READ_BIT);
-}
-
-void bvr_uniform_buffer_close(){
-    glUnmapBuffer(GL_UNIFORM_BUFFER);
-}
-
-void bvr_destroy_uniform_buffer(uint32_t* buffer){
-    if(!buffer){
-        return;
-    }
-
-    glDeleteBuffers(1, buffer);
-}
-
-int bvr_create_shaderf(bvr_shader_t* shader, FILE* file, int flags){
+int bvr_create_shaderf(bvr_shader_t* shader, FILE* file, const int flags){
     BVR_ASSERT(shader);
     BVR_ASSERT(file);
 
@@ -268,6 +240,39 @@ int bvri_create_shader_vert_frag(bvr_shader_t* shader, const char* vert, const c
     bvri_link_shader(shader->program);
 }
 
+void bvr_create_uniform_buffer(uint32* buffer, uint64 size){
+    glGenBuffers(1, buffer);
+    glBindBuffer(GL_UNIFORM_BUFFER, *buffer);
+    glBufferData(GL_UNIFORM_BUFFER, size, NULL, GL_DYNAMIC_DRAW);
+    glBindBuffer(GL_UNIFORM_BUFFER, 0);
+
+    glBindBufferRange(GL_UNIFORM_BUFFER, 0, *buffer, 0, size);
+}
+
+void bvr_enable_uniform_buffer(uint32 buffer){
+    glBindBuffer(GL_UNIFORM_BUFFER, buffer);
+}
+
+void bvr_uniform_buffer_set(uint32 offset, uint64 size, void* data){
+    glBufferSubData(GL_UNIFORM_BUFFER, offset, size, data);
+}
+
+void* bvr_uniform_buffer_map(uint32 offset, uint64 size){
+    return glMapBufferRange(GL_UNIFORM_BUFFER, offset, size, GL_MAP_READ_BIT);
+}
+
+void bvr_uniform_buffer_close(){
+    glUnmapBuffer(GL_UNIFORM_BUFFER);
+}
+
+void bvr_destroy_uniform_buffer(uint32* buffer){
+    if(!buffer){
+        return;
+    }
+
+    glDeleteBuffers(1, buffer);
+}
+
 bvr_shader_uniform_t* bvr_shader_register_uniform(bvr_shader_t* shader, int type, int count, const char* name){
     BVR_ASSERT(shader);
     BVR_ASSERT(name);
@@ -339,7 +344,7 @@ bvr_shader_uniform_t* bvr_shader_register_texture(bvr_shader_t* shader, int type
             }
         }
 
-        for (size_t i = 0; i < shader->uniform_count; i++)
+        for (uint64 i = 0; i < shader->uniform_count; i++)
         {
             if(shader->uniforms[i].type == BVR_TEXTURE_2D || shader->uniforms[i].type == BVR_TEXTURE_2D_ARRAY){
                 texture_uniform.unit++;
@@ -479,7 +484,7 @@ void bvr_shader_enable(bvr_shader_t* shader){
     glUseProgram(shader->program);
     
     // start at one it order to omit transform uniform
-    for (size_t uniform = 0; uniform < shader->uniform_count; uniform++)
+    for (uint64 uniform = 0; uniform < shader->uniform_count; uniform++)
     {
         bvr_shader_use_uniform(&shader->uniforms[uniform], NULL);
     }
@@ -492,12 +497,12 @@ void bvr_shader_disable(void){
 void bvr_destroy_shader(bvr_shader_t* shader){
     BVR_ASSERT(shader);
 
-    for (size_t shader_i = 0; shader_i < shader->shader_count; shader_i++)
+    for (uint64 shader_i = 0; shader_i < shader->shader_count; shader_i++)
     {
         glDeleteShader(shader->shaders[shader_i].shader);
     }
 
-    for (size_t uniform = 0; uniform < shader->uniform_count; uniform++)
+    for (uint64 uniform = 0; uniform < shader->uniform_count; uniform++)
     {
         bvr_destroy_string(&shader->uniforms[uniform].name);
 

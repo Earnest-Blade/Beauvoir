@@ -35,11 +35,11 @@ struct bvr_actor_s {
     bvr_uuid_t id;
     int flags;
 
-    uint8_t active;
-    uint16_t order_in_layer;
+    uint8 active;
+    uint16 order_in_layer;
 
     // TODO find why tranform overwrite order in layer
-    uint32_t padding;
+    uint32 padding;
 
     struct bvr_transform_s transform;
 };

@@ -1,5 +1,5 @@
 #include <BVR/editor/editor.h>
-#include <BVR/editor/renderer.h>
+#include <BVR/editor/flags.h>
 
 #include <BVR/buffer.h>
 #include <BVR/utils.h>
@@ -7,9 +7,7 @@
 #include <BVR/actors.h>
 #include <BVR/assets.h>
 
-#include <BVR/editor/flags.h>
-
-#include <SDL3/SDL_dialog.h>
+#include <GLAD/glad.h>
 
 #define NK_INCLUDE_FIXED_TYPES 
 #include <nuklear.h>
@@ -21,6 +19,12 @@
 
 #define BVR_HIERARCHY_RECT(width, height) (nk_rect(50, 50, width, height))
 #define BVR_INSPECTOR_RECT(width, height) (nk_rect(350, 50, width, height))
+
+static int bvri_create_editor_render_buffers(uint32* array_buffer, uint32* vertex_buffer, uint64 vertex_size);
+static void bvri_bind_editor_buffers(uint32 array_buffer, uint32 vertex_buffer);
+static void bvri_set_editor_buffers(float* vertices, uint32 vertices_count);
+static void bvri_draw_editor_buffer(int drawmode, uint32 element_offset, uint32 element_count); 
+static void bvri_destroy_editor_render_buffers(uint32* array_buffer, uint32* vertex_buffer);
 
 static bvr_editor_t* __editor = NULL;
 
@@ -58,14 +62,14 @@ static void bvri_draw_editor_mesh(bvr_mesh_t* mesh){
 
 }
 
-static void bvri_draw_hierarchy_button(const char* name, size_t type, void* object){
+static void bvri_draw_hierarchy_button(const char* name, uint64 type, void* object){
     if(nk_button_label(__editor->gui.context, name)){
 
-        bvr_destroy_string(&__editor->inspector_command.name);
-        bvr_create_string(&__editor->inspector_command.name, name);
+        bvr_destroy_string(&__editor->inspector_cmd.name);
+        bvr_create_string(&__editor->inspector_cmd.name, name);
 
-        __editor->inspector_command.type = type;
-        __editor->inspector_command.pointer = object;
+        __editor->inspector_cmd.type = type;
+        __editor->inspector_cmd.pointer = object;
     }
 }
 
@@ -82,11 +86,11 @@ void bvr_create_editor(bvr_editor_t* editor, bvr_book_t* book){
 
     editor->book = book;
     editor->state = BVR_EDITOR_STATE_HANDLE;
-    editor->inspector_command.pointer = NULL;
-    editor->inspector_command.type = 0;
-    editor->draw_command.drawmode = 0;
-    editor->draw_command.element_offset = 0;
-    editor->draw_command.element_count = 0;
+    editor->inspector_cmd.pointer = NULL;
+    editor->inspector_cmd.type = 0;
+    editor->draw_cmd.drawmode = 0;
+    editor->draw_cmd.element_offset = 0;
+    editor->draw_cmd.element_count = 0;
 
     {
         const char* vertex_shader = 
@@ -125,7 +129,7 @@ void bvr_create_editor(bvr_editor_t* editor, bvr_book_t* book){
         BVR_ASSERT(0 || "failed to create editor buffers");
     }
     
-    bvr_create_string(&editor->inspector_command.name, NULL);
+    bvr_create_string(&editor->inspector_cmd.name, NULL);
     bvr_create_nuklear(&editor->gui, &book->window);
 }
 
@@ -134,10 +138,10 @@ void bvr_editor_handle(){
 
     bvr_nuklear_handle(&__editor->gui);
     
-    if(bvr_key_down(&__editor->book->window, BVR_EDITOR_HIDDEN_INPUT)){
+    if(bvr_key_down(BVR_EDITOR_HIDDEN_INPUT)){
         __editor->state = BVR_EDITOR_STATE_HIDDEN;
     }
-    if(bvr_key_down(&__editor->book->window, BVR_EDITOR_SHOW_INPUT)){
+    if(bvr_key_down(BVR_EDITOR_SHOW_INPUT)){
         __editor->state = BVR_EDITOR_STATE_HANDLE;
     }
 
@@ -206,7 +210,7 @@ void bvr_editor_draw_page_hierarchy(){
             }
 
             bvri_draw_hierarchy_button("camera", BVR_EDITOR_CAMERA, &__editor->book->page.camera);
-            bvri_draw_hierarchy_button("graphics pipeline", BVR_EDITOR_PIPELINE, &__editor->book->pipeline);
+            bvri_draw_hierarchy_button("graphic pipeline", BVR_EDITOR_PIPELINE, &__editor->book->pipeline);
 
             nk_group_end(__editor->gui.context);
         }
@@ -241,7 +245,7 @@ void bvr_editor_draw_page_hierarchy(){
                 }
 
                 bvri_draw_hierarchy_button(
-                    BVR_FORMAT("collider%x", (size_t)blockcollider - (size_t)__editor->book->page.colliders.data),
+                    BVR_FORMAT("collider%x", (uint64)blockcollider - (uint64)__editor->book->page.colliders.data),
                     BVR_EDITOR_COLLIDER, collider
                 );
             }
@@ -276,24 +280,24 @@ void bvr_editor_draw_inspector(){
 
     BVR_ASSERT(__editor->state == BVR_EDITOR_STATE_DRAWING);
 
-    if(nk_begin(__editor->gui.context, BVR_FORMAT("inspector '%s'", __editor->inspector_command.name.string), BVR_INSPECTOR_RECT(350, 200), 
+    if(nk_begin(__editor->gui.context, BVR_FORMAT("inspector '%s'", __editor->inspector_cmd.name.string), BVR_INSPECTOR_RECT(350, 200), 
         NK_WINDOW_BORDER | NK_WINDOW_MOVABLE | NK_WINDOW_SCALABLE | NK_WINDOW_TITLE)){
     
-        if(!__editor->inspector_command.pointer){
+        if(!__editor->inspector_cmd.pointer){
             nk_end(__editor->gui.context);
             return;
         }
 
-        __editor->draw_command.drawmode = 0;
-        __editor->draw_command.element_offset = 0;
-        __editor->draw_command.element_count = 0;
+        __editor->draw_cmd.drawmode = 0;
+        __editor->draw_cmd.element_offset = 0;
+        __editor->draw_cmd.element_count = 0;
 
         nk_layout_row_dynamic(__editor->gui.context, 15, 1);
-        switch (__editor->inspector_command.type)
+        switch (__editor->inspector_cmd.type)
         {
         case BVR_EDITOR_CAMERA:
             {
-                bvr_camera_t* camera = (bvr_camera_t*)__editor->inspector_command.pointer;
+                bvr_camera_t* camera = (bvr_camera_t*)__editor->inspector_cmd.pointer;
                 
                 nk_layout_row_dynamic(__editor->gui.context, 40, 1);
                 if(nk_group_begin(__editor->gui.context, BVR_FORMAT("framebuffer%x", &camera->framebuffer), NK_WINDOW_BORDER|NK_WINDOW_NO_SCROLLBAR))
@@ -317,15 +321,15 @@ void bvr_editor_draw_inspector(){
 
         case BVR_EDITOR_PIPELINE:
             {
-                bvr_pipeline_t* pipeline = (bvr_pipeline_t*)__editor->inspector_command.pointer;
+                bvr_pipeline_t* pipeline = (bvr_pipeline_t*)__editor->inspector_cmd.pointer;
                 
                 nk_layout_row_dynamic(__editor->gui.context, 15, 1);
 
                 nk_label(__editor->gui.context, BVR_FORMAT("render time %f ms", __editor->book->average_render_time), NK_TEXT_ALIGN_LEFT);
                 nk_label(__editor->gui.context, BVR_FORMAT("fps %f", 1.0f / __editor->book->average_render_time), NK_TEXT_ALIGN_LEFT);
 
-                nk_checkbox_label(__editor->gui.context, "is blending", &pipeline->rendering_pass.blending);
-                nk_checkbox_label(__editor->gui.context, "is depth testing", &pipeline->rendering_pass.depth);
+                nk_checkbox_label(__editor->gui.context, "is blending", (int*)&pipeline->rendering_pass.blending);
+                nk_checkbox_label(__editor->gui.context, "is depth testing", (int*)&pipeline->rendering_pass.depth);
 
                 int blending = pipeline->rendering_pass.blending;
                 int depth = pipeline->rendering_pass.depth;
@@ -403,7 +407,7 @@ void bvr_editor_draw_inspector(){
 
         case BVR_EDITOR_ASSETS:
             {
-                bvr_memstream_t* stream = (bvr_memstream_t*)__editor->inspector_command.pointer;
+                bvr_memstream_t* stream = (bvr_memstream_t*)__editor->inspector_cmd.pointer;
                 bvr_asset_t asset;
 
                 bvr_memstream_seek(stream, 0, SEEK_SET);
@@ -414,11 +418,11 @@ void bvr_editor_draw_inspector(){
                         break;
                     }
 
-                    bvr_memstream_read(stream, &asset.path.length, sizeof(uint16_t));
+                    bvr_memstream_read(stream, &asset.path.length, sizeof(uint16));
 
                     asset.path.string = stream->cursor;
                     bvr_memstream_seek(stream, asset.path.length, SEEK_CUR);
-                    bvr_memstream_read(stream, &asset.open_mode, sizeof(uint8_t));
+                    bvr_memstream_read(stream, &asset.open_mode, sizeof(uint8));
 
                     nk_layout_row_dynamic(__editor->gui.context, 45, 1);
                     if(nk_group_begin(__editor->gui.context, BVR_MACRO_STR(__LINE__), NK_WINDOW_BORDER | NK_WINDOW_NO_SCROLLBAR)){
@@ -452,7 +456,7 @@ void bvr_editor_draw_inspector(){
         
         case BVR_EDITOR_ACTOR: 
             {
-                struct bvr_actor_s* actor = (struct bvr_actor_s*)__editor->inspector_command.pointer;
+                struct bvr_actor_s* actor = (struct bvr_actor_s*)__editor->inspector_cmd.pointer;
                 
                 nk_layout_row_dynamic(__editor->gui.context, 15, 1);
                 nk_label(__editor->gui.context, BVR_FORMAT("id %s", actor->id), NK_TEXT_ALIGN_LEFT);
@@ -477,7 +481,7 @@ void bvr_editor_draw_inspector(){
                             nk_label(__editor->gui.context, "LAYER ACTOR", NK_TEXT_ALIGN_CENTERED);
                             bvr_layer_t* layers = (bvr_layer_t*)(((bvr_layer_actor_t*)actor)->texture.image.layers.data);
 
-                            for (size_t layer = 0; layer < BVR_BUFFER_COUNT(((bvr_layer_actor_t*)actor)->texture.image.layers); layer++)
+                            for (uint64 layer = 0; layer < BVR_BUFFER_COUNT(((bvr_layer_actor_t*)actor)->texture.image.layers); layer++)
                             {
                                 nk_layout_row_dynamic(__editor->gui.context, 15, 1);
                                 
@@ -521,7 +525,7 @@ void bvr_editor_draw_inspector(){
 
         case BVR_EDITOR_COLLIDER:
             {
-                bvr_collider_t* collider = (bvr_collider_t*)__editor->inspector_command.pointer;
+                bvr_collider_t* collider = (bvr_collider_t*)__editor->inspector_cmd.pointer;
 
                 nk_layout_row_dynamic(__editor->gui.context, 100, 1);
                 if(nk_group_begin_titled(__editor->gui.context, BVR_FORMAT("collider%i", collider), "bounds", NK_WINDOW_BORDER | NK_WINDOW_TITLE)){
@@ -545,9 +549,9 @@ void bvr_editor_draw_inspector(){
                             bvri_set_editor_buffers(vertices, 8);
                             bvri_bind_editor_buffers(0, 0);
                         
-                            __editor->draw_command.drawmode = BVR_DRAWMODE_LINES;
-                            __editor->draw_command.element_offset = 0;
-                            __editor->draw_command.element_count = 8;
+                            __editor->draw_cmd.drawmode = BVR_DRAWMODE_LINES;
+                            __editor->draw_cmd.element_offset = 0;
+                            __editor->draw_cmd.element_count = 8;
                         }
                         
                         nk_layout_row_dynamic(__editor->gui.context, 15, 3);
@@ -582,11 +586,11 @@ void bvr_editor_render(){
     BVR_ASSERT(__editor->state == BVR_EDITOR_STATE_DRAWING);
     __editor->state = BVR_EDITOR_STATE_RENDERING;
 
-    if(__editor->draw_command.drawmode){
+    if(__editor->draw_cmd.drawmode){
         bvr_shader_enable(&__editor->device.shader);
 
         bvri_bind_editor_buffers(__editor->device.array_buffer, __editor->device.vertex_buffer);
-        bvri_draw_editor_buffer(__editor->draw_command.drawmode, __editor->draw_command.element_offset, __editor->draw_command.element_count);
+        bvri_draw_editor_buffer(__editor->draw_cmd.drawmode, __editor->draw_cmd.element_offset, __editor->draw_cmd.element_count);
         bvri_bind_editor_buffers(0, 0);
 
         bvr_shader_disable();
@@ -596,6 +600,47 @@ void bvr_editor_render(){
 }
 
 void bvr_destroy_editor(bvr_editor_t* editor){
-    bvr_destroy_string(&editor->inspector_command.name);
+    bvr_destroy_string(&editor->inspector_cmd.name);
     bvr_destroy_nuklear(&editor->gui);
+}
+
+int bvri_create_editor_render_buffers(uint32* array_buffer, uint32* vertex_buffer, uint64 vertex_size){
+    BVR_ASSERT(vertex_buffer);
+
+    glGenVertexArrays(1, array_buffer);
+    glGenBuffers(1, vertex_buffer);
+
+    glBindVertexArray(*array_buffer);
+    glBindBuffer(GL_ARRAY_BUFFER, *vertex_buffer);
+
+    glBufferData(GL_ARRAY_BUFFER, vertex_size * sizeof(float), NULL, GL_DYNAMIC_DRAW);
+
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(vec3), (void*)0);
+    glDisableVertexAttribArray(0);
+
+    glBindVertexArray(0);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+    return BVR_OK;
+}
+
+void bvri_bind_editor_buffers(uint32 array_buffer, uint32 vertex_buffer){
+    glBindVertexArray(array_buffer);
+    glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer);
+}
+
+void bvri_set_editor_buffers(float* vertices, uint32 vertices_count){
+    glBufferSubData(GL_ARRAY_BUFFER, 0, vertices_count * sizeof(vec3), vertices);
+}
+
+void bvri_draw_editor_buffer(int drawmode, uint32 element_offset, uint32 element_count){
+    glEnableVertexAttribArray(0);
+    glDrawArrays(drawmode, element_offset, element_count);
+    glDisableVertexAttribArray(0);
+}
+
+void bvri_destroy_editor_render_buffers(uint32* array_buffer, uint32* vertex_buffer){
+    glDeleteVertexArrays(1, array_buffer);
+    glDeleteBuffers(1, vertex_buffer);
 }

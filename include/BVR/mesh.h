@@ -51,25 +51,25 @@ typedef enum bvr_mesh_array_attrib_e {
 typedef struct bvr_vertex_group_s {
     bvr_string_t name;
 
-    uint32_t element_count;
-    uint32_t element_offset;
+    uint32 element_count;
+    uint32 element_offset;
 } bvr_vertex_group_t;
 
 typedef struct bvr_mesh_s {
-    uint32_t array_buffer;
-    uint32_t vertex_buffer;
-    uint32_t element_buffer;
+    uint32 array_buffer;
+    uint32 vertex_buffer;
+    uint32 element_buffer;
 
-    uint32_t vertex_count;
-    uint32_t element_count;
+    uint32 vertex_count;
+    uint32 element_count;
     struct bvr_buffer_s vertex_groups;
 
     int element_type;
 
     bvr_mesh_array_attrib_t attrib;
 
-    uint8_t attrib_count;
-    uint16_t stride;
+    uint8 attrib_count;
+    uint16 stride;
 } bvr_mesh_t;
 
 /*

@@ -25,11 +25,11 @@
 #endif
 
 typedef struct bvr_camera_s {
-    uint32_t mode;
+    uint32 mode;
 
     struct bvr_transform_s transform;
     bvr_framebuffer_t* framebuffer;
-    uint32_t buffer; /* uniform buffer object reference */
+    uint32 buffer; /* uniform buffer object reference */
     
     float near;
     float far;
@@ -72,7 +72,7 @@ typedef struct bvr_book_s {
     bvr_page_t page;
 
     float delta_time, average_render_time;
-    uint64_t prev_time, current_time;
+    uint64 prev_time, current_time;
 } bvr_book_t;
 
 /*
@@ -82,7 +82,7 @@ int bvr_create_book(bvr_book_t* book);
 
 bvr_book_t* bvr_get_book_instance();
 
-BVR_H_FUNC void bvr_create_book_memories(bvr_book_t* book, const size_t asset_size, const size_t garbage_size){
+BVR_H_FUNC void bvr_create_book_memories(bvr_book_t* book, const uint64 asset_size, const uint64 garbage_size){
     bvr_create_memstream(&book->asset_stream, asset_size);
     bvr_create_memstream(&book->garbage_stream, garbage_size);
 }

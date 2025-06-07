@@ -34,31 +34,31 @@
 #define BVR_MAX_DRAW_COMMAND 258
 
 struct bvr_pipeline_state_s {
-    int blending;
-    int depth;
+    short blending;
+    short depth;
     int flags;
 };
 
 struct bvr_draw_command_s {
-    int order;
+    short order;
 
-    uint32_t array_buffer;
-    uint32_t vertex_buffer;
-    uint32_t element_buffer;
+    uint32 array_buffer;
+    uint32 vertex_buffer;
+    uint32 element_buffer;
 
-    uint32_t element_offset;
-    uint32_t element_count;
-    uint32_t attrib_count;
+    uint16 element_offset;
+    uint32 element_count;
+    uint8 attrib_count;
     
-    uint8_t draw_mode;
+    uint8 draw_mode;
 
-    int texture_type;
+    uint16 texture_type;
 
     bvr_shader_t* shader;
     bvr_texture_t* texture;    
 
     void* user_data;
-};
+} __attribute__ ((packed));
 
 typedef struct bvr_pipeline_s {
     /*
@@ -72,35 +72,35 @@ typedef struct bvr_pipeline_s {
     */
     struct bvr_pipeline_state_s swap_pass;
 
-    int command_count;
+    uint16 command_count;
     struct bvr_draw_command_s commands[BVR_MAX_DRAW_COMMAND];
 
     vec3 clear_color;
 } bvr_pipeline_t;
 
 typedef struct bvr_framebuffer_s {
-    int width, target_width;
-    int height, target_height;
+    uint16 width, target_width;
+    uint16 height, target_height;
 
-    uint32_t buffer;
-    uint32_t color_buffer, depth_buffer, stencil_buffer;
-    uint32_t vertex_buffer, array_buffer;
+    uint32 buffer;
+    uint32 color_buffer, depth_buffer, stencil_buffer;
+    uint32 vertex_buffer, array_buffer;
 
     bvr_shader_t shader;
 } bvr_framebuffer_t;
 
-void bvr_pipeline_state_enable(struct bvr_pipeline_state_s* state);
+void bvr_pipeline_state_enable(struct bvr_pipeline_state_s* const state);
 void bvr_pipeline_draw_cmd(struct bvr_draw_command_s* cmd);
 void bvr_pipeline_add_draw_cmd(struct bvr_draw_command_s* cmd);
-void bvr_error();
+void bvr_error(void);
 
 BVR_H_FUNC int bvr_pipeline_compare_commands(const void* a, const void* b){
     return (((struct bvr_draw_command_s*)a)->order - ((struct bvr_draw_command_s*)b)->order);
 }
 
-int bvr_create_framebuffer(bvr_framebuffer_t* framebuffer, int width, int height, const char* shader);
+int bvr_create_framebuffer(bvr_framebuffer_t* framebuffer, const uint16 width, const uint16 height, const char* shader);
 void bvr_framebuffer_enable(bvr_framebuffer_t* framebuffer);
 void bvr_framebuffer_disable(bvr_framebuffer_t* framebuffer);
-void bvr_framebuffer_clear(bvr_framebuffer_t* framebuffer, vec3 color);
+void bvr_framebuffer_clear(bvr_framebuffer_t* framebuffer, vec3 const color);
 void bvr_framebuffer_blit(bvr_framebuffer_t* framebuffer);
 void bvr_destroy_framebuffer(bvr_framebuffer_t* framebuffer);

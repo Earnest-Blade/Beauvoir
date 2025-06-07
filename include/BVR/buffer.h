@@ -46,9 +46,9 @@
 */
 struct bvr_buffer_s {
     void* data;
-    unsigned long long size;
+    unsigned long size;
     unsigned int elemsize;
-};
+} __attribute__((packed));
 
 typedef struct bvr_memstream_s {
     void* data;
@@ -61,10 +61,10 @@ typedef struct bvr_memstream_s {
 /*
     pascal typed string
 */
-typedef struct bvr_string_s { 
+typedef struct bvr_string_s  { 
     unsigned short length;
     char* string;
-} bvr_string_t;
+} __attribute__ ((packed)) bvr_string_t;
 
 typedef struct bvr_pool_s {
     char* data;
@@ -88,11 +88,11 @@ typedef struct bvr_pool_s {
     unsigned int elemsize;
 } bvr_pool_t;
 
-void bvr_create_memstream(bvr_memstream_t* stream, const size_t size);
+void bvr_create_memstream(bvr_memstream_t* stream, const uint64 size);
 
-void bvr_memstream_write(bvr_memstream_t* stream, const void* data, const size_t size);
-void bvr_memstream_read(bvr_memstream_t* stream, void* dest, const size_t size);
-void bvr_memstream_seek(bvr_memstream_t* stream, size_t position, int mode);
+void bvr_memstream_write(bvr_memstream_t* stream, const void* data, const uint64 size);
+void bvr_memstream_read(bvr_memstream_t* stream, void* dest, const uint64 size);
+void bvr_memstream_seek(bvr_memstream_t* stream, uint64 position, int mode);
 void bvr_memstream_clear(bvr_memstream_t* stream);
 
 BVR_H_FUNC int bvr_memstream_eof(bvr_memstream_t* stream){
@@ -117,7 +117,7 @@ void bvr_string_create_and_copy(bvr_string_t* dest, bvr_string_t* source);
 /*
     Insert a char array into a string.
 */
-void bvr_string_insert(bvr_string_t* string, const size_t offset, const char* value);
+void bvr_string_insert(bvr_string_t* string, const uint64 offset, const char* value);
 
 /*
     Return a constant pointer to string's char array.
@@ -134,7 +134,7 @@ BVR_H_FUNC const char* bvr_string_get(bvr_string_t* string){
 */
 void bvr_destroy_string(bvr_string_t* string);
 
-void bvr_create_pool(bvr_pool_t* pool, size_t size, size_t count);
+void bvr_create_pool(bvr_pool_t* pool, uint64 size, uint64 count);
 
 /*
     Get a pointer to the next writable slot.

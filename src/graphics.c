@@ -9,7 +9,7 @@
 #include <memory.h>
 #include <malloc.h>
 
-void bvr_pipeline_state_enable(struct bvr_pipeline_state_s* state){
+void bvr_pipeline_state_enable(struct bvr_pipeline_state_s* const state){
     BVR_ASSERT(state);
 
     if(state->blending){
@@ -107,14 +107,14 @@ void bvr_pipeline_draw_cmd(struct bvr_draw_command_s* cmd){
     glBindBuffer(GL_ARRAY_BUFFER, cmd->vertex_buffer);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, cmd->element_buffer);
 
-    for (size_t i = 0; i < cmd->attrib_count; i++)
+    for (uint64 i = 0; i < cmd->attrib_count; i++)
     {
         glEnableVertexAttribArray(0);
     }
     
     glDrawElements(cmd->draw_mode, cmd->element_count, GL_UNSIGNED_INT, (void*)cmd->element_offset);
 
-    for (size_t i = 0; i < cmd->attrib_count; i++)
+    for (uint64 i = 0; i < cmd->attrib_count; i++)
     {
         glEnableVertexAttribArray(1);
     }
@@ -140,9 +140,9 @@ void bvr_pipeline_add_draw_cmd(struct bvr_draw_command_s* cmd){
     }
 }
 
-void bvr_error(){
+void bvr_error(void){
     char found_error = 0;
-    uint32_t err;
+    uint32 err;
 
     while ((err = glGetError()) != GL_NO_ERROR)
     {
@@ -187,7 +187,7 @@ void bvr_error(){
     BVR_ASSERT(!found_error || "Opengl has throw error(s)!");
 }
 
-int bvr_create_framebuffer(bvr_framebuffer_t* framebuffer, int width, int height, const char* shader){
+int bvr_create_framebuffer(bvr_framebuffer_t* framebuffer, const uint16 width, const uint16 height, const char* shader){
     BVR_ASSERT(framebuffer);
     BVR_ASSERT(width > 0 && height > 0);
 
@@ -298,8 +298,8 @@ void bvr_framebuffer_disable(bvr_framebuffer_t* framebuffer){
     glViewport(0, 0, framebuffer->target_width, framebuffer->target_height);
 }
 
-void bvr_framebuffer_clear(bvr_framebuffer_t* framebuffer, vec3 color){
-    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+void bvr_framebuffer_clear(bvr_framebuffer_t* framebuffer, vec3 const color){
+    glClearColor(color[0], color[1], color[2], 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 

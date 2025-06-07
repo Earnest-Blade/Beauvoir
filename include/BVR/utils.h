@@ -39,12 +39,22 @@
 /*          UTILS               */
 /*                              */
 
-typedef char bvr_uuid_t[37];
+typedef char bvr_uuid_t[37] __attribute__ ((aligned(8), packed));
 
-int bvr_sizeof(int type);
+/*
+    Return the size of a beauvoir type.
+*/
+int bvr_sizeof(const int type);
 
+/*
+    Create a new uuid
+*/
 void bvr_create_uuid(bvr_uuid_t uuid);
-int bvr_compare_uuid(bvr_uuid_t a, bvr_uuid_t b);
+
+/*
+    Check if two uuid are equals
+*/
+int bvr_uuid_equals(bvr_uuid_t const a, bvr_uuid_t const b);
 
 #define BVR_HAS_FLAG(x, f) ((int)((x & f) == f))
 

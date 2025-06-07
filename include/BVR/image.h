@@ -104,7 +104,7 @@ typedef enum bvr_layer_blend_mode_e {
 */
 typedef struct bvr_layer_s {
     bvr_string_t name;
-    uint16_t flags;
+    uint16 flags;
 
     int width, height;
     int anchor_x, anchor_y;
@@ -119,8 +119,8 @@ typedef struct bvr_layer_s {
 typedef struct bvr_image_s {
     int width, height, depth;
     int format;
-    uint8_t channels;
-    uint8_t* pixels;
+    uint8 channels;
+    uint8* pixels;
 
     struct bvr_buffer_s layers;
 } bvr_image_t;
@@ -131,7 +131,7 @@ typedef struct bvr_image_s {
 typedef struct bvr_texture_s {
     bvr_image_t image;
 
-    uint32_t id;
+    uint32 id;
     int filter, wrap;
 } bvr_texture_t;
 
@@ -142,10 +142,10 @@ typedef struct bvr_texture_atlas_s
 {
     bvr_image_t image;
 
-    uint32_t id;
+    uint32 id;
     int filter, wrap;
 
-    uint32_t tile_width, tile_height;
+    uint32 tile_width, tile_height;
 } bvr_texture_atlas_t;
 
 /*
@@ -154,7 +154,7 @@ typedef struct bvr_texture_atlas_s
 typedef struct bvr_layered_texture_s {
     bvr_image_t image;
 
-    uint32_t id;
+    uint32 id;
     int filter, wrap;
 } bvr_layered_texture_t;
 
@@ -178,7 +178,7 @@ void bvr_flip_image_vertically(bvr_image_t* image);
     Copy a specific image channel over another pixel buffer.
     The targeted pixel buffer must be allocated.
 */
-int bvr_image_copy_channel(bvr_image_t* image, int channel, uint8_t* buffer);
+int bvr_image_copy_channel(bvr_image_t* image, int channel, uint8* buffer);
 
 void bvr_destroy_image(bvr_image_t* image);
 
@@ -205,8 +205,8 @@ void bvr_texture_disable(void);
 void bvr_destroy_texture(bvr_texture_t* texture);
 
 /* ATLAS TEXTURE */
-int bvr_create_texture_atlasf(bvr_texture_atlas_t* atlas, FILE* file, uint32_t tile_width, uint32_t tile_height, int filter, int wrap);
-BVR_H_FUNC int bvr_create_texture_atlas(bvr_texture_atlas_t* atlas, const char* path, uint32_t tile_width, uint32_t tile_height, int filter, int wrap){
+int bvr_create_texture_atlasf(bvr_texture_atlas_t* atlas, FILE* file, uint32 tile_width, uint32 tile_height, int filter, int wrap);
+BVR_H_FUNC int bvr_create_texture_atlas(bvr_texture_atlas_t* atlas, const char* path, uint32 tile_width, uint32 tile_height, int filter, int wrap){
     BVR_FILE_EXISTS(path);
     FILE* file = fopen(path, "rb");
     int success = bvr_create_texture_atlasf(atlas, file, tile_width, tile_height, filter, wrap);

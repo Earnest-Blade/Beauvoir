@@ -7,7 +7,7 @@
 
 #include <GLAD/glad.h>
 
-static int bvri_create_mesh_buffers(bvr_mesh_t* mesh, size_t vertices_size, size_t element_size, int vertex_type, int element_type, bvr_mesh_array_attrib_t attrib);
+static int bvri_create_mesh_buffers(bvr_mesh_t* mesh, uint64 vertices_size, uint64 element_size, int vertex_type, int element_type, bvr_mesh_array_attrib_t attrib);
 
 #ifndef BVR_NO_OBJ
 
@@ -48,7 +48,7 @@ static char* bvri_objparsefloat(char* buffer, float* v){
     double num = 0.0;
     double fra = 0.0;
     double div = 1.0;
-    uint32_t e = 0;
+    uint32 e = 0;
 
     if(*buffer == '-'){
         sig = -1;
@@ -89,7 +89,7 @@ static int bvri_is_obj(FILE* file){
     char sig[32];
 
     // check 5 first lines
-    for (size_t i = 0; i < 5; i++)
+    for (uint64 i = 0; i < 5; i++)
     {
         bvri_objreadline(sig, file);
         if(sig[0] == '#'){
@@ -141,11 +141,11 @@ struct bvri_objobject_s {
     vec2 uvs[BVR_BUFFER_SIZE];
     vec3 normals[BVR_BUFFER_SIZE];
     struct {
-        uint32_t vertex[4];
-        uint32_t uv[4];
-        uint32_t normal[4];
+        uint32 vertex[4];
+        uint32 uv[4];
+        uint32 normal[4];
 
-        uint8_t edges;
+        uint8 edges;
     } faces[BVR_BUFFER_SIZE];
 
     bvr_mesh_buffer_t vertices;
@@ -154,10 +154,10 @@ struct bvri_objobject_s {
     struct bvr_buffer_s vertex_group;
     bvr_vertex_group_t* group;
 
-    uint32_t vertex_count;
-    uint32_t uv_count;
-    uint32_t normal_count;
-    uint32_t face_count;
+    uint32 vertex_count;
+    uint32 uv_count;
+    uint32 normal_count;
+    uint32 face_count;
 };
 
 static int bvri_load_obj(bvr_mesh_t* mesh, FILE* file){
@@ -280,7 +280,7 @@ static int bvri_load_obj(bvr_mesh_t* mesh, FILE* file){
 
     if(bvri_create_mesh_buffers(mesh, 
         object.vertices.count * sizeof(float), 
-        object.elements.count * sizeof(uint32_t),
+        object.elements.count * sizeof(uint32),
         object.vertices.type, object.elements.type, mesh->attrib) == BVR_FAILED){
 
         BVR_PRINT("failed to create object buffers");
@@ -293,8 +293,8 @@ static int bvri_load_obj(bvr_mesh_t* mesh, FILE* file){
     glBindBuffer(GL_ARRAY_BUFFER, mesh->vertex_buffer);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh->element_buffer);
 
-    size_t vertex = 0, element = 0;
-    for (size_t face = 0; face < object.face_count; face++)
+    uint64 vertex = 0, element = 0;
+    for (uint64 face = 0; face < object.face_count; face++)
     {
         BVR_ASSERT(object.faces[face].edges == 3 || object.faces[face].edges == 4);
 
@@ -304,12 +304,12 @@ static int bvri_load_obj(bvr_mesh_t* mesh, FILE* file){
         else {
             BVR_ASSERT(element + 3 <= object.elements.count);
 
-            const uint32_t elements_values[3] = {element, element + 1, element + 2};
-            glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, element * sizeof(uint32_t), sizeof(elements_values), elements_values);
+            const uint32 elements_values[3] = {element, element + 1, element + 2};
+            glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, element * sizeof(uint32), sizeof(elements_values), elements_values);
             element += 3;
         }
 
-        for (size_t i = 0; i < object.faces[face].edges; i++)
+        for (uint64 i = 0; i < object.faces[face].edges; i++)
         {
             BVR_ASSERT(vertex + 8 <= object.vertices.count);
 
@@ -336,7 +336,7 @@ bvr_objfailed:
     bvr_destroy_string(&object.name);
     bvr_destroy_string(&object.material);
 
-    for (size_t i = 0; i < BVR_BUFFER_COUNT(object.vertex_group); i++)
+    for (uint64 i = 0; i < BVR_BUFFER_COUNT(object.vertex_group); i++)
     {
         bvr_destroy_string(&((bvr_vertex_group_t*)object.vertex_group.data)[0].name);
     }
@@ -441,7 +441,7 @@ int bvr_create_meshv(bvr_mesh_t* mesh, bvr_mesh_buffer_t* vertices, bvr_mesh_buf
 /*
     Generic buffer creation function
 */
-static int bvri_create_mesh_buffers(bvr_mesh_t* mesh, size_t vertices_size, size_t element_size, 
+static int bvri_create_mesh_buffers(bvr_mesh_t* mesh, uint64 vertices_size, uint64 element_size, 
     int vertex_type, int element_type, bvr_mesh_array_attrib_t attrib){
 
     BVR_ASSERT(mesh);
@@ -546,7 +546,7 @@ static int bvri_create_mesh_buffers(bvr_mesh_t* mesh, size_t vertices_size, size
         return BVR_FAILED;
     }
 
-    for (size_t i = 0; i < mesh->attrib_count; i++){ 
+    for (uint64 i = 0; i < mesh->attrib_count; i++){ 
         glDisableVertexAttribArray(i); 
     }
 
@@ -588,7 +588,7 @@ static int bvri_create_mesh_buffers(bvr_mesh_t* mesh, size_t vertices_size, size
 void bvr_destroy_mesh(bvr_mesh_t* mesh){
     BVR_ASSERT(mesh);
 
-    for (size_t i = 0; i < BVR_BUFFER_COUNT(mesh->vertex_groups); i++)
+    for (uint64 i = 0; i < BVR_BUFFER_COUNT(mesh->vertex_groups); i++)
     {
         bvr_destroy_string(&((bvr_vertex_group_t*)mesh->vertex_groups.data)[i].name);
     }

@@ -29,8 +29,8 @@ static struct {
     bvr_shader_uniform_t* texture_uniform;
     char path[256];
 
-    uint8_t* enabled_layers;
-    uint32_t image_flags;
+    uint8* enabled_layers;
+    uint32 image_flags;
 } image_viewer;
 
 static void load_texture(const char* path){
@@ -47,7 +47,7 @@ static void load_texture(const char* path){
         bvr_create_layered_texture(&image_viewer.texture, path, image_viewer.image_flags, BVR_TEXTURE_WRAP_REPEAT);
         bvr_shader_set_texturei(image_viewer.texture_uniform, &image_viewer.texture.id, NULL);
     
-        image_viewer.enabled_layers = calloc(BVR_BUFFER_COUNT(image_viewer.texture.image.layers), sizeof(uint8_t));   
+        image_viewer.enabled_layers = calloc(BVR_BUFFER_COUNT(image_viewer.texture.image.layers), sizeof(uint8));   
         memset(image_viewer.enabled_layers, 1, BVR_BUFFER_COUNT(image_viewer.texture.image.layers)); 
     }
 }
@@ -113,7 +113,7 @@ int main(){
         bvr_new_frame(&game);
 
         /* exit the main loop conditions */
-        if(!bvr_is_awake(&game) || bvr_key_down(&game.window, BVR_KEY_ESCAPE)) {
+        if(!bvr_is_awake(&game) || bvr_key_down(BVR_KEY_ESCAPE)) {
             break;
         }
 
@@ -184,7 +184,7 @@ int main(){
                 }
                 nk_layout_row_dynamic(gui.context, 15, 1);
 
-                for (size_t layer = 0; layer < BVR_BUFFER_COUNT(image_viewer.texture.image.layers); layer++)
+                for (uint64 layer = 0; layer < BVR_BUFFER_COUNT(image_viewer.texture.image.layers); layer++)
                 {
                     image_viewer.enabled_layers[layer] = nk_check_label(gui.context, 
                         ((bvr_layer_t*)image_viewer.texture.image.layers.data)[layer].name.string, 

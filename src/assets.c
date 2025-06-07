@@ -9,14 +9,14 @@
 #include <unistd.h>
 
 struct bvri_chunk_data_s {
-    uint32_t length;
-    uint16_t flag;
+    uint32 length;
+    uint16 flag;
     void* buffer;
 };
 
 struct bvri_header_data_s {
     char sig[4];
-    uint32_t size;
+    uint32 size;
 };
 
 #pragma region asset db
@@ -52,7 +52,7 @@ int bvr_find_asset(bvr_book_t* book, const char* path, bvr_asset_t* asset){
     BVR_ASSERT(book);
     BVR_ASSERT(path);
 
-    uint16_t string_length;
+    uint16 string_length;
     const char* prev_cursor = book->asset_stream.cursor;
 
     bvr_memstream_seek(&book->asset_stream, 0, SEEK_SET);
@@ -61,7 +61,7 @@ int bvr_find_asset(bvr_book_t* book, const char* path, bvr_asset_t* asset){
         // skip uuid
         book->asset_stream.cursor += sizeof(bvr_uuid_t);
 
-        string_length = *((uint16_t*)book->asset_stream.cursor);
+        string_length = *((uint16*)book->asset_stream.cursor);
 
         if(!strncmp(book->asset_stream.cursor + sizeof(unsigned short), path, string_length)){
             memcpy(&asset->id, book->asset_stream.cursor - sizeof(bvr_uuid_t), sizeof(bvr_uuid_t));
@@ -76,7 +76,7 @@ int bvr_find_asset(bvr_book_t* book, const char* path, bvr_asset_t* asset){
         book->asset_stream.cursor += string_length;
 
         // go to the end
-        bvr_memstream_seek(&book->asset_stream, sizeof(uint16_t) + sizeof(char), SEEK_CUR);
+        bvr_memstream_seek(&book->asset_stream, sizeof(uint16) + sizeof(char), SEEK_CUR);
     }
     
     return BVR_FAILED;
@@ -95,23 +95,23 @@ static void bvri_clear_file(FILE* file){
 }
 
 static void bvri_write_string(FILE* file, bvr_string_t* string){
-    fwrite(&string->length, sizeof(uint16_t), 1, file);
+    fwrite(&string->length, sizeof(uint16), 1, file);
     if(string->string){
         fwrite(string->string, sizeof(char), string->length, file);
     }
 }
 
 static void bvri_write_chunk(FILE* file, struct bvri_chunk_data_s* data){
-    fwrite(&data->length, sizeof(uint32_t), 1, file);
-    fwrite(&data->flag, sizeof(uint16_t), 1, file);
+    fwrite(&data->length, sizeof(uint32), 1, file);
+    fwrite(&data->flag, sizeof(uint16), 1, file);
     if(data->buffer){
         fwrite(data->buffer, sizeof(char), data->length, file);
     }
 }
 
-static void bvri_write_chunk_data(FILE* file, uint32_t length, uint16_t flag, void* buffer){
-    fwrite(&length, sizeof(uint32_t), 1, file);
-    fwrite(&flag, sizeof(uint16_t), 1, file);
+static void bvri_write_chunk_data(FILE* file, uint32 length, uint16 flag, void* buffer){
+    fwrite(&length, sizeof(uint32), 1, file);
+    fwrite(&flag, sizeof(uint16), 1, file);
     if(buffer){
         fwrite(buffer, sizeof(char), length, file);
     }
@@ -133,14 +133,14 @@ void bvr_write_book_dataf(FILE* file, bvr_book_t* book){
     fseek(file, 0, SEEK_SET);
     fwrite(&header, sizeof(struct bvri_header_data_s), 1, file);
 
-    uint32_t bin_offset = 0;
+    uint32 bin_offset = 0;
     // write asset informaions
     {
-        uint32_t stream_size = book->asset_stream.next - (char*)book->asset_stream.data;
+        uint32 stream_size = book->asset_stream.next - (char*)book->asset_stream.data;
         bin_offset = 0;
 
-        fwrite(&stream_size, sizeof(uint32_t), 1, file);
-        fwrite(&bin_offset, sizeof(uint32_t), 1, file);
+        fwrite(&stream_size, sizeof(uint32), 1, file);
+        fwrite(&bin_offset, sizeof(uint32), 1, file);
         fwrite(book->asset_stream.data, stream_size, 1, file);
     }
 
@@ -154,11 +154,11 @@ void bvr_write_book_dataf(FILE* file, bvr_book_t* book){
         } camera;
 
         struct {
-            uint32_t size;
-            uint32_t offset;
+            uint32 size;
+            uint32 offset;
 
             bvr_string_t name;
-            uint16_t type;
+            uint16 type;
             bvr_uuid_t id;
             int flags;
 
@@ -231,8 +231,8 @@ void bvr_open_book_dataf(FILE* file, bvr_book_t* book){
 
     // read asset informations
     {
-        uint32_t section_size = bvr_fread32_le(file);
-        uint32_t asset_offset = bvr_fread32_le(file);
+        uint32 section_size = bvr_fread32_le(file);
+        uint32 asset_offset = bvr_fread32_le(file);
 
         // detroy current asset stream
         if(!book->asset_stream.data || book->asset_stream.size < section_size){

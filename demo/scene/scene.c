@@ -92,10 +92,10 @@ int main(){
             vec2 inputs;
             float speed = 5.0f;
 
-            inputs[0] = bvr_key_down(&book.window, BVR_KEY_RIGHT);
-            inputs[0] += -bvr_key_down(&book.window, BVR_KEY_LEFT);
-            inputs[1] = bvr_key_down(&book.window, BVR_KEY_UP);
-            inputs[1] += -bvr_key_down(&book.window, BVR_KEY_DOWN);
+            inputs[0] = bvr_key_down(BVR_KEY_RIGHT);
+            inputs[0] += -bvr_key_down(BVR_KEY_LEFT);
+            inputs[1] = bvr_key_down(BVR_KEY_UP);
+            inputs[1] += -bvr_key_down(BVR_KEY_DOWN);
 
             /* we scale input with the speed */
             vec2_scale(inputs, inputs, speed);
