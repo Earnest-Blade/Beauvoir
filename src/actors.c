@@ -4,6 +4,7 @@
 #include <BVR/graphics.h>
 
 #include <stdlib.h>
+#include <math.h>
 #include <memory.h>
 
 #include <GLAD/glad.h>
@@ -58,53 +59,92 @@ static void bvri_create_dynamic_actor(bvr_dynamic_actor_t* actor, int flags){
     bvri_create_generic_dynactor(actor, flags);
 
     // generate bounding boxes by using mesh's vertices
-    if(BVR_HAS_FLAG(flags, BVR_DYNACTOR_CREATE_COLLIDER_FROM_VERTICES)){
+    if(BVR_HAS_FLAG(flags, BVR_DYNACTOR_CREATE_COLLIDER_FROM_BOUNDS)){
         if(actor->mesh.attrib == BVR_MESH_ATTRIB_V3 || 
             actor->mesh.attrib == BVR_MESH_ATTRIB_V3UV2){
             
             BVR_PRINT("cannot generate bounding box for 3d meshes!");
         }
-        else {
-            if(actor->mesh.vertex_buffer){
-                actor->collider.shape = BVR_COLLIDER_BOX;
+        else if (actor->mesh.vertex_buffer) {
+            actor->collider.shape = BVR_COLLIDER_BOX;
 
-                float* vertices_ptr;
-                struct bvr_bounds_s bounds;
-    
-                // get a pointer to mesh's vertices
-                glBindBuffer(GL_ARRAY_BUFFER, actor->mesh.vertex_buffer);
-                vertices_ptr = glMapBufferRange(GL_ARRAY_BUFFER, 0, actor->mesh.vertex_count, GL_MAP_READ_BIT);
-                BVR_ASSERT(vertices_ptr);
-    
-                vec2_copy(bounds.coords, actor->object.transform.position);
-                bounds.width = 0;
-                bounds.height = 0;
-    
-                // get max bounds
-                for (uint64 i = 0; i < actor->mesh.vertex_count; i += actor->mesh.stride)
+            float *vertices = NULL;
+            struct bvr_bounds_s bounds;
+
+            // get a pointer to mesh's vertices
+            glBindBuffer(GL_ARRAY_BUFFER, actor->mesh.vertex_buffer);
+            vertices = glMapBufferRange(GL_ARRAY_BUFFER, 0, actor->mesh.vertex_count, GL_MAP_READ_BIT);
+            BVR_ASSERT(vertices);
+
+            vec2_copy(bounds.coords, actor->object.transform.position);
+            bounds.width = 0;
+            bounds.height = 0;
+
+            // get max bounds
+            for (uint64 i = 0; i < actor->mesh.vertex_count; i += actor->mesh.stride)
+            {
+                if (abs(vertices[i + 0] * 2) > bounds.width)
                 {
-                    if(abs(vertices_ptr[i + 0] * 2) > bounds.width){
-                        bounds.width = abs(vertices_ptr[i + 0] * 2);
-                    }
-                    if(abs(vertices_ptr[i + 1] * 2) > bounds.height){
-                        bounds.height = abs(vertices_ptr[i + 1] * 2);
-                    }
+                    bounds.width = abs(vertices[i + 0] * 2);
                 }
-                
-                // allocate geometry
-                actor->collider.geometry.elemsize = sizeof(struct bvr_bounds_s);
-                actor->collider.geometry.size = 1 * sizeof(struct bvr_bounds_s);
-                actor->collider.geometry.data = malloc(actor->collider.geometry.size);
-                BVR_ASSERT(actor->collider.geometry.data);
-    
-                memcpy(actor->collider.geometry.data, &bounds, actor->collider.geometry.size);
-    
-                glUnmapBuffer(GL_ARRAY_BUFFER);
-                glBindBuffer(GL_ARRAY_BUFFER, 0);
+                if (abs(vertices[i + 1] * 2) > bounds.height)
+                {
+                    bounds.height = abs(vertices[i + 1] * 2);
+                }
             }
-            else {
-                BVR_PRINT("failed to copy vertices data!");
-            }
+
+            // allocate geometry
+            actor->collider.geometry.elemsize = sizeof(struct bvr_bounds_s);
+            actor->collider.geometry.size = 1 * sizeof(struct bvr_bounds_s);
+            actor->collider.geometry.data = malloc(actor->collider.geometry.size);
+            BVR_ASSERT(actor->collider.geometry.data);
+
+            memcpy(actor->collider.geometry.data, &bounds, actor->collider.geometry.size);
+
+            glUnmapBuffer(GL_ARRAY_BUFFER);
+            glBindBuffer(GL_ARRAY_BUFFER, 0);
+        }
+        else {
+            BVR_PRINT("failed to copy vertices data!");
+        }
+    }
+
+   
+    if(BVR_HAS_FLAG(flags, BVR_DYNACTOR_TRIANGULATE_COLLIDER_FROM_VERTICES)){
+        if(actor->mesh.attrib == BVR_MESH_ATTRIB_V3 || 
+            actor->mesh.attrib == BVR_MESH_ATTRIB_V3UV2){
+            
+            BVR_PRINT("cannot triangulate mesh for 3d meshes!");
+        }
+        else if(actor->mesh.vertex_buffer) {
+            actor->collider.shape = BVR_COLLIDER_TRIARRAY;
+            char* vmap;
+
+            // get raw data
+            glBindBuffer(GL_ARRAY_BUFFER, actor->mesh.vertex_buffer);
+             vmap = glMapBufferRange(GL_ARRAY_BUFFER, 0, actor->mesh.vertex_count, GL_MAP_READ_BIT);
+            BVR_ASSERT(vmap);
+
+            bvr_mesh_buffer_t sbuf, tbuf;
+            sbuf.type = BVR_FLOAT;
+            tbuf.type = BVR_FLOAT;
+            tbuf.count = 0;
+            sbuf.count = actor->mesh.vertex_count;
+            tbuf.data = NULL;
+            sbuf.data = vmap;
+
+            bvr_triangulate(&sbuf, &tbuf, 2);
+            
+            glUnmapBuffer(GL_ARRAY_BUFFER);
+            glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+            // allocate and copy geometry
+            actor->collider.geometry.elemsize = sizeof(vec2) * 3;
+            actor->collider.geometry.size = tbuf.count * sizeof(float);
+            actor->collider.geometry.data = malloc(actor->collider.geometry.size);
+            BVR_ASSERT(actor->collider.geometry.data);
+
+            memcpy(actor->collider.geometry.data, tbuf.data, actor->collider.geometry.size);
         }
     }
 }

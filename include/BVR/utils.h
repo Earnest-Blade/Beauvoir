@@ -23,6 +23,7 @@
 #define BVR_UNSIGNED_INT8       0x1401
 #define BVR_UNSIGNED_INT16      0x1403
 #define BVR_UNSIGNED_INT32      0x1405
+#define BVR_VEC2                0x1407
 #define BVR_VEC3                0x1408
 #define BVR_VEC4                0x140A
 #define BVR_MAT3                0x140D

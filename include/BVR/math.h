@@ -2,6 +2,7 @@
 
 #include <BVR/config.h>
 
+#define _USE_MATH_DEFINES
 #include <math.h>
 #include <string.h>
 
@@ -52,6 +53,19 @@ BVR_H_FUNC float flerp(float a, float b, float t){
     return a + t * (b - a);
 }
 
+BVR_H_FUNC float rad_to_deg(float rad) { 
+    return rad * 180 / M_PI; 
+}
+
+BVR_H_FUNC float deg_to_rad(float deg) { 
+    return deg * M_PI / 180; 
+}
+
+BVR_H_FUNC float clamp(float d, float min, float max) {
+  const float t = d < min ? min : d;
+  return t > max ? max : t;
+}
+
 BVR_H_FUNC void vec2_add(vec2 result, vec2 const a, vec2 const b){
     result[0] = a[0] + b[0];
     result[1] = a[1] + b[1];
@@ -69,6 +83,10 @@ BVR_H_FUNC void vec2_scale(vec2 result, vec2 const a, float const s){
 
 BVR_H_FUNC float vec2_dot(vec2 const a, vec2 const b){
     return a[0] * b[0] + a[1] * b[1];
+}
+
+BVR_H_FUNC float vec2_cross(vec2 const a, vec2 const b){
+    return a[0] * b[1] - a[1] * b[0];
 }
 
 BVR_H_FUNC float vec2_len(vec2 const v){

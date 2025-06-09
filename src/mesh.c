@@ -1,5 +1,7 @@
-#include <bvr/mesh.h>
-#include <bvr/math.h>
+#include <BVR/mesh.h>
+#include <BVR/math.h>
+#include <BVR/buffer.h>
+#include <BVR/physics.h>
 
 #include <malloc.h>
 #include <string.h>
@@ -7,7 +9,8 @@
 
 #include <GLAD/glad.h>
 
-static int bvri_create_mesh_buffers(bvr_mesh_t* mesh, uint64 vertices_size, uint64 element_size, int vertex_type, int element_type, bvr_mesh_array_attrib_t attrib);
+static int bvri_create_mesh_buffers(bvr_mesh_t* mesh, uint64 vertices_size, uint64 element_size, 
+    int vertex_type, int element_type, bvr_mesh_array_attrib_t attrib);
 
 #ifndef BVR_NO_OBJ
 
@@ -445,7 +448,7 @@ static int bvri_create_mesh_buffers(bvr_mesh_t* mesh, uint64 vertices_size, uint
     int vertex_type, int element_type, bvr_mesh_array_attrib_t attrib){
 
     BVR_ASSERT(mesh);
-    BVR_ASSERT(vertices_size && element_size);
+    BVR_ASSERT(vertices_size);
 
     // create vertex array 
     glGenVertexArrays(1, &mesh->array_buffer);
@@ -459,9 +462,11 @@ static int bvri_create_mesh_buffers(bvr_mesh_t* mesh, uint64 vertices_size, uint
     glBindBuffer(GL_ARRAY_BUFFER, mesh->vertex_buffer);
     glBufferData(GL_ARRAY_BUFFER, vertices_size, NULL, GL_STATIC_DRAW);
 
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh->element_buffer);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, element_size, NULL, GL_STATIC_DRAW);
-
+    if(element_size){
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh->element_buffer);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, element_size, NULL, GL_STATIC_DRAW);
+    }
+    
     mesh->attrib = attrib;
     mesh->vertex_count = vertices_size / bvr_sizeof(vertex_type);
     mesh->element_count = element_size / bvr_sizeof(element_type);
@@ -557,33 +562,138 @@ static int bvri_create_mesh_buffers(bvr_mesh_t* mesh, uint64 vertices_size, uint
     return BVR_OK;
 }
 
-/*void bvr_mesh_draw(bvr_mesh_t* mesh, int drawmode){
-    glBindVertexArray(mesh->array_buffer);
-    glBindBuffer(GL_ARRAY_BUFFER, mesh->vertex_buffer);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh->element_buffer);
+void bvr_triangulate(bvr_mesh_buffer_t* src, bvr_mesh_buffer_t* dest, const uint8 stride){
 
-    for (size_t i = 0; i < mesh->attrib_count; i++){ 
-        glEnableVertexAttribArray(i); 
+    // https://github.com/joelibaceta/triangulator/blob/main/triangulator/ear_clipping_method.py
+
+    BVR_ASSERT(src);
+    BVR_ASSERT(dest);
+    BVR_ASSERT(src->data && src->count);
+
+    dest->type = BVR_FLOAT;
+    dest->count = 0;
+    dest->data = NULL;
+
+    struct {
+        vec2 a, b, c;
+    } triangles[1024];
+
+    // create a copy of the vertices.
+    uint32 vertex_count = src->count / stride;
+    vec2* raw_poly = (vec2*)src->data;
+    vec2* polygone = malloc(src->count * bvr_sizeof(src->type));
+    BVR_ASSERT(polygone);
+
+    memcpy(polygone, src->data, src->count * bvr_sizeof(src->type));
+
+    int signed_area = 0;
+    {
+        vec2 p0, p1;
+        for (size_t point = 0; point < vertex_count; point++)
+        {
+            vec2_copy(p0, polygone[point]);
+            vec2_copy(p1, polygone[((point + 1) % vertex_count)]);
+
+            signed_area += vec2_cross(p0, p1);
+        }
+     
+        // if this polygone is signed, then we flip it
+        if(signed_area < 0){
+            for (size_t point = 0; point < vertex_count; point++)
+            {
+                vec2 tmp;
+                vec2_copy(tmp, polygone[point]);
+                vec2_copy(polygone[point], polygone[vertex_count - 1 - point]);
+                vec2_copy(polygone[vertex_count - 1 - point], tmp);
+            }
+        }
     }
 
-    // draw each vertex group
-    for (size_t i = 0; i < BVR_BUFFER_COUNT(mesh->vertex_groups); i++)
+    vec2* prev_vert = (vec2*)1;
+    vec2* curr_vert = (vec2*)1;
+    vec2* next_vert = (vec2*)1;
+
+    // while there are triangles to be found
+    while (curr_vert != 0)
     {
-        glDrawElements(drawmode, 
-            ((bvr_vertex_group_t*)mesh->vertex_groups.data)[i].element_count, 
-            mesh->element_type, 
-            (void*)((bvr_vertex_group_t*)mesh->vertex_groups.data)[i].element_offset
-        );
+        prev_vert = NULL;
+        curr_vert = NULL;
+        next_vert = NULL;
+
+        for (size_t point = 0; point < vertex_count; point++)
+        {
+            prev_vert = &polygone[(point - 1) % vertex_count];
+            curr_vert = &polygone[point];
+            next_vert = &polygone[(point + 1) % vertex_count];
+        
+            // determine triangle angle
+            float angle = 0;
+            {
+                vec2 ba, bc;
+                vec2_sub(ba, *prev_vert, *curr_vert);
+                vec2_sub(bc, *next_vert, *curr_vert);
+
+                float theta = vec2_dot(ba, bc) / (vec2_len(ba) * vec2_len(bc));
+                angle = rad_to_deg(acosf(theta));
+
+                if(vec2_cross(ba, bc) < 0){
+                    angle = 360 - angle;
+                }
+            }
+
+            if(angle >= 180){
+                // skip because the angle is greater than 180
+                continue;
+            }
+            else {
+
+                int found_inside = 0;
+
+                for (size_t i = 0; i < vertex_count; i++)
+                {
+                    if(((*prev_vert)[0] == (*raw_poly)[0] && (*prev_vert)[1] == (*raw_poly)[1]) ||
+                        ((*curr_vert)[0] == (*raw_poly)[0] && (*curr_vert)[1] == (*raw_poly)[1]) ||
+                        ((*next_vert)[0] == (*raw_poly)[0] && (*next_vert)[1] == (*raw_poly)[1])){
+
+                        continue;
+                    }
+
+                    if(bvr_is_point_inside_triangle(*raw_poly, *prev_vert, *curr_vert, *next_vert)){
+                        found_inside = 1;
+                        break;
+                    }
+                }
+
+                if(!found_inside){
+                    vec2_copy(triangles[dest->count].a, *prev_vert);
+                    vec2_copy(triangles[dest->count].b, *curr_vert);
+                    vec2_copy(triangles[dest->count].c, *next_vert);
+                    dest->count++;
+
+                    for (size_t i = 0; i < vertex_count; i++)
+                    {
+                        vec2_copy(polygone[i], polygone[i + 1]);
+                    }
+                    vertex_count--;
+                    
+                    break;
+                }
+            }
+        }
+        
+        if(curr_vert == NULL){
+            break;
+        }
     }
     
-    for (size_t i = 0; i < mesh->attrib_count; i++){ 
-        glDisableVertexAttribArray(i); 
-    }
+    dest->type = BVR_VEC2;
+    dest->count = dest->count * 3;
+    dest->data = malloc(dest->count * sizeof(vec2));
 
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-    glBindVertexArray(0);
-}*/
+    memcpy(dest->data, &triangles[0], dest->count * sizeof(vec2));
+
+    free(polygone);
+}
 
 void bvr_destroy_mesh(bvr_mesh_t* mesh){
     BVR_ASSERT(mesh);

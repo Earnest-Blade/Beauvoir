@@ -22,7 +22,7 @@
 
 static int bvri_create_editor_render_buffers(uint32* array_buffer, uint32* vertex_buffer, uint64 vertex_size);
 static void bvri_bind_editor_buffers(uint32 array_buffer, uint32 vertex_buffer);
-static void bvri_set_editor_buffers(float* vertices, uint32 vertices_count);
+static void bvri_set_editor_buffers(float* vertices, uint32 vertices_count, uint8 stride);
 static void bvri_draw_editor_buffer(int drawmode, uint32 element_offset, uint32 element_count); 
 static void bvri_destroy_editor_render_buffers(uint32* array_buffer, uint32* vertex_buffer);
 
@@ -188,8 +188,8 @@ void bvr_editor_draw_page_hierarchy(){
                 if(nk_menu_begin_label(__editor->gui.context, "tools", NK_TEXT_ALIGN_LEFT, nk_vec2(100, 100))){
                     nk_layout_row_dynamic(__editor->gui.context, 15, 1);
 
-                    if(nk_menu_item_label(__editor->gui.context, "placeholder", NK_TEXT_ALIGN_LEFT)){
-
+                    if(nk_menu_item_label(__editor->gui.context, "triangulate", NK_TEXT_ALIGN_LEFT)){
+                        
                     }
 
                     nk_menu_end(__editor->gui.context);
@@ -198,6 +198,14 @@ void bvr_editor_draw_page_hierarchy(){
             nk_menubar_end(__editor->gui.context);
         }
         
+        {
+            vec2 screen, world;
+            bvr_mouse_position(&screen[0], &screen[1]);
+            bvr_screen_to_world_coords(__editor->book, screen, world);
+
+            nk_layout_row_dynamic(__editor->gui.context, 15, 1);
+            nk_label_wrap(__editor->gui.context, BVR_FORMAT("mx%f my%f", world[0], world[1]));
+        }
 
         // scene components
         nk_layout_row_dynamic(__editor->gui.context, 150, 1);
@@ -527,9 +535,9 @@ void bvr_editor_draw_inspector(){
             {
                 bvr_collider_t* collider = (bvr_collider_t*)__editor->inspector_cmd.pointer;
 
-                nk_layout_row_dynamic(__editor->gui.context, 100, 1);
-                if(nk_group_begin_titled(__editor->gui.context, BVR_FORMAT("collider%i", collider), "bounds", NK_WINDOW_BORDER | NK_WINDOW_TITLE)){
-                    
+                //nk_layout_row_dynamic(__editor->gui.context, 180, 1);
+                //if(nk_group_begin_titled(__editor->gui.context, BVR_FORMAT("collider%i", collider), "geometry", NK_WINDOW_BORDER | NK_WINDOW_TITLE)){
+                if(true){    
                     if(collider->shape == BVR_COLLIDER_BOX){
                         struct bvr_bounds_s* bounds = (struct bvr_bounds_s*)collider->geometry.data;
                     
@@ -546,10 +554,10 @@ void bvr_editor_draw_inspector(){
                             };
                         
                             bvri_bind_editor_buffers(__editor->device.array_buffer, __editor->device.vertex_buffer);
-                            bvri_set_editor_buffers(vertices, 8);
+                            bvri_set_editor_buffers(vertices, 8, 3);
                             bvri_bind_editor_buffers(0, 0);
                         
-                            __editor->draw_cmd.drawmode = BVR_DRAWMODE_LINES;
+                            __editor->draw_cmd.drawmode = BVR_DRAWMODE_LINE_STRIPE;
                             __editor->draw_cmd.element_offset = 0;
                             __editor->draw_cmd.element_count = 8;
                         }
@@ -564,8 +572,41 @@ void bvr_editor_draw_inspector(){
                         nk_label_wrap(__editor->gui.context, BVR_FORMAT("width %i ", bounds->width));
                         nk_label_wrap(__editor->gui.context, BVR_FORMAT("height %i ", bounds->height));
                     }
-                
-                    nk_group_end(__editor->gui.context);
+                    else if (collider->shape == BVR_COLLIDER_TRIARRAY)
+                    {
+                        vec2* tri = (vec2*)collider->geometry.data;
+
+                        {
+                            bvri_bind_editor_buffers(__editor->device.array_buffer, __editor->device.vertex_buffer);
+                            bvri_set_editor_buffers(collider->geometry.data, collider->geometry.size / sizeof(float), 2);
+                            bvri_bind_editor_buffers(0, 0);
+                        
+                            __editor->draw_cmd.drawmode = BVR_DRAWMODE_TRIANGLES;
+                            __editor->draw_cmd.element_offset = 0;
+                            __editor->draw_cmd.element_count = collider->geometry.size / sizeof(float);
+                        }
+
+                        nk_layout_row_dynamic(__editor->gui.context, 15, 1);
+                        nk_label(__editor->gui.context, BVR_FORMAT("%i triangles", collider->geometry.size / sizeof(vec2) / 3), NK_TEXT_ALIGN_LEFT);
+                        
+                        nk_layout_row_dynamic(__editor->gui.context, 15, 6);
+
+                        for (size_t triid = 0; triid < collider->geometry.size / sizeof(vec2) / 3; triid++)
+                        {
+                            if(nk_tree_push(__editor->gui.context, NK_TREE_TAB, BVR_FORMAT("triangle %i", triid), NK_MINIMIZED)){
+                                nk_layout_row_dynamic(__editor->gui.context, 15, 2);
+
+                                for (size_t i = 0; i < 3; i++)
+                                {
+                                    nk_label_wrap(__editor->gui.context, BVR_FORMAT("x%f", (tri[triid + i])[0]));
+                                    nk_label_wrap(__editor->gui.context, BVR_FORMAT("y%f", (tri[triid + i])[1]));
+                                }
+
+                                nk_tree_pop(__editor->gui.context);
+                            }
+                        }
+                    }
+                    //nk_group_end(__editor->gui.context);
                 } 
             }
             break;
@@ -630,8 +671,13 @@ void bvri_bind_editor_buffers(uint32 array_buffer, uint32 vertex_buffer){
     glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer);
 }
 
-void bvri_set_editor_buffers(float* vertices, uint32 vertices_count){
-    glBufferSubData(GL_ARRAY_BUFFER, 0, vertices_count * sizeof(vec3), vertices);
+void bvri_set_editor_buffers(float* vertices, uint32 vertices_count, uint8 stride){
+    glBufferSubData(GL_ARRAY_BUFFER, 0, vertices_count * stride * sizeof(float), vertices);
+    
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, stride, GL_FLOAT, GL_FALSE, stride * sizeof(float), (void*)0);
+    glDisableVertexAttribArray(0);
+    
 }
 
 void bvri_draw_editor_buffer(int drawmode, uint32 element_offset, uint32 element_count){

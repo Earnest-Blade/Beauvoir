@@ -7,6 +7,7 @@
 
 typedef enum bvr_drawmode_e {
     BVR_DRAWMODE_LINES = 0x0001,
+    BVR_DRAWMODE_LINE_STRIPE = 0x0003,
     BVR_DRAWMODE_TRIANGLES = 0x0004,
     BVR_DRAWMODE_QUADS = 0x0007
 } bvr_drawmode_t;
@@ -92,6 +93,8 @@ BVR_H_FUNC int bvr_create_mesh(bvr_mesh_t* mesh, const char* path, bvr_mesh_arra
     fclose(file);
     return status;
 }
+
+void bvr_triangulate(bvr_mesh_buffer_t* src, bvr_mesh_buffer_t* dest, const uint8 stride);
 
 void bvr_destroy_mesh(bvr_mesh_t* mesh);
 

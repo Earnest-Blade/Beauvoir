@@ -8,13 +8,34 @@
 
 #include <stdio.h>
 
-#define BVR_ACTOR_NOT_FREE                          0x00001
+/*
+    Does not destroy the actor when freeing the page
+*/
+#define BVR_ACTOR_NOT_FREE 0x00001
 
-#define BVR_DYNACTOR_PASSIVE                        0x00100
-#define BVR_DYNACTOR_AGGRESSIVE                     0x00200
-#define BVR_DYNACTOR_CREATE_COLLIDER_FROM_VERTICES  0x00400
+/*
+    This actor can only block object; this means that this actor shall not 
+    move.
+*/
+#define BVR_DYNACTOR_PASSIVE 0x00100
 
-#define BVR_BITMAP_CREATE_COLLIDER                  0x00800
+/*
+    This actor can move and generate collisions.
+*/
+#define BVR_DYNACTOR_AGGRESSIVE 0x00200
+
+/*
+    Create collider's box shape from an object's bounds
+*/
+#define BVR_DYNACTOR_CREATE_COLLIDER_FROM_BOUNDS 0x00400
+
+/*
+    Create a new triangulated mesh from an object's mesh. 
+    This new mesh with be used to 
+*/
+#define BVR_DYNACTOR_TRIANGULATE_COLLIDER_FROM_VERTICES 0x00800
+
+#define BVR_BITMAP_CREATE_COLLIDER 0x01000
 
 typedef enum bvr_actor_type_e {
     BVR_EMPTY_ACTOR,

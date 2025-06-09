@@ -65,7 +65,7 @@ int main(){
             BVR_DYNAMIC_ACTOR,
             BVR_COLLISION_ENABLE | /* means that we enable collision */
             BVR_DYNACTOR_AGGRESSIVE | /* means that this actor can respond to physics */
-            BVR_DYNACTOR_CREATE_COLLIDER_FROM_VERTICES /* means that we automaticly create collision boxes based on vertices */
+            BVR_DYNACTOR_CREATE_COLLIDER_FROM_BOUNDS /* means that we automaticly create collision boxes based on vertices */
         );
 
         /* link this object to a scene */

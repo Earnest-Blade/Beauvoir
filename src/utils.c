@@ -20,6 +20,7 @@ int bvr_sizeof(const int type){
         case BVR_INT8: case BVR_UNSIGNED_INT8: return 1;
         case BVR_INT16: case BVR_UNSIGNED_INT16: return 2;
         case BVR_FLOAT: case BVR_INT32: case BVR_UNSIGNED_INT32: return 4;
+        case BVR_VEC2: return 8;
         case BVR_VEC3: return 12;
         case BVR_VEC4: return 16;
         case BVR_MAT3: return 36;
