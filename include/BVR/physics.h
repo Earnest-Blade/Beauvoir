@@ -83,3 +83,7 @@ BVR_H_FUNC int bvr_is_point_inside_triangle(vec2 s, vec2 a, vec2 b, vec2 c){
         ((c[0] - b[0]) * (s[1] - b[1]) - (c[1] - b[1])*(s[0] - b[0]) > 0 != s_ab)
     );
 }
+
+BVR_H_FUNC void bvr_invert_direction(struct bvr_body_s* body){
+    vec3_scale(body->direction, body->direction, -1.0f);
+}

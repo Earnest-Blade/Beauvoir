@@ -15,7 +15,12 @@
 static void bvri_update_transform(struct bvr_actor_s* actor){
     BVR_ASSERT(actor);
 
+    mat4x4 rotation_mat;
+
+    BVR_IDENTITY_MAT4(rotation_mat);
     BVR_IDENTITY_MAT4(actor->transform.matrix);
+
+    mat4_rotate(rotation_mat, actor->transform.rotation);
 
     // copy translation to the translate matrix
     actor->transform.matrix[3][0] = actor->transform.position[0];
@@ -26,6 +31,8 @@ static void bvri_update_transform(struct bvr_actor_s* actor){
     actor->transform.matrix[0][0] = actor->transform.scale[0];
     actor->transform.matrix[1][1] = actor->transform.scale[0];
     actor->transform.matrix[2][2] = actor->transform.scale[0];
+
+    mat4_mul(actor->transform.matrix, actor->transform.matrix, rotation_mat);
 }
 
 /*

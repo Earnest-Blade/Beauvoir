@@ -37,7 +37,7 @@ static void bvri_draw_editor_vec3(const char* text, vec3 value){
 }
 
 static void bvri_draw_editor_transform(bvr_transform_t* transform){
-    nk_layout_row_dynamic(__editor->gui.context, 115, 1);
+    nk_layout_row_dynamic(__editor->gui.context, 180, 1);
 
     nk_group_begin_titled(__editor->gui.context, BVR_MACRO_STR(__LINE__), "transform", 
         NK_WINDOW_BORDER | NK_WINDOW_NO_SCROLLBAR | NK_WINDOW_TITLE);
@@ -47,6 +47,14 @@ static void bvri_draw_editor_transform(bvr_transform_t* transform){
         nk_property_float(__editor->gui.context, "y", -100000.0f, &transform->position[1], 100000.0f, 0.1f, 0.1f);
         nk_property_float(__editor->gui.context, "z", -100000.0f, &transform->position[2], 100000.0f, 0.1f, 0.1f);
         
+        nk_property_float(__editor->gui.context, "roll", -100000.0f, &transform->rotation[0], 100000.0f, 0.1f, 0.1f);
+        nk_property_float(__editor->gui.context, "pitch", -100000.0f, &transform->rotation[1], 100000.0f, 0.1f, 0.1f);
+        nk_property_float(__editor->gui.context, "yaw", -100000.0f, &transform->rotation[2], 100000.0f, 0.1f, 0.1f);
+        
+        float scale = transform->scale[0];
+        nk_property_float(__editor->gui.context, "size", 0.0f, &scale, 100000.0f, 0.1f, 0.1f);
+        BVR_SCALE_VEC3(transform->scale, scale);
+
         nk_group_end(__editor->gui.context);
     }
 }
@@ -585,7 +593,7 @@ void bvr_editor_draw_inspector(){
                             bvri_set_editor_buffers(collider->geometry.data, collider->geometry.size / sizeof(vec2), 2);
                             bvri_bind_editor_buffers(0, 0);
                         
-                            __editor->draw_cmd.drawmode = BVR_DRAWMODE_TRIANGLES;
+                            __editor->draw_cmd.drawmode = BVR_DRAWMODE_LINE_STRIPE;
                             __editor->draw_cmd.element_offset = 0;
                             __editor->draw_cmd.element_count = collider->geometry.size / sizeof(vec2);
                         }

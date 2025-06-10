@@ -134,6 +134,7 @@ static void bvri_compare_point_triangle(bvr_collider_t* a, bvr_collider_t* b, st
         if(bvr_is_point_inside_triangle(point, triangle->a, triangle->b, triangle->c)){
             result->collide = BVR_OK;
             result->other = b;
+            
             return;
         }
     }
@@ -148,7 +149,7 @@ void bvr_compare_colliders(bvr_collider_t* a, bvr_collider_t* b, struct bvr_coll
     result->distance = 0.0f;
     result->other = NULL;
     BVR_IDENTITY_VEC3(result->direction);
-
+    
     if(a->shape == BVR_COLLIDER_EMPTY || b->shape == BVR_COLLIDER_EMPTY){
         return;
     }
@@ -171,6 +172,12 @@ void bvr_compare_colliders(bvr_collider_t* a, bvr_collider_t* b, struct bvr_coll
     }
 
     result->collide ^= (a->is_inverted || b->is_inverted);
+    if(result->collide){
+        vec3_sub(result->direction, a->body.direction, b->body.direction);
+        vec3_scale(result->direction, result->direction, a->body.acceleration + b->body.acceleration);
+
+        result->distance = vec3_len(result->direction) / 2.0f;
+    }
 }
 
 void bvr_destroy_collider(bvr_collider_t* collider){

@@ -25,7 +25,7 @@ int bvr_create_book(bvr_book_t* book){
 
     book->pipeline.rendering_pass.blending = BVR_BLEND_FUNC_ALPHA_ONE_MINUS;
     book->pipeline.rendering_pass.depth = BVR_DEPTH_TEST_ENABLE;
-    book->pipeline.rendering_pass.depth ^= BVR_DEPTH_FUNC_LESS;
+    book->pipeline.rendering_pass.depth |= BVR_DEPTH_FUNC_LESS;
     book->pipeline.rendering_pass.flags = 0;
 
     book->pipeline.swap_pass.blending = BVR_BLEND_DISABLE;
@@ -111,7 +111,6 @@ void bvr_update(bvr_book_t* book){
 
         // collision are disabled
         if(!BVR_HAS_FLAG(collider->body.mode, BVR_COLLISION_ENABLE)){
-            bvr_body_apply_motion(&collider->body, collider->transform);
             
             continue;
         }
@@ -129,14 +128,14 @@ void bvr_update(bvr_book_t* book){
                 bvr_compare_colliders(collider, other, &result);
 
                 if(result.collide == 1){
+                    bvr_invert_direction(&collider->body);
                     break;
                 }
             }
 
-            if(result.collide <= 0){
-                bvr_body_apply_motion(&collider->body, collider->transform);
-            }
         }
+
+        bvr_body_apply_motion(&collider->body, collider->transform);
     }
 }
 
