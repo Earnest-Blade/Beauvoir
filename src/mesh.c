@@ -622,7 +622,7 @@ void bvr_triangulate(bvr_mesh_buffer_t* src, bvr_mesh_buffer_t* dest, const uint
 
         for (size_t point = 0; point < vertex_count; point++)
         {
-            prev_vert = &polygone[(point - 1) % vertex_count];
+            prev_vert = &polygone[(point + vertex_count - 1) % vertex_count];
             curr_vert = &polygone[point];
             next_vert = &polygone[(point + 1) % vertex_count];
         
@@ -646,35 +646,38 @@ void bvr_triangulate(bvr_mesh_buffer_t* src, bvr_mesh_buffer_t* dest, const uint
                 continue;
             }
             else {
+                bool found_inside = false;
 
-                int found_inside = 0;
-
+                // check if there is another poly point inside the triangle we found 
                 for (size_t i = 0; i < vertex_count; i++)
                 {
-                    if(((*prev_vert)[0] == (*raw_poly)[0] && (*prev_vert)[1] == (*raw_poly)[1]) ||
-                        ((*curr_vert)[0] == (*raw_poly)[0] && (*curr_vert)[1] == (*raw_poly)[1]) ||
-                        ((*next_vert)[0] == (*raw_poly)[0] && (*next_vert)[1] == (*raw_poly)[1])){
+                    if( ((*prev_vert)[0] == raw_poly[i][0] && (*prev_vert)[1] == raw_poly[i][1]) ||
+                        ((*curr_vert)[0] == raw_poly[i][0] && (*curr_vert)[1] == raw_poly[i][1]) ||
+                        ((*next_vert)[0] == raw_poly[i][0] && (*next_vert)[1] == raw_poly[i][1])){
 
                         continue;
                     }
 
-                    if(bvr_is_point_inside_triangle(*raw_poly, *prev_vert, *curr_vert, *next_vert)){
-                        found_inside = 1;
+                    if(bvr_is_point_inside_triangle(raw_poly[i], *prev_vert, *curr_vert, *next_vert)){
+                        found_inside = true;
                         break;
                     }
                 }
 
+                // add the new founded triangle
                 if(!found_inside){
                     vec2_copy(triangles[dest->count].a, *prev_vert);
                     vec2_copy(triangles[dest->count].b, *curr_vert);
                     vec2_copy(triangles[dest->count].c, *next_vert);
-                    dest->count++;
 
-                    for (size_t i = 0; i < vertex_count; i++)
+                    // pop out the ear point from the list
+                    for (size_t y = point; y < vertex_count; y++)
                     {
-                        vec2_copy(polygone[i], polygone[i + 1]);
+                        vec2_copy(polygone[y], polygone[y + 1]);
                     }
+
                     vertex_count--;
+                    dest->count++;
                     
                     break;
                 }

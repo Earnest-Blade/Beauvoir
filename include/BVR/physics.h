@@ -36,18 +36,20 @@ typedef struct bvr_collider_s {
 
     struct bvr_buffer_s geometry;
     bvr_collider_shape_t shape;
+    bool is_enabled;
+    bool is_inverted;
 
     struct bvr_transform_s* transform;
 } bvr_collider_t;
 
 struct bvr_collision_result_s {
-    int collide;
+    int8 collide;
 
     float distance;
     vec3 direction;
 
     bvr_collider_t* other;
-};
+} __attribute__((packed));
 
 /*
     Add force to move a body
@@ -61,6 +63,9 @@ void bvr_body_apply_motion(struct bvr_body_s* body, struct bvr_transform_s* tran
 
 void bvr_create_collider(bvr_collider_t* collider, float* vertices, uint64 count);
 
+/*
+    Check how two colliders interact.
+*/
 void bvr_compare_colliders(bvr_collider_t* a, bvr_collider_t* b, struct bvr_collision_result_s* result);
 
 void bvr_destroy_collider(bvr_collider_t* collider);

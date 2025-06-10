@@ -538,28 +538,30 @@ void bvr_editor_draw_inspector(){
                 //nk_layout_row_dynamic(__editor->gui.context, 180, 1);
                 //if(nk_group_begin_titled(__editor->gui.context, BVR_FORMAT("collider%i", collider), "geometry", NK_WINDOW_BORDER | NK_WINDOW_TITLE)){
                 if(true){    
+
+                    nk_layout_row_dynamic(__editor->gui.context, 15, 3);
+                    nk_checkbox_label(__editor->gui.context, "is inverted", (nk_bool*)&collider->is_inverted);
+
+                    // bouding box typed collider gui
                     if(collider->shape == BVR_COLLIDER_BOX){
                         struct bvr_bounds_s* bounds = (struct bvr_bounds_s*)collider->geometry.data;
                     
                         {
-                            float vertices[24] = {
+                            float vertices[15] = {
                                 bounds->coords[0] + bounds->width * -0.5f, bounds->coords[1] + bounds->height * +0.5f, 0.1f,
                                 bounds->coords[0] + bounds->width * +0.5f, bounds->coords[1] + bounds->height * +0.5f, 0.1f,
-                                bounds->coords[0] + bounds->width * +0.5f, bounds->coords[1] + bounds->height * +0.5f, 0.1f,
-                                bounds->coords[0] + bounds->width * +0.5f, bounds->coords[1] + bounds->height * -0.5f, 0.1f,
                                 bounds->coords[0] + bounds->width * +0.5f, bounds->coords[1] + bounds->height * -0.5f, 0.1f,
                                 bounds->coords[0] + bounds->width * -0.5f, bounds->coords[1] + bounds->height * -0.5f, 0.1f,
                                 bounds->coords[0] + bounds->width * -0.5f, bounds->coords[1] + bounds->height * +0.5f, 0.1f,
-                                bounds->coords[0] + bounds->width * -0.5f, bounds->coords[1] + bounds->height * -0.5f, 0.1f,
                             };
                         
                             bvri_bind_editor_buffers(__editor->device.array_buffer, __editor->device.vertex_buffer);
-                            bvri_set_editor_buffers(vertices, 8, 3);
+                            bvri_set_editor_buffers(vertices, 5, 3);
                             bvri_bind_editor_buffers(0, 0);
                         
                             __editor->draw_cmd.drawmode = BVR_DRAWMODE_LINE_STRIPE;
                             __editor->draw_cmd.element_offset = 0;
-                            __editor->draw_cmd.element_count = 8;
+                            __editor->draw_cmd.element_count = 5;
                         }
                         
                         nk_layout_row_dynamic(__editor->gui.context, 15, 3);
@@ -572,18 +574,20 @@ void bvr_editor_draw_inspector(){
                         nk_label_wrap(__editor->gui.context, BVR_FORMAT("width %i ", bounds->width));
                         nk_label_wrap(__editor->gui.context, BVR_FORMAT("height %i ", bounds->height));
                     }
+
+                    // triangle typed collider gui
                     else if (collider->shape == BVR_COLLIDER_TRIARRAY)
                     {
                         vec2* tri = (vec2*)collider->geometry.data;
 
                         {
                             bvri_bind_editor_buffers(__editor->device.array_buffer, __editor->device.vertex_buffer);
-                            bvri_set_editor_buffers(collider->geometry.data, collider->geometry.size / sizeof(float), 2);
+                            bvri_set_editor_buffers(collider->geometry.data, collider->geometry.size / sizeof(vec2), 2);
                             bvri_bind_editor_buffers(0, 0);
                         
                             __editor->draw_cmd.drawmode = BVR_DRAWMODE_TRIANGLES;
                             __editor->draw_cmd.element_offset = 0;
-                            __editor->draw_cmd.element_count = collider->geometry.size / sizeof(float);
+                            __editor->draw_cmd.element_count = collider->geometry.size / sizeof(vec2);
                         }
 
                         nk_layout_row_dynamic(__editor->gui.context, 15, 1);
