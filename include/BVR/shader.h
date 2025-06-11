@@ -3,6 +3,8 @@
 #include <BVR/utils.h>
 #include <BVR/buffer.h>
 
+#include <BVR/assets.h>
+
 #include <stdint.h>
 
 #define BVR_UNIFORM_CAMERA_NAME "bvr_camera"
@@ -48,6 +50,7 @@ typedef struct bvr_shader_s {
     uint8 uniform_count, block_count;
     
     int flags;
+    struct bvr_asset_reference_s asset;
 } bvr_shader_t;
 
 
@@ -55,6 +58,14 @@ int bvr_create_shaderf(bvr_shader_t* shader, FILE* file, const int flags);
 static inline int bvr_create_shader(bvr_shader_t* shader, const char* path, const int flags){
     BVR_FILE_EXISTS(path);
 
+    // link to an asset
+    bvr_uuid_t* id = bvr_register_asset(path, BVR_OPEN_READ);
+    if(id){
+        shader->asset.origin = BVR_ASSET_ORIGIN_PATH;
+        bvr_copy_uuid(*id, shader->asset.pointer.asset_id);
+    }
+
+    // open file stream
     FILE* file = fopen(path, "rb");
     int a = bvr_create_shaderf(shader, file, flags);
     fclose(file);

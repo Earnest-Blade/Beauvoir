@@ -142,6 +142,10 @@ void bvr_screen_to_world_coords(bvr_book_t* book, vec2 screen, vec3 world);
 */
 struct bvr_actor_s* bvr_link_actor_to_page(bvr_page_t* page, struct bvr_actor_s* actor);
 
+struct bvr_actor_s* bvr_find_actor(bvr_book_t* book, const char* name);
+
+struct bvr_actor_s* bvr_finr_actor_from_uuid(bvr_book_t* book, bvr_uuid_t uuid);
+
 /*
     Register a new non-actor collider inside page's pool.
     Return NULL if cannot register collider.

@@ -1,3 +1,4 @@
+#include <BVR/assets.book.h>
 #include <BVR/assets.h>
 
 #include <BVR/editor/flags.h>
@@ -7,6 +8,10 @@
 #include <string.h>
 #include <malloc.h>
 #include <unistd.h>
+
+#define BVR_FILE_SIG "BVRB"
+#define BVR_PAGE_SIG "PAJ"
+#define BVR_BIN_SIG  "BIN"
 
 struct bvri_chunk_data_s {
     uint32 length;
@@ -21,9 +26,10 @@ struct bvri_header_data_s {
 
 #pragma region asset db
 
-bvr_asset_t* bvr_register_asset(bvr_book_t* book, const char* path, char open_mode){
-    BVR_ASSERT(book);
+bvr_uuid_t* bvr_register_asset(const char* path, char open_mode){
     BVR_ASSERT(path);
+
+    bvr_book_t* book = bvr_get_book_instance();
 
     // if the file does not exists
     if(access(path, F_OK) != 0){
@@ -31,7 +37,18 @@ bvr_asset_t* bvr_register_asset(bvr_book_t* book, const char* path, char open_mo
         return NULL;
     }   
 
+    if(!book->asset_stream.data){
+        BVR_PRINT("asset stream is not created!");
+        return NULL;
+    }
+
     bvr_asset_t asset;
+    bvr_uuid_t* uuid = bvr_find_asset(path, NULL);
+    
+    if(uuid){
+        BVR_PRINT("asset already created!");
+        return uuid;
+    }
 
     asset.open_mode = open_mode;
 
@@ -39,19 +56,24 @@ bvr_asset_t* bvr_register_asset(bvr_book_t* book, const char* path, char open_mo
     bvr_create_string(&asset.path, path);
 
     bvr_memstream_seek(&book->asset_stream, 0, SEEK_NEXT);
+    bvr_uuid_t* id_ptr = (bvr_uuid_t*)book->asset_stream.cursor;
+
     bvr_memstream_write(&book->asset_stream, asset.id, sizeof(bvr_uuid_t));
     bvr_memstream_write(&book->asset_stream, &asset.path.length, sizeof(unsigned short));
     bvr_memstream_write(&book->asset_stream, asset.path.string, asset.path.length);
     bvr_memstream_write(&book->asset_stream, &asset.open_mode, sizeof(char));
 
     bvr_destroy_string(&asset.path);
+    return id_ptr;
 }
 
 // TODO: improve with an hash map
-int bvr_find_asset(bvr_book_t* book, const char* path, bvr_asset_t* asset){
-    BVR_ASSERT(book);
+bvr_uuid_t* bvr_find_asset(const char* path, bvr_asset_t* asset){
     BVR_ASSERT(path);
 
+    bvr_book_t* book = bvr_get_book_instance();
+
+    bvr_uuid_t* uuid = NULL;
     uint16 string_length;
     const char* prev_cursor = book->asset_stream.cursor;
 
@@ -64,13 +86,18 @@ int bvr_find_asset(bvr_book_t* book, const char* path, bvr_asset_t* asset){
         string_length = *((uint16*)book->asset_stream.cursor);
 
         if(!strncmp(book->asset_stream.cursor + sizeof(unsigned short), path, string_length)){
+            uuid = (bvr_uuid_t*)book->asset_stream.cursor;
+            if(asset == NULL){
+                return uuid;
+            }
+
             memcpy(&asset->id, book->asset_stream.cursor - sizeof(bvr_uuid_t), sizeof(bvr_uuid_t));
             asset->path.length = string_length;
             asset->path.string = book->asset_stream.cursor + sizeof(unsigned short);
             
             book->asset_stream.cursor += string_length;
             asset->open_mode = *book->asset_stream.cursor;
-            return BVR_OK;
+            return uuid;
         }
 
         book->asset_stream.cursor += string_length;
@@ -79,7 +106,7 @@ int bvr_find_asset(bvr_book_t* book, const char* path, bvr_asset_t* asset){
         bvr_memstream_seek(&book->asset_stream, sizeof(uint16) + sizeof(char), SEEK_CUR);
     }
     
-    return BVR_FAILED;
+    return uuid;
 }
 
 #pragma endregion
@@ -122,11 +149,8 @@ void bvr_write_book_dataf(FILE* file, bvr_book_t* book){
     BVR_ASSERT(book);
 
     struct bvri_header_data_s header;
-    header.sig[0] = 'B';  // 0x005FFD44
-    header.sig[1] = 'V';  
-    header.sig[2] = 'R';  
-    header.sig[3] = 'B';
     header.size = 0;
+    strncpy(header.sig, BVR_FILE_SIG, 4);
 
     bvri_clear_file(file);
 
@@ -137,9 +161,11 @@ void bvr_write_book_dataf(FILE* file, bvr_book_t* book){
     // write asset informaions
     {
         uint32 stream_size = book->asset_stream.next - (char*)book->asset_stream.data;
+        uint16 asset_flag = BVR_EDITOR_ASSETS;
         bin_offset = 0;
 
         fwrite(&stream_size, sizeof(uint32), 1, file);
+        fwrite(&asset_flag, sizeof(uint16), 1, file);
         fwrite(&bin_offset, sizeof(uint32), 1, file);
         fwrite(book->asset_stream.data, stream_size, 1, file);
     }
@@ -153,18 +179,6 @@ void bvr_write_book_dataf(FILE* file, bvr_book_t* book){
             bvr_transform_t transform;
         } camera;
 
-        struct {
-            uint32 size;
-            uint32 offset;
-
-            bvr_string_t name;
-            uint16 type;
-            bvr_uuid_t id;
-            int flags;
-
-            bvr_transform_t transform;
-        } actor;
-
         camera.near = page->camera.near;
         camera.far = page->camera.far;
         camera.scale = page->camera.field_of_view.scale;
@@ -172,11 +186,101 @@ void bvr_write_book_dataf(FILE* file, bvr_book_t* book){
 
         bvri_write_string(file, &page->name);
         bvri_write_chunk_data(file, sizeof(camera), BVR_EDITOR_CAMERA, &camera);
+
+        // here, write other scene infos
     }
 
-    // binary chunk
+    // actors chunk
     {
- 
+        const uint32 section_start = ftell(file);
+
+        uint32 size_offset;
+        uint32 prev_offset; 
+        uint32 length_offset;
+
+        uint32 section_size = 0;
+        uint16 actor_flag = BVR_EDITOR_ACTOR;
+
+        fwrite(&section_size, sizeof(uint32), 1, file);
+        fwrite(&actor_flag, sizeof(uint16), 1, file);
+
+        struct {
+            uint32 size;
+            uint32 offset;
+
+            bvr_string_t name;
+            bvr_actor_type_t type;
+
+            bvr_uuid_t id;
+            uint8 active;
+            int flags;
+
+            bvr_transform_t transform;
+        } actor_data;
+
+        struct bvr_actor_s* actor;
+        BVR_POOL_FOR_EACH(actor, book->page.actors){
+            if(actor == NULL){
+                break;
+            }
+
+            actor_data.size = 0;
+            actor_data.offset = 0;
+            actor_data.type = actor->type;
+            actor_data.flags = actor->flags;
+            actor_data.active = actor->active;
+            
+            memcpy(&actor_data.transform, &actor->transform, sizeof(bvr_transform_t));
+            memcpy(&actor_data.id, &actor->id, sizeof(bvr_uuid_t));
+            bvr_string_create_and_copy(&actor_data.name, &actor->name);
+
+            size_offset = ftell(file);
+            fwrite(&actor_data.size, sizeof(uint32), 1, file);
+            fwrite(&actor_data.offset, sizeof(uint32), 1, file);
+            bvri_write_string(file, &actor_data.name);
+            fwrite(&actor_data.type, sizeof(bvr_actor_type_t), 1, file);
+            fwrite(&actor_data.id, sizeof(bvr_uuid_t), 1, file);
+            fwrite(&actor_data.active, sizeof(uint8), 1, file);
+            fwrite(&actor_data.flags, sizeof(int), 1, file);
+            fwrite(&actor_data.transform, sizeof(bvr_transform_t), 1, file);
+
+            switch (actor->type)
+            {
+            case BVR_EMPTY_ACTOR:
+                break;
+            case BVR_BITMAP_ACTOR:
+                {
+                }
+                break;
+            case BVR_STATIC_ACTOR:
+                {
+                    
+                }
+            case BVR_DYNAMIC_ACTOR:
+                {
+                    
+                }
+                break;
+            default:
+                break;
+            }
+
+            prev_offset = ftell(file);
+
+            // calc actor data section size
+            actor_data.size = prev_offset - size_offset;
+            section_size += actor_data.size;
+            
+            // update size informations
+            fseek(file, size_offset, SEEK_SET);
+            fwrite(&actor_data.size, sizeof(uint32), 1, file);
+            fseek(file, section_start, SEEK_SET);
+            fwrite(&section_size, sizeof(uint32), 1, file);
+            fseek(file, prev_offset, SEEK_SET);
+            
+            // free elements
+            bvr_destroy_string(&actor_data.name);
+        }
     }
 
     fflush(file);
@@ -232,7 +336,10 @@ void bvr_open_book_dataf(FILE* file, bvr_book_t* book){
     // read asset informations
     {
         uint32 section_size = bvr_fread32_le(file);
+        uint16 asset_flag = bvr_fread16_le(file);
         uint32 asset_offset = bvr_fread32_le(file);
+
+        BVR_ASSERT(asset_flag == BVR_EDITOR_ASSETS);
 
         // detroy current asset stream
         if(!book->asset_stream.data || book->asset_stream.size < section_size){
@@ -259,6 +366,7 @@ void bvr_open_book_dataf(FILE* file, bvr_book_t* book){
         if(bvr_fread32_le(file)){
             BVR_ASSERT(bvr_freadu16_le(file) == BVR_EDITOR_CAMERA);
 
+            // get camera datas
             float near = bvr_freadf(file);
             float far = bvr_freadf(file);
             float scale = bvr_freadf(file);
@@ -269,6 +377,59 @@ void bvr_open_book_dataf(FILE* file, bvr_book_t* book){
 
             // copy transform
             fread(&page->camera.transform, sizeof(bvr_transform_t), 1, file);            
+        }
+    }
+
+    // actor chunk
+    {
+        uint32 readed_bytes = 0;
+        uint32 section_start = ftell(file) + 6;
+        uint32 section_size = bvr_fread32_le(file);
+        uint16 actor_flag = bvr_fread16_le(file);
+
+        struct {
+            uint32 size;
+            uint32 offset;
+
+            bvr_string_t name;
+            bvr_actor_type_t type;
+
+            bvr_uuid_t id;
+            uint8 active;
+            int flags;
+
+            bvr_transform_t transform;
+        } actor_data;
+
+        sizeof(struct bvr_asset_reference_s);
+
+        BVR_ASSERT(actor_flag == BVR_EDITOR_ACTOR);
+
+        if(section_size && book->page.actors.count){
+            // TODO: clear actors
+        }
+
+        // while this section isn't finished
+        while (readed_bytes < section_size)
+        {
+            actor_data.size = bvr_fread32_le(file);
+            actor_data.offset = bvr_fread32_le(file);
+
+            bvri_read_string(file, &actor_data.name);
+
+            fread(&actor_data.type, sizeof(bvr_actor_type_t), 1, file);
+            fread(&actor_data.id, sizeof(bvr_uuid_t), 1, file);
+
+            actor_data.flags = (int)bvr_fread32_le(file);
+
+            fread(&actor_data.transform, sizeof(bvr_transform_t), 1, file);
+
+            bvr_destroy_string(&actor_data.name);
+
+            // make sure to go to the sector actor
+            // might delete later
+            readed_bytes += actor_data.size;
+            fseek(file, section_start + readed_bytes, SEEK_SET);
         }
     }
 

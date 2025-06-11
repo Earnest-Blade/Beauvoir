@@ -48,9 +48,15 @@ typedef char bvr_uuid_t[37] __attribute__ ((aligned(8), packed));
 int bvr_sizeof(const int type);
 
 /*
+    Return the name of a type as a string.
+*/
+void bvr_nameof(const int type, char* name);
+
+/*
     Create a new uuid
 */
 void bvr_create_uuid(bvr_uuid_t uuid);
+void bvr_copy_uuid(bvr_uuid_t src, bvr_uuid_t dest);
 
 /*
     Check if two uuid are equals

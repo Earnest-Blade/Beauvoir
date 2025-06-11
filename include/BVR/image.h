@@ -2,6 +2,7 @@
 
 #include <BVR/buffer.h>
 #include <BVR/utils.h>
+#include <BVR/assets.h>
 
 #include <stdint.h>
 #include <stdio.h>
@@ -123,6 +124,7 @@ typedef struct bvr_image_s {
     uint8* pixels;
 
     struct bvr_buffer_s layers;
+    struct bvr_asset_reference_s asset;
 } bvr_image_t;
 
 /*
@@ -161,6 +163,13 @@ typedef struct bvr_layered_texture_s {
 int bvr_create_imagef(bvr_image_t* image, FILE* file);
 BVR_H_FUNC int bvr_create_image(bvr_image_t* image, const char* path){
     BVR_FILE_EXISTS(path);
+    
+    bvr_uuid_t* id = bvr_register_asset(path, BVR_OPEN_READ);
+    if(id){
+        image->asset.origin = BVR_ASSET_ORIGIN_PATH;
+        bvr_copy_uuid(*id, image->asset.pointer.asset_id);
+    }
+
     FILE* file = fopen(path, "rb");
     int success = bvr_create_imagef(image, file);
     fclose(file);
@@ -187,6 +196,13 @@ int bvr_create_texture_from_image(bvr_texture_t* texture, bvr_image_t* image, in
 int bvr_create_texturef(bvr_texture_t* texture, FILE* file, int filter, int wrap);
 BVR_H_FUNC int bvr_create_texture(bvr_texture_t* texture, const char* path, int filter, int wrap){
     BVR_FILE_EXISTS(path);
+
+    bvr_uuid_t* id = bvr_register_asset(path, BVR_OPEN_READ);
+    if(id){
+        texture->image.asset.origin = BVR_ASSET_ORIGIN_PATH;
+        bvr_copy_uuid(*id, texture->image.asset.pointer.asset_id);
+    }
+
     FILE* file = fopen(path, "rb");
     int success = bvr_create_texturef(texture, file, filter, wrap);
     fclose(file);
@@ -208,6 +224,13 @@ void bvr_destroy_texture(bvr_texture_t* texture);
 int bvr_create_texture_atlasf(bvr_texture_atlas_t* atlas, FILE* file, uint32 tile_width, uint32 tile_height, int filter, int wrap);
 BVR_H_FUNC int bvr_create_texture_atlas(bvr_texture_atlas_t* atlas, const char* path, uint32 tile_width, uint32 tile_height, int filter, int wrap){
     BVR_FILE_EXISTS(path);
+    
+    bvr_uuid_t* id = bvr_register_asset(path, BVR_OPEN_READ);
+    if(id){
+        atlas->image.asset.origin = BVR_ASSET_ORIGIN_PATH;
+        bvr_copy_uuid(*id, atlas->image.asset.pointer.asset_id);
+    }
+
     FILE* file = fopen(path, "rb");
     int success = bvr_create_texture_atlasf(atlas, file, tile_width, tile_height, filter, wrap);
     fclose(file);
@@ -222,6 +245,13 @@ void bvr_destroy_texture_atlas(bvr_texture_atlas_t* atlas);
 int bvr_create_layered_texturef(bvr_layered_texture_t* texture, FILE* file, int filter, int wrap);
 BVR_H_FUNC int bvr_create_layered_texture(bvr_layered_texture_t* texture, const char* path, int filter, int wrap){
     BVR_FILE_EXISTS(path);
+    
+    bvr_uuid_t* id = bvr_register_asset(path, BVR_OPEN_READ);
+    if(id){
+        texture->image.asset.origin = BVR_ASSET_ORIGIN_PATH;
+        bvr_copy_uuid(*id, texture->image.asset.pointer.asset_id);
+    }
+
     FILE* file = fopen(path, "rb");
     int success = bvr_create_layered_texturef(texture, file, filter, wrap);
     fclose(file);

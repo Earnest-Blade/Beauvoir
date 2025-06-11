@@ -5,7 +5,9 @@
 #include <BVR/utils.h>
 #include <BVR/window.h>
 #include <BVR/actors.h>
+
 #include <BVR/assets.h>
+#include <BVR/assets.book.h>
 
 #include <GLAD/glad.h>
 
@@ -37,12 +39,13 @@ static void bvri_draw_editor_vec3(const char* text, vec3 value){
 }
 
 static void bvri_draw_editor_transform(bvr_transform_t* transform){
-    nk_layout_row_dynamic(__editor->gui.context, 180, 1);
 
-    nk_group_begin_titled(__editor->gui.context, BVR_MACRO_STR(__LINE__), "transform", 
-        NK_WINDOW_BORDER | NK_WINDOW_NO_SCROLLBAR | NK_WINDOW_TITLE);
+    //if(nk_group_begin(__editor->gui.context, "transform", NK_WINDOW_BORDER | NK_WINDOW_NO_SCROLLBAR | NK_WINDOW_TITLE));
+    if(true)
     {
         nk_layout_row_dynamic(__editor->gui.context, 15, 1);
+        nk_label(__editor->gui.context, "TRANSFORM", NK_TEXT_ALIGN_CENTERED);
+     
         nk_property_float(__editor->gui.context, "x", -100000.0f, &transform->position[0], 100000.0f, 0.1f, 0.1f);
         nk_property_float(__editor->gui.context, "y", -100000.0f, &transform->position[1], 100000.0f, 0.1f, 0.1f);
         nk_property_float(__editor->gui.context, "z", -100000.0f, &transform->position[2], 100000.0f, 0.1f, 0.1f);
@@ -55,7 +58,7 @@ static void bvri_draw_editor_transform(bvr_transform_t* transform){
         nk_property_float(__editor->gui.context, "size", 0.0f, &scale, 100000.0f, 0.1f, 0.1f);
         BVR_SCALE_VEC3(transform->scale, scale);
 
-        nk_group_end(__editor->gui.context);
+        //nk_group_end(__editor->gui.context);
     }
 }
 
@@ -67,7 +70,45 @@ static void bvri_draw_editor_body(struct bvr_body_s* body){
 }
 
 static void bvri_draw_editor_mesh(bvr_mesh_t* mesh){
+    if(!mesh){
+        return;
+    }
 
+    nk_layout_row_dynamic(__editor->gui.context, 15, 1);
+
+    nk_label(__editor->gui.context, "Mesh", NK_TEXT_ALIGN_CENTERED);
+
+}
+
+static void bvri_draw_editor_image(bvr_image_t* image){
+    nk_layout_row_dynamic(__editor->gui.context, 15, 1);
+
+    nk_label(__editor->gui.context, "Image", NK_TEXT_ALIGN_CENTERED);
+    nk_label_wrap(__editor->gui.context, image->asset.pointer.asset_id);
+}
+
+static void bvri_draw_editor_shader(bvr_shader_t* shader){
+    if(!shader){
+        return;
+    }
+
+    nk_layout_row_dynamic(__editor->gui.context, 15, 1);
+
+    nk_label(__editor->gui.context, "Shader", NK_TEXT_ALIGN_CENTERED);
+    nk_label(__editor->gui.context, shader->asset.pointer.asset_id, NK_TEXT_ALIGN_LEFT);
+    
+    nk_layout_row_dynamic(__editor->gui.context, 15, 2);
+    
+    char type_name[16];
+    for (size_t i = 0; i < shader->uniform_count; i++)
+    {
+        bvr_nameof(shader->uniforms[i].type, type_name);
+
+        nk_label_wrap(__editor->gui.context, BVR_FORMAT("%s", shader->uniforms[i].name.string));  
+        
+        nk_label_wrap(__editor->gui.context, BVR_FORMAT("%s", type_name));     
+    }
+    
 }
 
 static void bvri_draw_hierarchy_button(const char* name, uint64 type, void* object){
@@ -280,7 +321,7 @@ void bvr_editor_draw_page_hierarchy(){
 
 static void bvri_editor_import_asset(bvr_string_t* string){
     if(string && string->string){
-        if(bvr_register_asset(__editor->book, string->string, BVR_OPEN_READ)){
+        if(bvr_register_asset(string->string, BVR_OPEN_READ)){
             BVR_PRINTF("sucessfully imported %s", string->string);
         }
         else {
@@ -483,7 +524,7 @@ void bvr_editor_draw_inspector(){
 
                 bvri_draw_editor_transform(&actor->transform);
 
-                nk_layout_row_dynamic(__editor->gui.context, 120, 1);
+                nk_layout_row_dynamic(__editor->gui.context, 250, 1);
                 if(nk_group_begin(__editor->gui.context, BVR_MACRO_STR(__LINE__), NK_WINDOW_BORDER|NK_WINDOW_NO_SCROLLBAR)){
                     nk_layout_row_dynamic(__editor->gui.context, 15, 1);
 
@@ -496,6 +537,10 @@ void bvr_editor_draw_inspector(){
                         {
                             nk_label(__editor->gui.context, "LAYER ACTOR", NK_TEXT_ALIGN_CENTERED);
                             bvr_layer_t* layers = (bvr_layer_t*)(((bvr_layer_actor_t*)actor)->texture.image.layers.data);
+
+                            nk_layout_row_dynamic(__editor->gui.context, 15, 1);
+                            bvri_draw_editor_shader(&((bvr_layer_actor_t*)actor)->shader);
+                            bvri_draw_editor_image(&((bvr_layer_actor_t*)actor)->texture.image);
 
                             for (uint64 layer = 0; layer < BVR_BUFFER_COUNT(((bvr_layer_actor_t*)actor)->texture.image.layers); layer++)
                             {
@@ -523,6 +568,8 @@ void bvr_editor_draw_inspector(){
                         {
                             nk_label(__editor->gui.context, "DYNAMIC ACTOR", NK_TEXT_ALIGN_CENTERED);
                             bvri_draw_editor_mesh(&((bvr_dynamic_actor_t*)actor)->mesh);
+                            bvri_draw_editor_shader(&((bvr_dynamic_actor_t*)actor)->shader);
+
                             bvri_draw_editor_body(&((bvr_dynamic_actor_t*)actor)->collider.body);
 
                             nk_layout_row_dynamic(__editor->gui.context, 15, 1);

@@ -338,6 +338,15 @@ bvr_collider_t* bvr_link_collider_to_page(bvr_page_t* page, bvr_collider_t* coll
     return NULL;
 }
 
+struct bvr_actor_s* bvr_find_actor(bvr_book_t* book, const char* name){
+    BVR_ASSERT(book);
+    BVR_ASSERT(name);
+}
+
+struct bvr_actor_s* bvr_finr_actor_from_uuid(bvr_book_t* book, bvr_uuid_t uuid){
+
+}
+
 void bvr_destroy_page(bvr_page_t* page){
     BVR_ASSERT(page);
 

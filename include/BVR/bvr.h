@@ -7,6 +7,7 @@
 
 #include <BVR/scene.h>
 #include <BVR/assets.h>
+#include <BVR/assets.book.h>
 #include <BVR/gui.h>
 
 #ifdef BVR_INCLUDE_NUKLEAR

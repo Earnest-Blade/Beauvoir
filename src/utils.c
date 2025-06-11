@@ -29,6 +29,69 @@ int bvr_sizeof(const int type){
     }
 }
 
+void bvr_nameof(const int type, char* name){
+    switch (type)
+    {
+        case BVR_INT8: 
+            strcpy(name, "INT8");
+            return;
+
+        case BVR_UNSIGNED_INT8:
+            strcpy(name, "UNSIGNED_INT8");
+            return;
+
+        case BVR_INT16: 
+            strcpy(name, "INT16");
+            return;
+
+        case BVR_UNSIGNED_INT16:
+            strcpy(name, "UNSIGNED_INT16");
+            return;
+ 
+        case BVR_FLOAT:
+            strcpy(name, "FLOAT");
+            return;
+ 
+        case BVR_INT32:
+            strcpy(name, "INT32");
+            return;
+
+        case BVR_UNSIGNED_INT32: 
+            strcpy(name, "UNSIGNED_INT32");
+            return;
+
+        case BVR_VEC2: 
+            strcpy(name, "VEC2");
+            return;
+
+        case BVR_VEC3: 
+            strcpy(name, "VEC3");
+            return;
+
+        case BVR_VEC4: 
+            strcpy(name, "VEC4");
+            return;
+
+        case BVR_MAT3: 
+            strcpy(name, "MAT3");
+            return;
+
+        case BVR_MAT4: 
+            strcpy(name, "MAT4");
+            return;
+        case BVR_TEXTURE_2D:
+            strcpy(name, "TEXTURE_2D");
+            return;
+        
+        case BVR_TEXTURE_2D_ARRAY:
+            strcpy(name, "TEXTURE_2D_ARRAY");
+            return;
+
+        default:
+            return;
+    }
+}
+
 void bvr_create_uuid(bvr_uuid_t uuid){
     const char hex_digits[] = "0123456789abcdefABCDEF";
 
@@ -42,6 +105,10 @@ void bvr_create_uuid(bvr_uuid_t uuid){
     (uuid)[18] = '-';
     (uuid)[23] = '-';
     (uuid)[36] = '\0';
+}
+
+void bvr_copy_uuid(bvr_uuid_t src, bvr_uuid_t dest){
+    memcpy(dest, src, sizeof(bvr_uuid_t));
 }
 
 int bvr_uuid_equals(bvr_uuid_t const a, bvr_uuid_t const b){
