@@ -144,7 +144,7 @@ struct bvr_actor_s* bvr_link_actor_to_page(bvr_page_t* page, struct bvr_actor_s*
 
 struct bvr_actor_s* bvr_find_actor(bvr_book_t* book, const char* name);
 
-struct bvr_actor_s* bvr_finr_actor_from_uuid(bvr_book_t* book, bvr_uuid_t uuid);
+struct bvr_actor_s* bvr_find_actor_uuid(bvr_book_t* book, bvr_uuid_t uuid);
 
 /*
     Register a new non-actor collider inside page's pool.

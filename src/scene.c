@@ -338,26 +338,54 @@ bvr_collider_t* bvr_link_collider_to_page(bvr_page_t* page, bvr_collider_t* coll
     return NULL;
 }
 
+
 struct bvr_actor_s* bvr_find_actor(bvr_book_t* book, const char* name){
     BVR_ASSERT(book);
     BVR_ASSERT(name);
+
+    struct bvr_actor_s* actor;
+    BVR_POOL_FOR_EACH(actor, book->page.actors){
+        if(actor == NULL){
+            break;
+        }
+
+        if(strncmp(actor->name.string, name, actor->name.length) == 0){
+            return actor;
+        }
+    }
+
+    return NULL;
 }
 
-struct bvr_actor_s* bvr_finr_actor_from_uuid(bvr_book_t* book, bvr_uuid_t uuid){
+struct bvr_actor_s* bvr_find_actor_uuid(bvr_book_t* book, bvr_uuid_t uuid){
+    BVR_ASSERT(book);
+    BVR_ASSERT(uuid);
 
+    struct bvr_actor_s* actor;
+    BVR_POOL_FOR_EACH(actor, book->page.actors){
+        if(actor == NULL){
+            break;
+        }
+
+        if(bvr_uuid_equals(actor->id, uuid)){
+            return actor;
+        }
+    }
+
+    return NULL;
 }
 
 void bvr_destroy_page(bvr_page_t* page){
     BVR_ASSERT(page);
 
-    struct bvr_actor_s* actor;
+    struct bvr_actor_s* actor = NULL;
     BVR_POOL_FOR_EACH(actor, page->actors){
         if(!actor) break;
 
         bvr_destroy_actor(actor);
     }
 
-    bvr_collider_t* collider;
+    bvr_collider_t* collider = NULL;
     BVR_POOL_FOR_EACH(collider, page->colliders){
         if(!collider) break;
 

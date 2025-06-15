@@ -241,6 +241,22 @@ void bvr_editor_draw_page_hierarchy(){
                         
                     }
 
+                    if(nk_menu_item_label(__editor->gui.context, "save garbage", NK_TEXT_ALIGN_LEFT)){
+                        if(__editor->book->garbage_stream.data){
+                            FILE* file = fopen("garbagedump.bin", "wb");
+                            fwrite(__editor->book->garbage_stream.data, sizeof(char), __editor->book->garbage_stream.size, file);
+                            fclose(file);
+                        }
+                    }
+
+                    if(nk_menu_item_label(__editor->gui.context, "save assets", NK_TEXT_ALIGN_LEFT)){
+                        if(__editor->book->asset_stream.data){
+                            FILE* file = fopen("assetsdump.bin", "wb");
+                            fwrite(__editor->book->asset_stream.data, sizeof(char), __editor->book->asset_stream.size, file);
+                            fclose(file);
+                        }
+                    }
+
                     nk_menu_end(__editor->gui.context);
                 }
             }
@@ -278,7 +294,7 @@ void bvr_editor_draw_page_hierarchy(){
         {
             nk_layout_row_dynamic(__editor->gui.context, 15, 1);
             
-            struct bvr_actor_s* actor;
+            struct bvr_actor_s* actor = NULL;
             BVR_POOL_FOR_EACH(actor, __editor->book->page.actors){
                 if(!actor){
                     break;
@@ -295,7 +311,7 @@ void bvr_editor_draw_page_hierarchy(){
         {
             nk_layout_row_dynamic(__editor->gui.context, 15, 1);
             
-            struct bvr_collider_s* collider;
+            struct bvr_collider_s* collider = NULL;
             BVR_POOL_FOR_EACH(collider, __editor->book->page.colliders){
                 if(!collider){
                     break;

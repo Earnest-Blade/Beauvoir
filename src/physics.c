@@ -184,4 +184,7 @@ void bvr_destroy_collider(bvr_collider_t* collider){
     BVR_ASSERT(collider);
     
     free(collider->geometry.data);
+    collider->geometry.data = NULL;
+    collider->geometry.size = 0;
+    collider->geometry.elemsize = 0;
 }

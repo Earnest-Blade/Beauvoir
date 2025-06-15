@@ -39,9 +39,11 @@ typedef struct bvr_asset_s {
 bvr_uuid_t* bvr_register_asset(const char* path, char open_mode);
 
 /*
-    Get a new asset from the list
+    Retreive asset's informations from the list
 */
 bvr_uuid_t* bvr_find_asset(const char* path, bvr_asset_t* asset);
+
+int bvr_find_asset_uuid(bvr_uuid_t uuid, bvr_asset_t* asset);
 
 /*
     Open a file stream to a game asset

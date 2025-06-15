@@ -129,7 +129,7 @@ static void bvri_create_dynamic_actor(bvr_dynamic_actor_t* actor, int flags){
 
             // get raw data
             glBindBuffer(GL_ARRAY_BUFFER, actor->mesh.vertex_buffer);
-             vmap = glMapBufferRange(GL_ARRAY_BUFFER, 0, actor->mesh.vertex_count, GL_MAP_READ_BIT);
+            vmap = glMapBufferRange(GL_ARRAY_BUFFER, 0, actor->mesh.vertex_count, GL_MAP_READ_BIT);
             BVR_ASSERT(vmap);
 
             bvr_mesh_buffer_t sbuf, tbuf;
@@ -309,6 +309,13 @@ void bvr_destroy_actor(struct bvr_actor_s* actor){
             bvr_destroy_texture(&((bvr_bitmap_layer_t*)actor)->bitmap);
         }
         break;
+    case BVR_LAYER_ACTOR:
+        {
+            bvr_destroy_mesh(&((bvr_layer_actor_t*)actor)->mesh);
+            bvr_destroy_shader(&((bvr_layer_actor_t*)actor)->shader);
+            bvr_destroy_layered_texture(&((bvr_layer_actor_t*)actor)->texture);
+        }
+        break;
     case BVR_STATIC_ACTOR:
         {
             bvr_destroy_mesh(&((bvr_static_actor_t*)actor)->mesh);
@@ -324,6 +331,14 @@ void bvr_destroy_actor(struct bvr_actor_s* actor){
     default:
         break;
     }
+
+    actor->type = BVR_NULL_ACTOR;
+    
+    BVR_IDENTITY_VEC3(actor->transform.position);
+    BVR_IDENTITY_VEC3(actor->transform.rotation);
+    BVR_SCALE_VEC3(actor->transform.scale, 1.0f);
+
+    BVR_IDENTITY_MAT4(actor->transform.matrix);
 }
 
 static void bvri_draw_layer_actor(bvr_layer_actor_t* actor){
@@ -345,7 +360,6 @@ static void bvri_draw_layer_actor(bvr_layer_actor_t* actor){
 
         bvr_shader_use_uniform(&actor->shader.uniforms[0], &actor->object.transform.matrix[0][0]);
 
-        //bvr_mesh_draw(&actor->mesh, BVR_DRAWMODE_TRIANGLES);
         cmd.order = actor->object.order_in_layer + layer * 2;
         cmd.array_buffer = actor->mesh.array_buffer;
         cmd.vertex_buffer = actor->mesh.vertex_buffer;
@@ -372,7 +386,7 @@ static void bvri_draw_layer_actor(bvr_layer_actor_t* actor){
 
 void bvr_draw_actor(struct bvr_actor_s* actor, int drawmode){
     // skip actor if 
-    if(!actor->active ){
+    if(!actor->active || bvr_is_actor_null(actor)){
         return;
     }
 

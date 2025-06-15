@@ -4,7 +4,7 @@
 
 #include <stdio.h>
 
-#define BVR_BUFFER_COUNT(buffer)(buffer.data != NULL ? ((unsigned long long)(buffer.size / buffer.elemsize)) : 0)
+#define BVR_BUFFER_COUNT(buffer) ((buffer.data != NULL) * ((unsigned long long)(buffer.size / buffer.elemsize)))
 
 #ifndef BVR_BUFFER_SIZE
     #define BVR_BUFFER_SIZE 1024
@@ -16,12 +16,18 @@
 
 #define SEEK_NEXT 3
 
+/*
+    This macro creates a for loop that interates through a pool.
+    It will define each `a` as the current used value.
+*/
+
 // GCC specific macro
 #ifdef __GNUC__
     #define BVR_POOL_FOR_EACH(a, pool)    \
         struct bvr_pool_block_s (first ## ##a) = {0};   \
         struct bvr_pool_block_s* (block ## ##a) = &(first ## ##a); \
         while(                                                     \
+            pool.data && \
             ((int)(((block ## ##a) = (struct bvr_pool_block_s*)(pool.data + ((block ## ##a)->next * (pool.elemsize + sizeof(struct bvr_pool_block_s))))) \
             && (a = *(typeof(a)*)((block ## ##a) + sizeof(struct bvr_pool_block_s)))))*0 \
             || ((block ## ##a)->next || (block ## ##a) == &(first ## ##a)) \
@@ -31,11 +37,13 @@
     #define BVR_POOL_FOR_EACH(a, pool)                                        \
         struct bvr_pool_block_s first_##a = {0};                                    \
         struct bvr_pool_block_s* block_##a = &first_##a;                            \
-        while (                                                                     \
+        while (  \
+            pool.data &&                                                                   \
             ((block_##a = (struct bvr_pool_block_s*)(                              \
                 (pool).data + (block_##a->next * ((pool).elemsize + sizeof(struct bvr_pool_block_s))))), \
             (a = *((char*)block_##a + sizeof(struct bvr_pool_block_s))),     \
             (block_##a->next || block_##a == &first_##a))                           \
+            
         )
 #else
     #define BVR_POOL_FOR_EACH(a, pool) while(0)                                 
