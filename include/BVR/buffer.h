@@ -112,6 +112,11 @@ void bvr_destroy_memstream(bvr_memstream_t* stream);
 void bvr_create_string(bvr_string_t* string, const char* value);
 
 /*
+    Use an already created string to replace its value.
+*/
+void bvr_overwrite_string(bvr_string_t* string, const char* value, const uint32 length);
+
+/*
     Concatenate a string.
     WARNING: function might be slow -> no growth factor :(
 */

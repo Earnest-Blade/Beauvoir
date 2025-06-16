@@ -82,7 +82,7 @@ int main(){
 
     /* Create initial game context */
     bvr_create_book(&game);
-    bvr_create_page(&game.page);
+    bvr_create_page(&game.page, "image viewer");
 
     bvr_create_window(&game.window, 800, 800, "Window", 0);
     bvr_create_audio_stream(&game.audio, BVR_DEFAULT_SAMPLE_RATE, BVR_DEFAULT_AUDIO_BUFFER_SIZE);

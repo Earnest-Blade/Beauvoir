@@ -66,7 +66,12 @@ typedef struct bvr_book_s {
     bvr_pipeline_t pipeline;
     bvr_audio_stream_t audio;
 
+    // contains all assets informations
+    // this might be used to store assets informations to export them as bundle
     bvr_memstream_t asset_stream;
+
+    // for now, this is not used, but it aims to store 
+    // all scene-actor heap relative elements
     bvr_memstream_t garbage_stream;
 
     bvr_page_t page;
@@ -116,7 +121,11 @@ void bvr_destroy_book(bvr_book_t* book);
 /*
     Create a new scene
 */
-int bvr_create_page(bvr_page_t* page);
+int bvr_create_page(bvr_page_t* page, const char* name);
+
+void bvr_enable_page(bvr_page_t* page);
+
+void bvr_disable_page(bvr_page_t* page);
 
 bvr_camera_t* bvr_create_orthographic_camera(bvr_page_t* page, bvr_framebuffer_t* framebuffer, float near, float far, float scale);
 

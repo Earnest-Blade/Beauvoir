@@ -22,7 +22,7 @@ static bvr_editor_t editor;
 int main(){
     /* create initial game's context */
     bvr_create_book(&book);
-    bvr_create_page(&book.page);
+    bvr_create_page(&book.page, "scene");
 
     /* create the window */
     bvr_create_window(&book.window, 800, 800, "Window", 0);

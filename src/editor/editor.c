@@ -220,11 +220,15 @@ void bvr_editor_draw_page_hierarchy(){
                     nk_layout_row_dynamic(__editor->gui.context, 15, 1);
 
                     if(nk_menu_item_label(__editor->gui.context, "save", NK_TEXT_ALIGN_LEFT)){
-                        bvr_write_book("book.bin", __editor->book);
+                        bvr_write_book(BVR_FORMAT("%s.bin", __editor->book->page.name.string), __editor->book);
                     }
 
                     if(nk_menu_item_label(__editor->gui.context, "open", NK_TEXT_ALIGN_LEFT)){
-                        bvr_open_book("book.bin", __editor->book);
+                        bvr_open_book(BVR_FORMAT("%s.bin", __editor->book->page.name.string), __editor->book);
+                    }
+
+                    if(nk_menu_item_label(__editor->gui.context, "clear cache", NK_TEXT_ALIGN_LEFT)){
+                        remove(BVR_FORMAT("%s.bin", __editor->book->page.name.string));
                     }
 
                     if(nk_menu_item_label(__editor->gui.context, "exit", NK_TEXT_ALIGN_LEFT)){

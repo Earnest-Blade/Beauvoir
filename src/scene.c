@@ -1,6 +1,8 @@
 #include <BVR/scene.h>
 #include <BVR/math.h>
 
+#include <BVR/assets.book.h>
+
 #include <string.h>
 #include <memory.h>
 
@@ -200,15 +202,40 @@ void bvr_destroy_book(bvr_book_t* book){
     bvr_destroy_page(&book->page);
 }
 
-int bvr_create_page(bvr_page_t* page){
+int bvr_create_page(bvr_page_t* page, const char* name){
     BVR_ASSERT(page);
 
-    bvr_create_string(&page->name, NULL);
+    bvr_create_string(&page->name, name);
 
     bvr_create_pool(&page->actors, sizeof(struct bvr_actor_s*), BVR_MAX_SCENE_ACTOR_COUNT);
     bvr_create_pool(&page->colliders, sizeof(bvr_collider_t*), BVR_COLLIDER_COLLECTION_SIZE);
 
     return BVR_OK;
+}
+
+void bvr_enable_page(bvr_page_t* page){
+#ifdef BVR_AUTO_SAVE
+
+    BVR_ASSERT(page);
+
+    bvr_asset_t asset;
+    if(bvr_find_asset(BVR_FORMAT("%s.bin", page->name.string), &asset)){
+        bvr_open_book(BVR_FORMAT("%s.bin", page->name.string), bvr_get_book_instance());
+    }
+
+#endif
+}
+
+void bvr_disable_page(bvr_page_t* page){
+#ifdef BVR_AUTO_SAVE
+
+    BVR_ASSERT(page);
+
+    if(access(BVR_FORMAT("%s.bin", page->name.string), F_OK)){
+        bvr_write_book(BVR_FORMAT("%s.bin", page->name.string), bvr_get_book_instance());
+    }
+
+#endif
 }
 
 bvr_camera_t* bvr_create_orthographic_camera(bvr_page_t* page, bvr_framebuffer_t* framebuffer, float near, float far, float scale){

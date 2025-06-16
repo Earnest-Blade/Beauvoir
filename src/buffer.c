@@ -165,6 +165,27 @@ void bvr_create_string(bvr_string_t* string, const char* value){
     }
 }
 
+void bvr_overwrite_string(bvr_string_t* string, const char* value, const uint32 length){
+    BVR_ASSERT(string);
+
+    if(!string->string){
+        bvr_create_string(string, value);
+        return;
+    }
+
+    if(value && length){
+
+        if(string->length < length){
+            string->string = realloc(string->string, length);
+            BVR_ASSERT(string->string);
+        }
+
+        string->length = length;
+        memcpy(string->string, value, string->length - 1);
+        string->string[string->length - 1] = '\0';
+    }
+}
+
 void bvr_string_concat(bvr_string_t* string, const char* other){
     BVR_ASSERT(string);
     

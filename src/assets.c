@@ -191,7 +191,6 @@ static void bvri_write_chunk(FILE* file, struct bvri_chunk_data_s* data){
 }
 
 static void bvri_write_chunk_data(FILE* file, uint32 length, uint16 flag, void* buffer){
-    BVR_PRINTF("%i %i", flag, length);
     fwrite(&length, sizeof(uint32), 1, file);
     fwrite(&flag, sizeof(uint16), 1, file);
     if(buffer){
@@ -306,92 +305,6 @@ void bvr_write_book_dataf(FILE* file, bvr_book_t* book){
             fwrite(&actor_data.order_in_layer, sizeof(uint16), 1, file);
             fwrite(&actor_data.transform, sizeof(bvr_transform_t), 1, file);
 
-            /*switch (actor->type)
-            {
-            case BVR_EMPTY_ACTOR:
-                break;
-            case BVR_BITMAP_ACTOR:
-                {
-                }
-                break;
-            case BVR_LAYER_ACTOR:
-                {
-
-                }
-                break;
-            case BVR_STATIC_ACTOR:
-                {
-                    bvr_static_actor_t* static_actor = (bvr_static_actor_t*)actor;
-
-                    // mesh
-                    if(static_actor->mesh.vertex_buffer){
-                        // retrieve vertices 
-                        glBindBuffer(GL_ARRAY_BUFFER, static_actor->mesh.vertex_buffer);
-                        float* vertices = glMapBufferRange(GL_ARRAY_BUFFER, 0, static_actor->mesh.vertex_count * sizeof(float), GL_MAP_READ_BIT);
-                        bvri_write_chunk_data(file, static_actor->mesh.vertex_count * sizeof(float), BVR_EDITOR_MESH, vertices);
-                        glUnmapBuffer(GL_ARRAY_BUFFER);
-
-                        // retrieve elements
-                        if(static_actor->mesh.element_count){
-                            glBindBuffer(GL_ARRAY_BUFFER, static_actor->mesh.element_buffer);
-                            float* elements = glMapBufferRange(GL_ARRAY_BUFFER, 0, static_actor->mesh.element_count * sizeof(uint32), GL_MAP_READ_BIT);
-                            bvri_write_chunk_data(file, static_actor->mesh.element_count * sizeof(uint32), BVR_EDITOR_MESH, elements);
-                            glUnmapBuffer(GL_ARRAY_BUFFER);
-                        }
-                        else {
-                            bvri_write_chunk_data(file, 0, BVR_EDITOR_MESH, NULL);
-                        }
-
-                        // write attribute mode
-                        fwrite(&static_actor->mesh.attrib, sizeof(bvr_mesh_array_attrib_t), 1, file);
-                    }
-                    else {
-                        bvri_write_chunk_data(file, 0, BVR_EDITOR_MESH, NULL);
-                    }
-
-                    bvri_write_asset_reference(file, &static_actor->shader.asset);
-                }
-                break;
-
-            case BVR_DYNAMIC_ACTOR:
-                {
-                    bvr_dynamic_actor_t* dynactor = (bvr_dynamic_actor_t*)actor;
-
-                    // mesh
-                    if(dynactor->mesh.vertex_buffer){
-                        // retrieve vertices 
-                        glBindBuffer(GL_ARRAY_BUFFER, dynactor->mesh.vertex_buffer);
-                        float* vertices = glMapBufferRange(GL_ARRAY_BUFFER, 0, dynactor->mesh.vertex_count, GL_MAP_READ_BIT);
-                        bvri_write_chunk_data(file, dynactor->mesh.vertex_count * sizeof(float), BVR_EDITOR_MESH, vertices);
-                        glUnmapBuffer(GL_ARRAY_BUFFER);
-
-                        // retrieve elements
-                        if(dynactor->mesh.element_count){
-                            glBindBuffer(GL_ARRAY_BUFFER, dynactor->mesh.element_buffer);
-                            float* elements = glMapBufferRange(GL_ARRAY_BUFFER, 0, dynactor->mesh.element_count * sizeof(uint32), GL_MAP_READ_BIT);
-                            bvri_write_chunk_data(file, dynactor->mesh.element_count * sizeof(uint32), BVR_EDITOR_MESH, elements);
-                            glUnmapBuffer(GL_ARRAY_BUFFER);
-                        }
-                        else {
-                            bvri_write_chunk_data(file, 0, BVR_EDITOR_MESH, NULL);
-                        }
-
-                        // write attribute mode
-                        fwrite(&dynactor->mesh.attrib, sizeof(bvr_mesh_array_attrib_t), 1, file);
-                    }
-
-                    // shader
-                    bvri_write_asset_reference(file, &dynactor->shader.asset);
-
-                    // collider
-                    bvri_write_chunk_data(file, sizeof(bvr_collider_t), BVR_EDITOR_COLLIDER, &dynactor->collider);                    
-                    bvri_write_chunk_data(file, dynactor->collider.geometry.size, BVR_EDITOR_COLLIDER, &dynactor->collider.geometry.data);                    
-                }
-                break;
-            default:
-                break;
-            }*/
-
             prev_offset = ftell(file);
 
             // calc actor data section size
@@ -418,14 +331,12 @@ void bvr_write_book_dataf(FILE* file, bvr_book_t* book){
 #pragma region open
 
 static void bvri_read_string(FILE* file, bvr_string_t* string){
-    string->length = bvr_freadu16_le(file);
-    if(string->length){
-        string->string = malloc(string->length);
-        BVR_ASSERT(string->string);
+    char buffer[BVR_BUFFER_SIZE];
+    uint16 length = bvr_freadu16_le(file);
+    BVR_ASSERT(length < BVR_BUFFER_SIZE);
 
-        fread(string->string, sizeof(char), string->length, file);
-        string->string[string->length] = '\0';
-    }
+    fread(buffer, sizeof(char), length, file);
+    bvr_overwrite_string(string, buffer, length);
 }
 
 static void bvri_read_chunk(FILE* file, struct bvri_chunk_data_s* chunk, void* object){
@@ -502,6 +413,8 @@ void bvr_open_book_dataf(FILE* file, bvr_book_t* book){
         bvr_page_t* page = &book->page;
         struct bvri_chunk_data_s camera;
 
+        bvr_destroy_string(&page->name);
+
         // get scene name
         bvri_read_string(file, &page->name);
 
@@ -549,44 +462,16 @@ void bvr_open_book_dataf(FILE* file, bvr_book_t* book){
             bvr_transform_t transform;
         } target_data;
 
-        sizeof(struct bvr_asset_reference_s);
-
         BVR_ASSERT(actor_flag == BVR_EDITOR_ACTOR);
 
-        /*if(section_size && book->page.actors.count){
-            // TODO: clear actors
-
-            struct bvr_actor_s* actor = NULL;
-            bvr_collider_t* collider = NULL;
-            BVR_POOL_FOR_EACH(actor, book->page.actors){
-                if(actor == NULL){
-                    break;
-                }
-
-                bvr_destroy_actor(actor);
-            }
-
-            BVR_POOL_FOR_EACH(collider, book->page.colliders){
-                if(!collider) break;
-            
-                collider = NULL;
-            }
-
-            bvr_destroy_pool(&book->page.actors);
-            bvr_destroy_pool(&book->page.colliders);
-        
-            bvr_destroy_memstream(&book->garbage_stream);
-        }
-
-        bvr_create_pool(&book->page.actors, sizeof(struct bvr_actor_s*), actor_count);
-        bvr_create_memstream(&book->garbage_stream, section_size);
-        bvr_memstream_seek(&book->garbage_stream, 0, SEEK_SET);*/
+        target_data.name.string = NULL;
 
         // while this section isn't finished
         while (readed_bytes < section_size)
         {
             target_data.size = bvr_fread32_le(file);
             target_data.offset = bvr_fread32_le(file);
+
 
             // read binary data
             bvri_read_string(file, &target_data.name);
@@ -612,129 +497,6 @@ void bvr_open_book_dataf(FILE* file, bvr_book_t* book){
 
                 memcpy(&target->transform, &target_data.transform, sizeof(bvr_transform_t));
             }
-
-            // copy over the garbage buffer
-            /*bvr_memstream_write(&book->garbage_stream, &actor_data.name, sizeof(bvr_string_t));
-            bvr_memstream_write(&book->garbage_stream, &actor_data.type, sizeof(bvr_actor_type_t));
-            bvr_memstream_write(&book->garbage_stream, &actor_data.id, sizeof(bvr_uuid_t));
-            bvr_memstream_write(&book->garbage_stream, &actor_data.flags, sizeof(int));
-            bvr_memstream_write(&book->garbage_stream, &actor_data.active, sizeof(uint8));
-            bvr_memstream_write(&book->garbage_stream, &actor_data.order_in_layer, sizeof(uint16));
-            bvr_memstream_write(&book->garbage_stream, &actor_data.padding, sizeof(uint32));
-            bvr_memstream_write(&book->garbage_stream, &actor_data.transform, sizeof(bvr_transform_t));
-
-            switch (actor_data.type)
-            {
-            case BVR_EMPTY_ACTOR:
-                break;
-            case BVR_BITMAP_ACTOR:
-                {
-                    bvr_memstream_seek(&book->garbage_stream, 
-                        sizeof(bvr_mesh_t) + sizeof(bvr_shader_t) + 
-                        sizeof(bvr_collider_t) + sizeof(bvr_texture_t), SEEK_CUR
-                    );
-                }
-                break;
-            case BVR_LAYER_ACTOR:
-                {
-                    bvr_memstream_seek(&book->garbage_stream, 
-                        sizeof(bvr_mesh_t) + sizeof(bvr_shader_t) + 
-                        sizeof(bvr_layered_texture_t), SEEK_CUR
-                    );
-                }
-                break;
-            case BVR_STATIC_ACTOR:
-                {
-                    bvr_memstream_seek(&book->garbage_stream, 
-                        sizeof(bvr_mesh_t) + sizeof(bvr_shader_t), SEEK_CUR
-                    );
-                }
-                break;
-            case BVR_DYNAMIC_ACTOR:
-                {
-                    bvr_dynamic_actor_t* dynactor = (bvr_dynamic_actor_t*)actor_pointer;
-                    
-                    // retrieve mesh data
-                    {
-                        bvr_mesh_buffer_t vertices, elements;
-
-                        vertices.count = 0;
-                        vertices.data = NULL;
-                        vertices.type = BVR_FLOAT;
-
-                        elements.count = 0;
-                        elements.data = NULL;
-                        elements.type = BVR_UNSIGNED_INT32;
-
-                        uint32 vertex_count = bvr_fread32_le(file);
-                        uint16 vertex_flag = bvr_fread16_le(file);
-                        BVR_ASSERT(vertex_flag == BVR_EDITOR_MESH);
-
-                        if(vertex_count){
-                            vertices.count = vertex_count / sizeof(float);
-                            vertices.type = BVR_FLOAT;
-                            vertices.data = malloc(vertex_count);
-                            BVR_ASSERT(vertices.data);
-
-                            fread(vertices.data, sizeof(float), vertices.count, file);
-
-                            uint32 element_count = bvr_fread32_le(file);
-                            uint16 element_flag = bvr_fread16_le(file);
-                            BVR_ASSERT(element_flag == BVR_EDITOR_MESH);
-
-                            if(element_count){
-                                elements.count = element_count / sizeof(uint32);
-                                elements.type = BVR_UNSIGNED_INT32;
-                                elements.data = malloc(element_count);
-                                BVR_ASSERT(elements.data);
-
-                                fread(elements.data, sizeof(uint32), elements.count, file);
-                            }
-
-                        }
-
-                        bvr_mesh_array_attrib_t attrib = (bvr_mesh_array_attrib_t)bvr_fread32_le(file);
-                        bvr_create_meshv(&dynactor->mesh, &vertices, &elements, attrib);
-
-                        free(vertices.data);
-                        free(elements.data);
-                    }
-
-                    // retrieve shader
-                    {
-                        bvri_read_asset_reference(file, &dynactor->shader.asset);
-                        bvr_asset_t asset;
-
-                        if(dynactor->shader.asset.origin == BVR_ASSET_ORIGIN_PATH){
-                            if(bvr_find_asset_uuid(dynactor->shader.asset.pointer.asset_id, &asset)){
-                                FILE* file = bvr_open_asset(&asset);
-                                bvr_create_shaderf(&dynactor->shader, file, BVR_VERTEX_SHADER | BVR_FRAGMENT_SHADER);
-                                fclose(file);
-                            }
-
-                        }
-                        else {
-                            BVR_ASSERT(0 || "not supported");
-                        }
-                    }
-
-                    bvr_create_collider(&dynactor->collider, NULL, 0);
-
-                    // move stream cursor
-                    bvr_memstream_seek(&book->garbage_stream, 
-                        sizeof(bvr_mesh_t) + sizeof(bvr_shader_t) + 
-                        sizeof(bvr_collider_t), SEEK_CUR
-                    ); 
-                }
-                break;
-            default:
-                break;
-            }
-
-            bvr_create_actor(actor_pointer, actor_data.name.string, actor_data.type, actor_data.flags);
-            bvr_link_actor_to_page(&book->page, actor_pointer);
-            
-            bvr_destroy_string(&actor_data.name);*/
 
             // make sure to go to the sector actor
             // might delete later
