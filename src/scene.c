@@ -20,6 +20,8 @@ int bvr_create_book(bvr_book_t* book){
     memset(&book->window, 0, sizeof(bvr_window_t));
     memset(&book->page, 0, sizeof(bvr_page_t));
 
+    book->frames = 0;
+    book->frame_timer = 0.0f;
     book->delta_time = 0.0f;
     book->prev_time = 0.0f;
     book->current_time = 0.0f;
@@ -182,8 +184,17 @@ void bvr_render(bvr_book_t* book){
     }
 #endif
 
-    book->average_render_time = flerp(book->average_render_time, book->delta_time, 0.5f);
+    book->frames++;
+    book->frame_timer += book->delta_time;
+
+    //book->average_render_time = (int)(flerp((float)book->average_render_time, (float)(book->frames / book->frame_timer), 0.5f));
     book->prev_time = book->current_time;
+
+    if(book->frames > BVR_TARGET_FRAMERATE){
+        book->average_render_time = book->frames / book->frame_timer;
+        book->frames = 0;
+        book->frame_timer = book->delta_time;
+    }
 
     bvr_error();
 }

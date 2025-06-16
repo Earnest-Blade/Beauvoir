@@ -76,7 +76,8 @@ typedef struct bvr_book_s {
 
     bvr_page_t page;
 
-    float delta_time, average_render_time;
+    float delta_time, frame_timer;
+    int average_render_time, frames;
     uint64 prev_time, current_time;
 } bvr_book_t;
 
