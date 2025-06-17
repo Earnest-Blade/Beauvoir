@@ -9,8 +9,10 @@
 
 #define BVR_UNIFORM_CAMERA_NAME "bvr_camera"
 #define BVR_UNIFORM_TRANSFORM_NAME "bvr_transform"
+#define BVR_UNIFORM_GLOBAL_ILLUMINATION_NAME "bvr_global_illumination"
 
-#define BVR_UNIFORM_BLOCK_CAMERA 0x0
+#define BVR_UNIFORM_BLOCK_CAMERA                0x0
+#define BVR_UNIFORM_BLOCK_GLOBAL_ILLUMINATION   0x1
 
 #define BVR_MAX_SHADER_COUNT 7
 #define BVR_MAX_UNIFORM_COUNT 20
@@ -75,8 +77,10 @@ static inline int bvr_create_shader(bvr_shader_t* shader, const char* path, cons
 void bvr_create_uniform_buffer(uint32* buffer, uint64 size);
 void bvr_enable_uniform_buffer(uint32 buffer);
 void bvr_uniform_buffer_set(uint32 offset, uint64 size, void* data);
+
 void* bvr_uniform_buffer_map(uint32 offset, uint64 size);
 void bvr_uniform_buffer_close();
+
 void bvr_destroy_uniform_buffer(uint32* buffer);
 
 /*

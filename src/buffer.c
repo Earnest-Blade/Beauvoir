@@ -143,6 +143,11 @@ void bvr_memstream_clear(bvr_memstream_t* stream){
 void bvr_destroy_memstream(bvr_memstream_t* stream){
     BVR_ASSERT(stream);
 
+    // clear all stream data
+    // so that it will be an empty chunk if we're trying to access
+    // to the stream's data after it has been freed.
+    memset(stream->data, 0, stream->size);
+
     free(stream->data);
 
     stream->size = 0;

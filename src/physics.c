@@ -172,6 +172,7 @@ void bvr_compare_colliders(bvr_collider_t* a, bvr_collider_t* b, struct bvr_coll
     }
 
     result->collide ^= (a->is_inverted || b->is_inverted);
+    
     if(result->collide){
         vec3_sub(result->direction, a->body.direction, b->body.direction);
         vec3_scale(result->direction, result->direction, a->body.acceleration + b->body.acceleration);

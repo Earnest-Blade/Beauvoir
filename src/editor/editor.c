@@ -247,6 +247,7 @@ void bvr_editor_draw_page_hierarchy(){
 
                     if(nk_menu_item_label(__editor->gui.context, "save garbage", NK_TEXT_ALIGN_LEFT)){
                         if(__editor->book->garbage_stream.data){
+                            remove("garbagedump.bin");
                             FILE* file = fopen("garbagedump.bin", "wb");
                             fwrite(__editor->book->garbage_stream.data, sizeof(char), __editor->book->garbage_stream.size, file);
                             fclose(file);
@@ -255,6 +256,7 @@ void bvr_editor_draw_page_hierarchy(){
 
                     if(nk_menu_item_label(__editor->gui.context, "save assets", NK_TEXT_ALIGN_LEFT)){
                         if(__editor->book->asset_stream.data){
+                            remove("assetsdump.bin");
                             FILE* file = fopen("assetsdump.bin", "wb");
                             fwrite(__editor->book->asset_stream.data, sizeof(char), __editor->book->asset_stream.size, file);
                             fclose(file);

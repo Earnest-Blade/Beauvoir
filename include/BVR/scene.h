@@ -16,6 +16,14 @@
     #define BVR_MAX_SCENE_ACTOR_COUNT 64
 #endif
 
+#ifndef BVR_MAX_SCENE_LIGHT_COUNT
+    #define BVR_MAX_SCENE_LIGHT_COUNT 16
+#endif
+
+#ifndef BVR_NO_SCENE_AUTO_HEAP
+    #define BVR_SCENE_AUTO_HEAP
+#endif
+
 #ifndef BVR_NO_FPS_CAP
     #ifndef BVR_TARGET_FRAMERATE
         #define BVR_TARGET_FRAMERATE 60
@@ -54,6 +62,9 @@ typedef struct bvr_page_s {
     // all world's actors (pointers)
     bvr_pool_t actors;
 
+    // all world lights
+    bvr_pool_t lights;
+
     // all world's colliders (pointers)
     bvr_collider_collection_t colliders;
 } bvr_page_t;
@@ -63,7 +74,9 @@ typedef struct bvr_page_s {
 */
 typedef struct bvr_book_s {
     bvr_window_t window;
+
     bvr_pipeline_t pipeline;
+
     bvr_audio_stream_t audio;
 
     // contains all assets informations
@@ -88,9 +101,18 @@ int bvr_create_book(bvr_book_t* book);
 
 bvr_book_t* bvr_get_book_instance();
 
+/*
+    Allocate scene's memory streams
+*/
 BVR_H_FUNC void bvr_create_book_memories(bvr_book_t* book, const uint64 asset_size, const uint64 garbage_size){
-    bvr_create_memstream(&book->asset_stream, asset_size);
-    bvr_create_memstream(&book->garbage_stream, garbage_size);
+    if(!book->asset_stream.data && asset_size){
+        bvr_create_memstream(&book->asset_stream, asset_size);        
+    }
+
+    if(garbage_size){
+        bvr_destroy_memstream(&book->garbage_stream);
+        bvr_create_memstream(&book->garbage_stream, garbage_size);
+    }
 }
 
 /*

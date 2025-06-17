@@ -66,7 +66,7 @@ struct bvr_actor_s {
     struct bvr_transform_s transform;
 };
 
-typedef struct bvr_actor_s bvr_emty_actor_t;
+typedef struct bvr_actor_s bvr_empty_actor_t;
 
 typedef struct bvr_layer_actor_s {
     struct bvr_actor_s object;

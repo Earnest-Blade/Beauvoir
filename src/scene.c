@@ -1,6 +1,7 @@
 #include <BVR/scene.h>
 #include <BVR/math.h>
 
+#include <BVR/lights.h>
 #include <BVR/assets.book.h>
 
 #include <string.h>
@@ -44,8 +45,16 @@ int bvr_create_book(bvr_book_t* book){
     memset(&book->pipeline.commands, 0, sizeof(book->pipeline.commands));
 
     bvr_create_memstream(&book->asset_stream, 0);
-    bvr_create_memstream(&book->garbage_stream, 0);
 
+#ifdef BVR_SCENE_AUTO_HEAP
+    bvr_create_memstream(
+        &book->garbage_stream, 
+        BVR_MAX_SCENE_ACTOR_COUNT * sizeof(bvr_dynamic_actor_t) +
+        BVR_MAX_SCENE_LIGHT_COUNT * sizeof(struct bvr_light_s)
+    );
+#else
+    bvr_create_memstream(&book->garbage_stream, 0);
+#endif
     return BVR_OK;
 }
 
@@ -132,7 +141,9 @@ void bvr_update(bvr_book_t* book){
                 bvr_compare_colliders(collider, other, &result);
 
                 if(result.collide == 1){
-                    bvr_invert_direction(&collider->body);
+                    //bvr_invert_direction(&collider->body);
+                    //BVR_IDENTITY_VEC3(collider->body.direction);
+
                     break;
                 }
             }
@@ -203,14 +214,15 @@ void bvr_destroy_book(bvr_book_t* book){
     if(book->window.context){
         bvr_destroy_window(&book->window);
     }
+
     if(book->audio.stream){
         bvr_destroy_audio_stream(&book->audio);
     }
 
-    bvr_destroy_memstream(&book->asset_stream);
-    bvr_destroy_memstream(&book->garbage_stream);
-    
     bvr_destroy_page(&book->page);
+
+    bvr_destroy_memstream(&book->asset_stream);
+    bvr_destroy_memstream(&book->garbage_stream);    
 }
 
 int bvr_create_page(bvr_page_t* page, const char* name){
@@ -220,6 +232,7 @@ int bvr_create_page(bvr_page_t* page, const char* name){
 
     bvr_create_pool(&page->actors, sizeof(struct bvr_actor_s*), BVR_MAX_SCENE_ACTOR_COUNT);
     bvr_create_pool(&page->colliders, sizeof(bvr_collider_t*), BVR_COLLIDER_COLLECTION_SIZE);
+    bvr_create_pool(&page->lights, sizeof(struct bvr_light_s*), BVR_MAX_SCENE_LIGHT_COUNT);
 
     return BVR_OK;
 }
@@ -344,8 +357,47 @@ struct bvr_actor_s* bvr_link_actor_to_page(bvr_page_t* page, struct bvr_actor_s*
     
     if(actor){
         struct bvr_actor_s** aptr = (struct bvr_actor_s**) bvr_pool_alloc(&page->actors);
-        *aptr = actor;
 
+#ifdef BVR_SCENE_AUTO_HEAP
+        *aptr = (struct bvr_actor_s*) bvr_get_book_instance()->garbage_stream.cursor;
+
+        switch (actor->type)
+        {
+        case BVR_NULL_ACTOR:        
+            break;
+        case BVR_EMPTY_ACTOR:
+            bvr_memstream_write(&bvr_get_book_instance()->garbage_stream, actor, sizeof(bvr_empty_actor_t));
+            break;
+
+        case BVR_LAYER_ACTOR:
+            bvr_memstream_write(&bvr_get_book_instance()->garbage_stream, actor, sizeof(bvr_layer_actor_t));
+            break;
+
+        case BVR_BITMAP_ACTOR:
+            {
+                bvr_collider_t* collider = bvr_link_collider_to_page(page, &((bvr_bitmap_layer_t*)*aptr)->collider);
+                bvr_memstream_write(&bvr_get_book_instance()->garbage_stream, actor, sizeof(bvr_bitmap_layer_t));
+                collider->transform = &(*aptr)->transform;
+            }
+            break;
+
+        case BVR_STATIC_ACTOR:
+            bvr_memstream_write(&bvr_get_book_instance()->garbage_stream, actor, sizeof(bvr_static_actor_t));
+            break;
+
+        case BVR_DYNAMIC_ACTOR:
+            {
+                bvr_collider_t* collider = bvr_link_collider_to_page(page, &((bvr_dynamic_actor_t*)*aptr)->collider);
+                bvr_memstream_write(&bvr_get_book_instance()->garbage_stream, actor, sizeof(bvr_dynamic_actor_t));
+                collider->transform = &(*aptr)->transform;
+            }
+            break;
+        
+        default:
+            break;
+        }
+#else
+        *aptr = actor;
         switch (actor->type)
         {
         case BVR_BITMAP_ACTOR:
@@ -357,7 +409,8 @@ struct bvr_actor_s* bvr_link_actor_to_page(bvr_page_t* page, struct bvr_actor_s*
         default:
             break;
         }
-
+#endif
+        BVR_PRINTF("linked %s to the page!", (*aptr)->name.string);
         return *aptr;
     }
 
@@ -370,6 +423,7 @@ bvr_collider_t* bvr_link_collider_to_page(bvr_page_t* page, bvr_collider_t* coll
     if(collider){
         bvr_collider_t** cptr = (bvr_collider_t**) bvr_pool_alloc(&page->colliders);
         *cptr = collider;
+        BVR_PRINTF("linked collider %x to the page!", *cptr);
         return *cptr;
     }
 
@@ -416,10 +470,12 @@ struct bvr_actor_s* bvr_find_actor_uuid(bvr_book_t* book, bvr_uuid_t uuid){
 void bvr_destroy_page(bvr_page_t* page){
     BVR_ASSERT(page);
 
+    int i = 0;
     struct bvr_actor_s* actor = NULL;
     BVR_POOL_FOR_EACH(actor, page->actors){
         if(!actor) break;
-
+        
+        // destroy actor
         bvr_destroy_actor(actor);
     }
 
@@ -427,12 +483,22 @@ void bvr_destroy_page(bvr_page_t* page){
     BVR_POOL_FOR_EACH(collider, page->colliders){
         if(!collider) break;
 
+        // remove collider
         collider = NULL;
+    }
+
+    struct bvr_light_s* light = NULL;
+    BVR_POOL_FOR_EACH(light, page->lights){
+        if(!light) break;
+
+        // destroy light
     }
 
     bvr_destroy_uniform_buffer(&page->camera.buffer);
 
     bvr_destroy_string(&page->name);
+
     bvr_destroy_pool(&page->actors);
     bvr_destroy_pool(&page->colliders);
+    bvr_destroy_pool(&page->lights);
 }
