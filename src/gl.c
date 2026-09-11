@@ -1962,7 +1962,7 @@ int bvr_load_gles(GLADloadproc load){
         NULL
     };
 
-    glGetString = (PFNGLGETSTRINGPROC)load("glGetString");
+    glGetString = (PFNGLGETSTRINGPROC)load("glGetString");	
     if(glGetString == NULL) return 0;
 
     version = glGetString(GL_VERSION);

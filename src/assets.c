@@ -31,7 +31,5 @@ int bvr_load_pagef(bvr_page_t* page, FILE* file){
     if(!json_root){
         BVR_PRINT("failed to parse the json page file!");
         return BVR_FALSE;
-    }
-
-    
+    }   
 }

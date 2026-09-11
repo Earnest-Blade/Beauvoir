@@ -26,10 +26,24 @@ extern "C" {
     #define BVR_USE_GLES 0
 #endif
 
+#ifndef BVR_USE_GTK
+// default usage
 #if defined(BVR_USE_GLES)
     #include <glad/glad.es.h>
 #else
     #include <glad/glad.core.h>
+#endif
+#else
+// gtk gl usage
+
+// defined gladproc
+typedef void* (* GLADloadproc)(const char *name);
+
+#if defined(BVR_USE_GLES)
+    #include <epoxy/egl.h>
+#else
+    #include <epoxy/gl.h>
+#endif
 #endif
 
 #ifndef BVR_H_GL
@@ -46,6 +60,7 @@ extern "C" {
 
     #define GL_TEX_STORAGE_3D(target, format, type, internal_format, width, height, depth) \
         glTexImage3D(target, 0, internal_format, width, height, depth, 0, format, type, NULL)
+        
 #elif BVR_USE_GLES
     #define GL_PIXEL_STOREI(pname, pvalue) {}
     #define GL_READ_PIXEL(x, y, width, height, format, type, bufsize, pixels) \

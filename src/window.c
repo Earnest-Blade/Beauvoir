@@ -7,7 +7,9 @@
 #include <string.h>
 #include <memory.h>
 
-#ifdef _WIN32
+#ifdef BVR_USE_GTK
+
+#elif _WIN32
     #include <windows.h>
     #include <windowsx.h>
     #include <gl\gl.h>
@@ -66,7 +68,89 @@ static void bvri_create_keymap_layout();
 void static bvr_error_callback(GLenum source, GLenum type, GLuint id, 
     GLenum severity, GLsizei length, const GLchar* message, const void* userParam);
 
+#ifdef BVR_USE_GTK
+
+#include <gtk/gtk.h>
+#include <epoxy/gl.h>
+
+#include <dlfcn.h>
+
+#ifdef GDK_WINDOWING_X11
+    #include <epoxy/glx.h>
+#endif
+#ifdef GDK_WINDOWING_WAYLAND
+    #include <epoxy/egl.h>
+#endif
+
+static void* bvri_load_proc(const char* name){
+
+#ifdef BVR_USE_GLDESK
 #ifdef _WIN32
+    return (void*)wglGetProcAddress((const GLubyte*)name);
+#elif __unix__
+    return (void*)glXGetProcAddress((const GLubyte*)name);
+#else
+    return dlsym(RTLD_DEFAULT, name);
+#endif
+#elif BVR_USE_GLES
+    return (void*)eglGetProcAddress(name);
+#else
+    return dlsym(RTLD_DEFAULT, name);
+#endif
+
+}
+
+// create a new window
+static int bvri_create_window_impl(bvr_window_t* window, const uint16 width, const uint16 height, const char* title, const int flags){
+    // no-op
+}
+
+// pump window's events
+static void bvri_window_poll_events_impl(bvr_window_t* window){
+    // no-op
+}
+
+// swap buffers
+static void bvri_window_push_buffers_impl(bvr_window_t* window){
+    // no-op
+}
+
+// window set size
+static void bvr_window_set_size_impl(bvr_window_t* window, const uint16 width, const uint16 height){
+    // no-op
+}
+
+// window set position
+static void bvr_window_set_position_impl(bvr_window_t* window, const uint16 x, const uint16 y){
+    // no-op
+}
+
+// window set name
+static void bvr_window_set_name_impl(bvr_window_t* window, const char* name){
+    // no-op
+}
+
+// window destroy
+static void bvri_window_destroy_impl(bvr_window_t* window){
+    // no-op
+}
+
+// os timer
+static uint64 bvri_get_ns_tick_impl(){
+    return g_get_monotonic_time_ns();
+}
+
+// os sleep for x nanoseconds
+static void bvri_thread_wait_ns(uint64 ns){
+    g_usleep(ns / 100);
+}
+
+// register and create the current keyboard layout
+static void bvri_create_keymap_layout(){
+    memset(__keycodes, 0, sizeof(__keycodes));
+}
+
+#elif _WIN32
 
 // windproc callback
 LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
@@ -1170,11 +1254,14 @@ int bvr_create_window(bvr_window_t* window, const uint16 width, const uint16 hei
     BVR_PRINTF("Running OPENGL %s", window->vendor.gl_version);
     BVR_PRINTF("Running GLSL %s", window->vendor.glsl_version);
 
+// check for extensions
+#ifdef __glad_h_
     // enable debugging
     if(glad_glDebugMessageCallback){
         glEnable(GL_DEBUG_OUTPUT);
         glDebugMessageCallback(bvr_error_callback, NULL);
     }
+#endif
 
     window->awake = 1;
     window->focus = 1;
@@ -1182,6 +1269,10 @@ int bvr_create_window(bvr_window_t* window, const uint16 width, const uint16 hei
     bvr_create_framebuffer(&window->framebuffer, width, height, NULL);
 
     return state;
+}
+
+void* bvr_load_proc(const char* name){
+    return bvri_load_proc(name);
 }
 
 void bvr_window_poll_events(bvr_window_t* window){

@@ -180,6 +180,11 @@ union bvr_window_handle_u {
 
         unsigned long atoms[16];
     } x11;
+
+    struct {
+        void* win;
+        void* widget;
+    } gtk;
 };
 
 typedef struct bvr_window_s {
@@ -243,28 +248,131 @@ typedef struct bvr_window_s {
     } vendor;
 } bvr_window_t;
 
+/**
+ * @brief create a new window
+ * @param width the width of the window.
+ * @param height the height of the window.
+ * @param title the display string of the window.
+ * @param flags window's flags ```BVR_WINDOW_RESIZABLE```,
+ * ```BVR_WINDOW_ALWAYS_ON_TOP```, ```BVR_WINDOW_BORDERLESS```, ```BVR_WINDOW_FULLSCREEN```,
+ * ```BVR_WINDOW_CENTERED```, ```BVR_WINDOW_USER_FRAMEBUFFER```, ```BVR_WINDOW_DEFAULT```
+ */
 int bvr_create_window(bvr_window_t* window, const uint16 width, const uint16 height, const char* title, const int flags);
 
+/**
+ * @brief return the address of a named OpenGL extension function, if it exists.
+ * @param name the null-terminated name of the OpenGL function to resolve.
+ * @return the address of the function, or ```NULL``` if the function is
+ * not supported by the current context.
+ */
+void* bvr_load_proc(const char* name);
+
+/**
+ * @brief process all pending events for the specified window, such as
+ * input, resize and close events, and update the window's internal state
+ * accordingly.
+ * @param window the window whose events are to be processed.
+ */
 void bvr_window_poll_events(bvr_window_t* window);
+
+/**
+ * @brief swap the front and back buffers of the specified window, displaying
+ * the contents that have been rendered since the last call.
+ * @param window the window whose buffers are to be swapped.
+ */
 void bvr_window_push_buffers(bvr_window_t* window);
 
+/**
+ * @brief set the width and height of the specified window.
+ * @param window the window to be resized.
+ * @param width the new width of the window.
+ * @param height the new height of the window.
+ */
 void bvr_window_set_size(bvr_window_t* window, const uint16 width, const uint16 height);
+
+/**
+ * @brief move the specified window to the given position on the screen.
+ * @param window the window to be moved.
+ * @param x the new horizontal position of the window, in pixels.
+ * @param y the new vertical position of the window, in pixels.
+ */
 void bvr_window_set_position(bvr_window_t* window, const uint16 x, const uint16 y);
 
+/**
+ * @brief destroy the specified window and free all resources associated
+ * with it.
+ * @param window the window to be destroyed.
+ */
 void bvr_destroy_window(bvr_window_t* window);
 
+/**
+ * @brief return whether the specified key is currently held down.
+ * @param key the keycode to test.
+ * @return non-zero if the key is currently down, zero otherwise.
+ */
 int bvr_key_down(uint16 key);
+
+/**
+ * @brief return whether the specified key has just been pressed during the
+ * current event poll.
+ * @param key the keycode to test.
+ * @return non-zero if the key was pressed, zero otherwise.
+ */
 int bvr_key_presssed(uint16 key);
 
+/**
+ * @brief return whether the specified axis is currently held down, in
+ * either of its two directions.
+ * @param axis the key axis to test.
+ * @return non-zero if the axis is currently down, zero otherwise.
+ */
 int bvr_axis_down(bvr_keyaxis_t* axis);
+
+/**
+ * @brief return whether the specified axis has just been pressed during
+ * the current event poll.
+ * @param axis the key axis to test.
+ * @return non-zero if the axis was pressed, zero otherwise.
+ */
 int bvr_axis_presssed(bvr_keyaxis_t* axis);
 
+/**
+ * @brief return whether the specified mouse button is currently held down.
+ * @param button the button code to test.
+ * @return non-zero if the button is currently down, zero otherwise.
+ */
 int bvr_button_down(uint16 button);
+
+/**
+ * @brief return whether the specified mouse button has just been pressed
+ * during the current event poll.
+ * @param button the button code to test.
+ * @return non-zero if the button was pressed, zero otherwise.
+ */
 int bvr_button_pressed(uint16 button);
 
+/**
+ * @brief retrieve the current position of the mouse cursor, relative to
+ * the origin of the window.
+ * @param x pointer to a float receiving the horizontal position of the cursor.
+ * @param y pointer to a float receiving the vertical position of the cursor.
+ */
 void bvr_mouse_position(float* x, float* y);
+
+/**
+ * @brief retrieve the displacement of the mouse cursor since the last
+ * event poll.
+ * @param x pointer to a float receiving the horizontal displacement of the cursor.
+ * @param y pointer to a float receiving the vertical displacement of the cursor.
+ */
 void bvr_mouse_relative_position(float* x, float* y);
 
+/**
+ * @brief return the amount of vertical scroll registered since the last
+ * event poll.
+ * @return the scroll delta, positive for scrolling up and negative for
+ * scrolling down.
+ */
 float bvr_mouse_scroll();
 
 /*

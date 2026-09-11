@@ -3,10 +3,12 @@ project(beauvoir LANGUAGES C)
 
 # beauvoir options
 option(BVR_DEBUG "Enable debugging" ON)
+option(BVR_USE_GTK "Use GTK4 as a backend" OFF)
 option(BVR_TARGET_SHARED "Build shared library" ON)
 option(BVR_TARGET_STATIC "Build static library" OFF)
 
 message(STATUS "BVR_DEBUG = ${BVR_DEBUG}")
+message(STATUS "BVR_USE_GTK = ${BVR_USE_GTK}")
 message(STATUS "BVR_TARGET_SHARED = ${BVR_TARGET_SHARED}")
 message(STATUS "BVR_TARGET_STATIC = ${BVR_TARGET_STATIC}")
 
@@ -89,6 +91,10 @@ file(GLOB_RECURSE BVR_ENGINE_SOURCES "${BVR_SOURCE_DIR}/*.c")
 target_sources(beauvoir PRIVATE ${BVR_ENGINE_SOURCES})
 if(BVR_DEBUG)
     target_compile_definitions(beauvoir PRIVATE BVR_DEBUG=${BVR_DEBUG})
+endif()
+
+if(BVR_USE_GTK)
+    target_compile_definitions(beauvoir PRIVATE BVR_USE_GTK)
 endif()
 
 target_include_directories(beauvoir
